@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum RoomStatus {
+  ACTIVE
+  HIDDEN
+  UNAVAILABLE
+}
+
+enum BookingStatus {
+  RECEIVED
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PAY_AT_PROPERTY
+  FAILED
+  REFUNDED
+}
+
+enum BookingSource {
+  DIRECT_WEBSITE
+}
+
+enum ChatStatus {
+  OPEN
+  PENDING
+  CLOSED
+}
+
+enum SenderType {
+  GUEST
+  ADMIN
+  SYSTEM
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  FILE
+}
+
+enum MediaSource {
+  URL
+  UPLOAD
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String?  @unique
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Room {
+  id                       String            @id @default(cuid())
+  slug                     String            @unique
+  name                     String
+  shortDescription         String
+  fullDescription          String
+  basePrice                Int
+  weekendPrice             Int?
+  holidayPrice             Int?
+  longStayDiscountEnabled  Boolean           @default(true)
+  longStayMinNights        Int               @default(7)
+  longStayDiscountPercent  Float             @default(5)
+  serviceFeePercent        Float             @default(0)
+  taxPercent               Float             @default(0)
+  minNights                Int               @default(1)
+  maxNights                Int               @default(30)
+  allowSameDayBooking      Boolean           @default(true)
+  advanceBookingDays       Int               @default(365)
+  cleaningBufferHours      Int               @default(0)
+  size                     String
+  maxGuests                Int
+  bedType                  String
+  numberOfBeds             Int               @default(1)
+  status                   RoomStatus        @default(ACTIVE)
+  isFeatured               Boolean           @default(false)
+  sortOrder                Int               @default(0)
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  translations             RoomTranslation[]
+  images                   RoomImage[]
+  amenities                RoomAmenity[]
+  blockedDates             RoomBlockedDate[]
+  bookings                 Booking[]
+}
+
+model RoomTranslation {
+  id               String   @id @default(cuid())
+  roomId           String
+  languageCode     String
+  name             String
+  shortDescription String
+  fullDescription  String
+  priceNote        String?
+  policiesJson     Json?
+  suitableForJson  Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  room             Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, languageCode])
+}
+
+model RoomImage {
+  id        String   @id @default(cuid())
+  roomId    String
+  url       String
+  altText   String?
+  isMain    Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model Amenity {
+  id        String        @id @default(cuid())
+  key       String        @unique
+  iconName  String?
+  createdAt DateTime      @default(now())
+  rooms     RoomAmenity[]
+}
+
+model RoomAmenity {
+  roomId    String
+  amenityId String
+  room      Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  amenity   Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, amenityId])
+}
+
+model RoomBlockedDate {
+  id        String   @id @default(cuid())
+  roomId    String
+  startDate DateTime
+  endDate   DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model Guest {
+  id          String    @id @default(cuid())
+  fullName    String
+  email       String?
+  phoneCode   String
+  phoneNumber String
+  country     String
+  nationality String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]
+
+  @@index([email])
+  @@index([phoneNumber])
+}
+
+model Booking {
+  id             String        @id @default(cuid())
+  bookingCode    String        @unique
+  roomId         String
+  guestId        String
+  checkIn        DateTime
+  checkOut       DateTime
+  nights         Int
+  guests         Int
+  pricePerNight  Int
+  subtotal       Int
+  discountAmount Int           @default(0)
+  serviceFee     Int           @default(0)
+  taxAmount      Int           @default(0)
+  totalPrice     Int
+  currency       String        @default("VND")
+  specialRequest String?
+  arrivalTime    String?
+  bookingStatus  BookingStatus @default(RECEIVED)
+  paymentStatus  PaymentStatus @default(PENDING)
+  paymentMethod  String?
+  internalNote   String?
+  source         BookingSource @default(DIRECT_WEBSITE)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  room           Room          @relation(fields: [roomId], references: [id])
+  guest          Guest         @relation(fields: [guestId], references: [id])
+  payments       Payment[]
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  bookingId       String
+  method          String
+  provider        String?
+  amount          Int
+  currency        String        @default("VND")
+  status          PaymentStatus @default(PENDING)
+  transactionRef  String?
+  transferContent String?
+  rawPayloadJson  Json?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  booking         Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model PaymentMethodSetting {
+  id               String   @id @default(cuid())
+  key              String   @unique
+  displayName      String
+  description      String?
+  enabled          Boolean  @default(false)
+  visibleForGuests Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  configJson       Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  valueJson Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatSession {
+  id             String        @id @default(cuid())
+  sessionCode    String        @unique
+  guestName      String?
+  guestPhone     String?
+  guestEmail     String?
+  language       String        @default("en")
+  bookingCode    String?
+  status         ChatStatus    @default(OPEN)
+  unreadByAdmin  Int           @default(0)
+  unreadByGuest  Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  messages       ChatMessage[]
+}
+
+model ChatMessage {
+  id          String      @id @default(cuid())
+  sessionId   String
+  senderType  SenderType
+  senderName  String?
+  message     String
+  readByAdmin Boolean     @default(false)
+  readByGuest Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model CurrencyRateCache {
+  id             String   @id @default(cuid())
+  baseCurrency   String
+  targetCurrency String
+  rate           Float
+  provider       String
+  lastUpdated    DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([baseCurrency, targetCurrency, provider])
+}
+
+model MediaAsset {
+  id        String      @id @default(cuid())
+  url       String
+  type      MediaType   @default(IMAGE)
+  altText   String?
+  source    MediaSource @default(URL)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}

@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    background: var(--lune-page-bg, #fbfaf7);
+    color: #171412;
+    font-family: Inter, system-ui, sans-serif;
+  }
+
+  ::selection {
+    background: #b08a4b;
+    color: #fff;
+  }
+
+  img {
+    display: block;
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-space {
+    @apply py-12 sm:py-16 lg:py-20;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase;
+    color: var(--lune-accent-color, #8b6834);
+  }
+
+  .input-field {
+    @apply min-h-12 w-full rounded-md border border-stone-200 bg-white px-3 py-3 text-base text-lune-ink outline-none transition focus:border-lune-gold focus:ring-2 focus:ring-lune-gold/20 sm:text-sm;
+  }
+
+  .label {
+    @apply mb-2 block text-xs font-semibold uppercase text-stone-600;
+  }
+
+  .btn-primary {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-lune-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-lune-charcoal focus:outline-none focus:ring-2 focus:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-gold {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-lune-gold px-5 py-3 text-sm font-semibold text-white transition hover:bg-lune-goldDark focus:outline-none focus:ring-2 focus:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
+    background: var(--lune-button-color, #b08a4b);
+  }
+
+  .btn-secondary {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-lune-ink transition hover:border-lune-gold hover:text-lune-goldDark focus:outline-none focus:ring-2 focus:ring-lune-gold/30;
+  }
+
+  .card {
+    @apply rounded-lg border border-stone-200 bg-white shadow-soft;
+  }
+
+  .section-title {
+    @apply font-display text-4xl font-bold leading-tight text-lune-ink sm:text-5xl;
+  }
+
+  .muted-text {
+    @apply text-base leading-7 text-stone-600 sm:text-sm;
+  }
+}
