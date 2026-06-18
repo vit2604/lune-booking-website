@@ -75,4 +75,125 @@
   .muted-text {
     @apply text-base leading-7 text-stone-600 sm:text-sm;
   }
+
+  .reveal-on-scroll {
+    opacity: 0;
+    transform: var(--reveal-transform, translate3d(0, 28px, 0));
+    transition:
+      opacity var(--reveal-duration, 650ms) ease,
+      transform var(--reveal-duration, 650ms) cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+
+  .reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .reveal-variant-curve-left,
+  .reveal-variant-curve-right,
+  .reveal-variant-float,
+  .reveal-variant-zoom {
+    transform: none;
+    transition: none;
+  }
+
+  .reveal-variant-curve-left.is-visible {
+    animation: revealCurveLeft var(--reveal-duration, 760ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
+  }
+
+  .reveal-variant-curve-right.is-visible {
+    animation: revealCurveRight var(--reveal-duration, 760ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
+  }
+
+  .reveal-variant-float.is-visible {
+    animation: revealFloat var(--reveal-duration, 700ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
+  }
+
+  .reveal-variant-zoom.is-visible {
+    animation: revealZoom var(--reveal-duration, 620ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
+  }
+}
+
+@keyframes revealCurveLeft {
+  0% {
+    opacity: 0;
+    transform: translate3d(-46px, 34px, 0) rotate(-2.8deg) scale(0.985);
+    filter: blur(8px);
+  }
+  58% {
+    opacity: 1;
+    transform: translate3d(10px, -7px, 0) rotate(0.7deg) scale(1.005);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes revealCurveRight {
+  0% {
+    opacity: 0;
+    transform: translate3d(46px, 34px, 0) rotate(2.8deg) scale(0.985);
+    filter: blur(8px);
+  }
+  58% {
+    opacity: 1;
+    transform: translate3d(-10px, -7px, 0) rotate(-0.7deg) scale(1.005);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes revealFloat {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 42px, 0) scale(0.97);
+    filter: blur(6px);
+  }
+  62% {
+    opacity: 1;
+    transform: translate3d(0, -9px, 0) scale(1.012);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes revealZoom {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.94);
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal-on-scroll {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    animation: none !important;
+    filter: none;
+    will-change: auto;
+  }
 }

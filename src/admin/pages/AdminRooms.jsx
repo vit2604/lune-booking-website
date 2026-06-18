@@ -1,10 +1,25 @@
 import { Edit, Eye, EyeOff, Plus, Search, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminTable from '../components/AdminTable.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 import { deleteRoom, getRooms, toggleRoomStatus } from '../services/adminRoomService.js';
+import { canUseMockFallback } from '../../config/apiConfig.js';
+import { adminDeleteRoom, adminListRooms, adminUpdateRoomStatus } from '../../services/adminApiService.js';
 import { formatCurrency } from '../../utils/booking.js';
+
+function normalizeRoom(room) {
+  return {
+    ...room,
+    type: room.type || 'Apartment',
+    price: Number(room.price || room.basePrice || 0),
+    image: room.image || room.mainImage || room.images?.find((image) => image.isMain)?.url || room.images?.[0]?.url || '',
+    gallery: room.gallery || room.images?.map((image) => image.url) || [],
+    status: room.status === 'ACTIVE' ? 'active' : String(room.status || 'active').toLowerCase(),
+  };
+}
+
+const toApiRoomStatus = (status) => (status === 'hidden' ? 'HIDDEN' : 'ACTIVE');
 
 export default function AdminRooms() {
   const [rooms, setRooms] = useState(getRooms());
@@ -13,6 +28,32 @@ export default function AdminRooms() {
   const [status, setStatus] = useState('all');
   const [toast, setToast] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [source, setSource] = useState(canUseMockFallback() ? 'local' : 'api');
+  const [loading, setLoading] = useState(false);
+
+  const loadRooms = async (message = '') => {
+    setLoading(true);
+    try {
+      const data = await adminListRooms();
+      setRooms((Array.isArray(data) ? data : []).map(normalizeRoom));
+      setSource('api');
+      if (message) setToast(message);
+    } catch (error) {
+      if (!canUseMockFallback()) {
+        setToast(error.message || 'Could not load rooms from backend.');
+      } else {
+        setRooms(getRooms());
+        setSource('local');
+        if (message) setToast(message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRooms();
+  }, []);
 
   const roomTypes = [...new Set(rooms.map((room) => room.type).filter(Boolean))];
   const filteredRooms = useMemo(
@@ -29,15 +70,23 @@ export default function AdminRooms() {
     setToast(message);
   };
 
-  const handleToggle = (id) => {
-    toggleRoomStatus(id);
-    refresh('Room visibility updated.');
+  const handleToggle = async (id) => {
+    if (source === 'api') {
+      const room = rooms.find((item) => item.id === id);
+      await adminUpdateRoomStatus(id, toApiRoomStatus(room?.status === 'hidden' ? 'active' : 'hidden'));
+      await loadRooms('Room visibility updated.');
+    } else {
+      toggleRoomStatus(id);
+      refresh('Room visibility updated.');
+    }
   };
 
-  const handleDelete = () => {
-    deleteRoom(deleteTarget.id);
+  const handleDelete = async () => {
+    if (source === 'api') await adminDeleteRoom(deleteTarget.id);
+    else deleteRoom(deleteTarget.id);
     setDeleteTarget(null);
-    refresh('Room deleted.');
+    if (source === 'api') await loadRooms('Room hidden or deleted.');
+    else refresh('Room deleted.');
   };
 
   return (
@@ -55,6 +104,7 @@ export default function AdminRooms() {
       </div>
 
       {toast ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-700">{toast}</div> : null}
+      {loading ? <div className="rounded-lg border border-stone-200 bg-white p-3 text-sm text-stone-600">Loading rooms...</div> : null}
 
       <div className="grid gap-3 rounded-lg border border-stone-200 bg-white p-4 shadow-sm lg:grid-cols-[1fr_220px_180px]">
         <label className="relative">

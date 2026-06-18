@@ -1,8 +1,10 @@
 import { Save } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AdminFormInput from '../components/AdminFormInput.jsx';
 import ImageUploader from '../components/ImageUploader.jsx';
 import { getPaymentSettings, savePaymentSettings } from '../services/adminSettingsService.js';
+import { canUseMockFallback } from '../../config/apiConfig.js';
+import { adminGetPaymentSettings, adminSavePaymentSettings } from '../../services/adminApiService.js';
 
 const methodLabels = {
   payAtProperty: 'Pay at property',
@@ -24,6 +26,30 @@ const walletMethodIds = ['vnpay', 'momo', 'zaloPay'];
 export default function AdminPaymentSettings() {
   const [settings, setSettings] = useState(getPaymentSettings());
   const [message, setMessage] = useState('');
+  const [source, setSource] = useState(canUseMockFallback() ? 'local' : 'api');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+    async function loadSettings() {
+      setLoading(true);
+      try {
+        const methods = await adminGetPaymentSettings();
+        if (ignore) return;
+        const paymentMethods = Object.fromEntries((methods || []).map((method) => [method.key || method.id, method]));
+        setSettings((current) => ({ ...current, paymentMethods }));
+        setSource('api');
+      } catch (error) {
+        if (!canUseMockFallback() && !ignore) setMessage(error.message || 'Could not load payment settings from backend.');
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+    loadSettings();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const update = (field, value) => setSettings((current) => ({ ...current, [field]: value }));
 
@@ -46,9 +72,9 @@ export default function AdminPaymentSettings() {
     warnings.push('Bank transfer is enabled. Bank name, account number, and account holder should be filled.');
   }
 
-  const handleSave = (event) => {
+  const handleSave = async (event) => {
     event.preventDefault();
-    savePaymentSettings({
+    const payload = {
       ...settings,
       enablePayAtProperty: settings.paymentMethods?.payAtProperty?.enabled,
       enableBankTransfer: settings.paymentMethods?.bankTransfer?.enabled,
@@ -59,8 +85,19 @@ export default function AdminPaymentSettings() {
       transferContentTemplate: bankTransfer.transferContentTemplate,
       qrImageUrl: bankTransfer.qrImageUrl || settings.paymentMethods?.vietQr?.qrImageUrl || '',
       payAtPropertyNote: settings.paymentMethods?.payAtProperty?.paymentNote,
-    });
-    setMessage('Payment settings saved. Guest Payment page now uses these enabled methods and placeholders.');
+    };
+    try {
+      if (source === 'api') {
+        const methods = await adminSavePaymentSettings(payload.paymentMethods);
+        const paymentMethods = Object.fromEntries((methods || []).map((method) => [method.key || method.id, method]));
+        setSettings((current) => ({ ...current, paymentMethods }));
+      } else {
+        savePaymentSettings(payload);
+      }
+      setMessage('Payment settings saved. Guest Payment page now uses these enabled methods and placeholders.');
+    } catch (error) {
+      setMessage(error.message || 'Could not save payment settings.');
+    }
   };
 
   return (
@@ -80,6 +117,7 @@ export default function AdminPaymentSettings() {
       </div>
 
       {message ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-700">{message}</div> : null}
+      {loading ? <div className="rounded-lg border border-stone-200 bg-white p-3 text-sm text-stone-600">Loading payment settings...</div> : null}
       {warnings.map((warning) => (
         <div key={warning} className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">{warning}</div>
       ))}

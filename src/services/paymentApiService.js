@@ -1,4 +1,5 @@
 import { getPaymentSettings } from '../admin/services/adminSettingsService.js';
+import { canUseMockFallback } from '../config/apiConfig.js';
 import { apiRequest } from './apiClient.js';
 
 export async function getPaymentMethodsWithFallback() {
@@ -13,6 +14,7 @@ export async function getPaymentMethodsWithFallback() {
       })),
     };
   } catch (_error) {
+    if (!canUseMockFallback()) throw _error;
     const settings = getPaymentSettings();
     const methods = Object.entries(settings.paymentMethods || {})
       .map(([key, config]) => ({ key, ...config }))
@@ -26,6 +28,7 @@ export async function createPaymentWithFallback(bookingCode, method) {
   try {
     return { source: 'api', payment: await apiRequest('/payments/create', { method: 'POST', body: { bookingCode, method } }) };
   } catch (_error) {
+    if (!canUseMockFallback()) throw _error;
     return { source: 'local', payment: { bookingCode, method, paymentStatus: method === 'payAtProperty' ? 'pay_at_property' : 'pending' } };
   }
 }

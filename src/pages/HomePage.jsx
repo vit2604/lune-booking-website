@@ -1,11 +1,16 @@
 import {
   ArrowRight,
   Bath,
+  BedDouble,
   Building2,
+  CalendarDays,
   Clock,
   Headphones,
+  MapPin,
   ShieldCheck,
   Snowflake,
+  Star,
+  Users,
   Waves,
   Wifi,
 } from 'lucide-react';
@@ -15,6 +20,7 @@ import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import { getBrandingSettings } from '../admin/services/adminSettingsService.js';
 import RoomCard from '../components/RoomCard.jsx';
 import BookingPolicy from '../components/BookingPolicy.jsx';
+import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import { buildBookingDraft, getDefaultDates } from '../utils/booking.js';
 import { saveBookingDraft } from '../utils/storage.js';
@@ -36,6 +42,42 @@ export default function HomePage() {
   const { t } = useTranslation();
   const featured = rooms.slice(0, 3);
   const guestInfoItems = t('home.guestInfoItems');
+  const heroTitle = branding.heroTitle || t('home.heroTitle');
+  const heroSubtitle = branding.heroSubtitle || t('home.heroSubtitle');
+  const heroButtonText = branding.heroButtonText || t('home.searchRooms');
+  const heroHighlights = [
+    {
+      title: t('home.featuredRooms'),
+      text: t('home.chooseStay'),
+      icon: BedDouble,
+    },
+    {
+      title: t('roomDetail.amenities'),
+      text: t('home.amenitiesTitle'),
+      icon: Star,
+    },
+    {
+      title: t('amenities.Near beach'),
+      text: t('policy.location', { address: branding.address }),
+      icon: MapPin,
+    },
+    {
+      title: t('trust.support'),
+      text: t('chat.usuallyReplies'),
+      icon: Headphones,
+    },
+  ];
+  const reviewStats = [
+    { value: '9.3/10', label: 'Guest review score' },
+    { value: '9.9', label: 'Service' },
+    { value: '9.8', label: 'Location' },
+    { value: '9.5', label: 'Cleanliness' },
+  ];
+  const guestLoved = [
+    'New, clean rooms with warm wood details and a boutique apartment feel.',
+    'Around a short walk to My Khe Beach, seafood restaurants, marts, and local cafes.',
+    'Kitchen amenities, washing machine access, hot high-pressure shower, and daily support.',
+  ];
   const reasons = [
     {
       title: t('amenities.Near beach'),
@@ -91,53 +133,142 @@ export default function HomePage() {
 
   return (
     <>
-      <section className="relative isolate overflow-hidden bg-lune-ink text-white">
+      <RevealOnScroll as="section" direction="none" duration={500} className="relative isolate overflow-hidden bg-lune-ink text-white">
         <img
           src={branding.heroImage}
           alt="Boutique hotel pool and exterior"
           className="absolute inset-0 -z-20 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/70 via-black/38 to-black/20" />
-        <div className="page-shell flex min-h-[calc(100svh-8rem)] flex-col justify-center py-12 sm:py-14">
-          <div className="max-w-4xl">
-            <p className="text-sm font-semibold uppercase text-lune-linen">{branding.hotelName}</p>
-            <h1 className="mt-5 font-display text-5xl font-bold leading-tight sm:text-6xl lg:text-7xl">
-              {t('home.heroTitle')}
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_62%_32%,rgba(255,255,255,0.18),transparent_30%),linear-gradient(90deg,rgba(21,16,11,0.82),rgba(60,43,26,0.44)_42%,rgba(23,18,13,0.12)_78%)]" />
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-black/45 to-transparent" />
+
+        <div className="page-shell flex min-h-[760px] flex-col justify-end pb-0 pt-32 sm:min-h-[820px] lg:min-h-screen">
+          <div className="max-w-3xl pb-10 sm:pb-14">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-lune-gold sm:text-base">
+              {branding.shortSlogan || branding.hotelName}
+            </p>
+            <h1 className="mt-5 max-w-2xl font-display text-5xl font-bold leading-[0.98] tracking-normal sm:text-7xl lg:text-8xl">
+              {heroTitle}
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-white/82">{t('home.heroSubtitle')}</p>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-white/88 sm:text-xl">{heroSubtitle}</p>
+            <Link
+              to="/rooms"
+              className="mt-8 inline-flex min-h-14 items-center justify-center rounded-lg bg-lune-gold px-8 text-sm font-bold uppercase tracking-wide text-white shadow-[0_18px_45px_rgba(0,0,0,0.22)] transition hover:bg-lune-goldDark"
+            >
+              {heroButtonText}
+            </Link>
           </div>
 
           <form
-            className="mt-10 grid gap-3 rounded-lg border border-white/20 bg-white/95 p-4 text-lune-ink shadow-soft sm:grid-cols-[1fr_1fr_0.8fr_auto]"
+            className="relative z-10 -mb-16 grid gap-0 overflow-hidden rounded-2xl border border-white/45 bg-white/92 text-lune-ink shadow-[0_28px_80px_rgba(23,20,18,0.26)] backdrop-blur-xl md:grid-cols-[1fr_1fr_0.95fr_auto]"
             onSubmit={handleSearch}
           >
-            <label>
-              <span className="label">{t('common.checkInDate')}</span>
-              <input className="input-field" type="date" name="checkIn" defaultValue={defaults.checkIn} />
+            <label className="border-b border-stone-200/80 p-5 md:border-b-0 md:border-r">
+              <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">{t('common.checkInDate')}</span>
+              <span className="mt-2 flex items-center gap-3">
+                <CalendarDays className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
+                <input
+                  className="min-h-12 w-full bg-transparent text-base font-semibold text-lune-ink outline-none"
+                  type="date"
+                  name="checkIn"
+                  defaultValue={defaults.checkIn}
+                  min={defaults.checkIn}
+                />
+              </span>
             </label>
-            <label>
-              <span className="label">{t('common.checkOutDate')}</span>
-              <input className="input-field" type="date" name="checkOut" defaultValue={defaults.checkOut} />
+            <label className="border-b border-stone-200/80 p-5 md:border-b-0 md:border-r">
+              <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">{t('common.checkOutDate')}</span>
+              <span className="mt-2 flex items-center gap-3">
+                <CalendarDays className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
+                <input
+                  className="min-h-12 w-full bg-transparent text-base font-semibold text-lune-ink outline-none"
+                  type="date"
+                  name="checkOut"
+                  defaultValue={defaults.checkOut}
+                  min={defaults.checkOut}
+                />
+              </span>
             </label>
-            <label>
-              <span className="label">{t('common.guests')}</span>
-              <select className="input-field" name="guests" defaultValue="2">
+            <label className="border-b border-stone-200/80 p-5 md:border-b-0 md:border-r">
+              <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">{t('common.guests')}</span>
+              <span className="mt-2 flex items-center gap-3">
+                <Users className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
+                <select
+                  className="min-h-12 w-full bg-transparent text-base font-semibold text-lune-ink outline-none"
+                  name="guests"
+                  defaultValue="2"
+                >
                 {[1, 2, 3, 4].map((guest) => (
                   <option key={guest} value={guest}>
                     {guest} {guest === 1 ? t('common.guest') : t('common.guestsPlural')}
                   </option>
                 ))}
-              </select>
+                </select>
+              </span>
             </label>
-            <button className="btn-gold self-end" type="submit">
-              {t('home.searchRooms')}
+            <button
+              className="m-3 inline-flex min-h-16 items-center justify-center gap-2 rounded-lg bg-[#463527] px-6 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-lune-goldDark md:min-w-[220px]"
+              type="submit"
+            >
+              {heroButtonText}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </form>
         </div>
-      </section>
+      </RevealOnScroll>
 
-      <section className="section-space bg-white">
+      <RevealOnScroll as="section" variant="float" className="bg-white pb-8 pt-24 shadow-[0_-1px_0_rgba(0,0,0,0.05)]">
+        <div className="page-shell grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {heroHighlights.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.title} className="flex gap-4 border-stone-200 py-2 lg:border-r lg:pr-6 last:lg:border-r-0">
+                <Icon className="mt-1 h-9 w-9 shrink-0 text-[#4b392a]" strokeWidth={1.7} aria-hidden="true" />
+                <div>
+                  <h2 className="text-base font-bold text-lune-ink">{item.title}</h2>
+                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-stone-600">{item.text}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </RevealOnScroll>
+
+      <RevealOnScroll as="section" variant="curve-left" className="bg-lune-cream py-10">
+        <div className="page-shell grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div>
+            <p className="eyebrow">Guest-loved stay</p>
+            <h2 className="mt-3 font-display text-4xl font-bold leading-tight text-lune-ink sm:text-5xl">
+              A new, spotless boutique base close to the beach.
+            </h2>
+            <p className="mt-5 text-sm leading-7 text-stone-600">
+              Lune is built for travelers who want the comfort of an apartment and the ease of a hotel:
+              clean rooms, practical amenities, responsive support, and a calm location in Sơn Trà.
+            </p>
+          </div>
+          <div className="grid gap-4">
+            <div className="grid gap-3 sm:grid-cols-4">
+              {reviewStats.map((stat) => (
+                <div key={stat.label} className="rounded-lg border border-white bg-white/80 p-4">
+                  <strong className="block font-display text-3xl text-lune-ink">{stat.value}</strong>
+                  <span className="mt-1 block text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    {stat.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="grid gap-3">
+              {guestLoved.map((item) => (
+                <div key={item} className="rounded-lg border border-white bg-white/80 p-4 text-sm leading-6 text-stone-700">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </RevealOnScroll>
+
+      <RevealOnScroll as="section" variant="curve-right" className="section-space bg-white">
         <div className="page-shell grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div className="overflow-hidden rounded-lg">
             <img src={branding.introImage} alt="Modern apartment lounge" className="h-full w-full object-cover" />
@@ -162,9 +293,9 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </RevealOnScroll>
 
-      <section className="section-space bg-lune-cream">
+      <RevealOnScroll as="section" variant="float" className="section-space bg-lune-cream">
         <div className="page-shell">
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
@@ -177,34 +308,36 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {featured.map((room) => (
-              <RoomCard key={room.id} room={room} onBook={handleBook} />
+            {featured.map((room, index) => (
+              <RevealOnScroll key={room.id} variant={index % 2 === 0 ? 'curve-left' : 'curve-right'} delay={index * 90}>
+                <RoomCard room={room} onBook={handleBook} />
+              </RevealOnScroll>
             ))}
           </div>
         </div>
-      </section>
+      </RevealOnScroll>
 
-      <section className="section-space bg-white">
+      <RevealOnScroll as="section" variant="curve-left" className="section-space bg-white">
         <div className="page-shell">
           <div className="max-w-2xl">
             <p className="eyebrow">{t('roomDetail.amenities')}</p>
             <h2 className="section-title mt-3">{t('home.amenitiesTitle')}</h2>
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {defaultAmenities.map((amenity) => {
+            {defaultAmenities.map((amenity, index) => {
               const Icon = amenity.icon;
               return (
-                <div key={amenity.label} className="rounded-lg border border-stone-200 bg-white p-6">
+                <RevealOnScroll key={amenity.label} variant="zoom" delay={index * 70} className="rounded-lg border border-stone-200 bg-white p-6">
                   <Icon className="h-6 w-6 text-lune-goldDark" aria-hidden="true" />
                   <h3 className="mt-4 text-base font-semibold text-lune-ink">{t(`amenities.${amenity.label}`)}</h3>
-                </div>
+                </RevealOnScroll>
               );
             })}
           </div>
         </div>
-      </section>
+      </RevealOnScroll>
 
-      <section className="section-space bg-lune-mist">
+      <RevealOnScroll as="section" variant="curve-right" className="section-space bg-lune-mist">
         <div className="page-shell">
           <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
             <div>
@@ -212,10 +345,10 @@ export default function HomePage() {
               <h2 className="section-title mt-3">{t('home.calmBase')}</h2>
             </div>
             <div className="grid gap-4">
-              {reasons.map((reason) => {
+              {reasons.map((reason, index) => {
                 const Icon = reason.icon;
                 return (
-                  <div key={reason.title} className="rounded-lg border border-white bg-white/70 p-6">
+                  <RevealOnScroll key={reason.title} variant={index % 2 === 0 ? 'curve-left' : 'curve-right'} delay={index * 90} className="rounded-lg border border-white bg-white/70 p-6">
                     <div className="flex gap-4">
                       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-lune-ink text-white">
                         <Icon className="h-5 w-5" aria-hidden="true" />
@@ -225,7 +358,7 @@ export default function HomePage() {
                         <p className="mt-2 text-sm leading-7 text-stone-600">{reason.text}</p>
                       </div>
                     </div>
-                  </div>
+                  </RevealOnScroll>
                 );
               })}
               <div className="rounded-lg border border-lune-gold/30 bg-white p-6">
@@ -244,17 +377,17 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </RevealOnScroll>
 
-      <section className="section-space bg-white">
+      <RevealOnScroll as="section" variant="float" className="section-space bg-white">
         <div className="page-shell">
           <p className="eyebrow">{t('home.guestInfoTitle')}</p>
           {Array.isArray(guestInfoItems) ? (
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {guestInfoItems.map((item) => (
-                <div key={item} className="rounded-lg border border-stone-200 bg-lune-cream p-4 text-sm leading-6 text-stone-700">
+              {guestInfoItems.map((item, index) => (
+                <RevealOnScroll key={item} variant="zoom" delay={index * 60} className="rounded-lg border border-stone-200 bg-lune-cream p-4 text-sm leading-6 text-stone-700">
                   {item}
-                </div>
+                </RevealOnScroll>
               ))}
             </div>
           ) : null}
@@ -262,7 +395,7 @@ export default function HomePage() {
             <BookingPolicy />
           </div>
         </div>
-      </section>
+      </RevealOnScroll>
     </>
   );
 }

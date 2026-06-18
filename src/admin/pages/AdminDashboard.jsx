@@ -1,15 +1,62 @@
 import { BedDouble, CalendarCheck, CreditCard, Hotel, MessageCircle, Plus, ReceiptText, Settings } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminStatCard from '../components/AdminStatCard.jsx';
 import AdminTable from '../components/AdminTable.jsx';
 import { getBookings } from '../services/adminBookingService.js';
 import { getRooms } from '../services/adminRoomService.js';
+import { canUseMockFallback } from '../../config/apiConfig.js';
+import { adminListBookings, adminListRooms } from '../../services/adminApiService.js';
 import { formatCurrency } from '../../utils/booking.js';
 import { readJsonStorage, storageKeys } from '../../constants/storageKeys.js';
 
+function normalizeBooking(booking) {
+  return {
+    ...booking,
+    guestInfo: booking.guestInfo || {
+      fullName: booking.guest?.fullName,
+      email: booking.guest?.email,
+      phone: `${booking.guest?.phoneCode || ''} ${booking.guest?.phoneNumber || ''}`.trim(),
+    },
+    roomName: booking.roomName || booking.room?.name,
+    total: booking.total || booking.totalPrice,
+    bookingStatus: String(booking.bookingStatus || 'received').toLowerCase(),
+    paymentStatus: String(booking.paymentStatus || 'pending').toLowerCase(),
+  };
+}
+
+function normalizeRoom(room) {
+  return {
+    ...room,
+    status: room.status === 'ACTIVE' ? 'active' : String(room.status || 'active').toLowerCase(),
+  };
+}
+
 export default function AdminDashboard() {
-  const rooms = getRooms();
-  const bookings = getBookings();
+  const [rooms, setRooms] = useState(getRooms());
+  const [bookings, setBookings] = useState(getBookings());
+
+  useEffect(() => {
+    let ignore = false;
+    async function loadDashboardData() {
+      try {
+        const [apiRooms, apiBookings] = await Promise.all([adminListRooms(), adminListBookings({ limit: 6 })]);
+        if (ignore) return;
+        setRooms((Array.isArray(apiRooms) ? apiRooms : []).map(normalizeRoom));
+        const bookingItems = Array.isArray(apiBookings) ? apiBookings : apiBookings.items || [];
+        setBookings(bookingItems.map(normalizeBooking));
+      } catch (_error) {
+        if (!canUseMockFallback() || ignore) return;
+        setRooms(getRooms());
+        setBookings(getBookings());
+      }
+    }
+    loadDashboardData();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   const activeBookings = bookings.filter((booking) => booking.bookingStatus !== 'cancelled');
   const pendingPayments = bookings.filter((booking) => booking.paymentStatus === 'pending');
   const estimatedRevenue = activeBookings.reduce((sum, booking) => sum + Number(booking.total || 0), 0);

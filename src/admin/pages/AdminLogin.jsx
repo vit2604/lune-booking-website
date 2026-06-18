@@ -36,7 +36,7 @@ export default function AdminLogin() {
         </div>
         <div className="mt-5 text-center">
           <h1 className="font-display text-4xl font-bold text-lune-ink">Lune Admin</h1>
-          <p className="mt-2 text-sm leading-6 text-stone-500">Mock login for hotel website management.</p>
+          <p className="mt-2 text-sm leading-6 text-stone-500">Hotel website management for rooms, bookings, payments, and content.</p>
         </div>
 
         <div className="mt-8 grid gap-4">
@@ -56,7 +56,7 @@ export default function AdminLogin() {
               type="password"
               value={form.password}
               onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-              placeholder="luneadmin123"
+              placeholder="Enter admin password"
             />
           </label>
         </div>
@@ -68,8 +68,7 @@ export default function AdminLogin() {
         </button>
 
         <p className="mt-5 text-xs leading-5 text-stone-500">
-          This is frontend-only mock authentication. Production must use backend auth, secure sessions,
-          and role-based access control.
+          Production login uses backend JWT authentication. Mock fallback only works when explicitly enabled for demos.
         </p>
       </form>
     </main>

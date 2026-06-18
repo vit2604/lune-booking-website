@@ -1,4 +1,5 @@
 import { storageKeys } from '../../constants/storageKeys.js';
+import { canUseMockFallback } from '../../config/apiConfig.js';
 import { adminLogin as backendAdminLogin } from '../../services/adminApiService.js';
 
 const ADMIN_SESSION_KEY = storageKeys.adminLoggedIn;
@@ -18,6 +19,9 @@ export async function login(username, password) {
     localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(data.admin));
     return { ok: true, source: 'api' };
   } catch (_error) {
+    if (!canUseMockFallback()) {
+      return { ok: false, message: _error.message || 'Backend login failed.' };
+    }
     // Local fallback keeps the MVP usable when the API server is not running.
     // Production must use backend authentication, JWT/session cookies, RBAC, and secure password storage.
     // Do not ship real passwords in frontend code.

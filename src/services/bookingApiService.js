@@ -1,4 +1,5 @@
 import { saveBooking } from '../admin/services/adminBookingService.js';
+import { canUseMockFallback } from '../config/apiConfig.js';
 import { apiRequest } from './apiClient.js';
 
 function splitPhoneCode(value = '+84 Vietnam') {
@@ -42,7 +43,7 @@ export async function createBookingWithFallback(booking) {
     saveBooking(normalized);
     return { source: 'api', booking: normalized };
   } catch (_error) {
-    if (_error?.status) throw _error;
+    if (!canUseMockFallback() || _error?.status) throw _error;
     const saved = saveBooking(booking);
     return { source: 'local', booking: saved };
   }
@@ -52,6 +53,7 @@ export async function fetchBookingWithFallback(bookingCode) {
   try {
     return { source: 'api', booking: await apiRequest(`/bookings/${bookingCode}`) };
   } catch (_error) {
+    if (!canUseMockFallback()) throw _error;
     return { source: 'local', booking: null };
   }
 }

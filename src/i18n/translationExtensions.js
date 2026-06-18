@@ -75,6 +75,8 @@ const extraEn = {
   },
   contact: {
     copyAddress: 'Copy address',
+    getDirections: 'Get directions',
+    mapFallback: 'Map could not load. Please open Google Maps or copy the address.',
   },
   chat: {
     chatWithUs: 'Chat with us',
@@ -154,7 +156,11 @@ const packs = {
       paymentProviderNote: 'Thanh toán thẻ sẽ được xử lý bởi nhà cung cấp thanh toán bảo mật.',
     },
     success: { contactNote: 'Vui lòng giữ mã đặt phòng. Đội ngũ Lune sẽ sớm liên hệ với các bước tiếp theo.' },
-    contact: { copyAddress: 'Sao chép địa chỉ' },
+    contact: {
+      copyAddress: 'Sao chép địa chỉ',
+      getDirections: 'Chỉ đường',
+      mapFallback: 'Bản đồ không tải được. Vui lòng mở Google Maps hoặc sao chép địa chỉ.',
+    },
     footer: { social: 'Mạng xã hội', rights: 'Đã đăng ký bản quyền.' },
     errors: { phoneInvalid: 'Số điện thoại không được chỉ gồm chữ.', phoneCodeRequired: 'Vui lòng chọn mã quốc gia.' },
   },

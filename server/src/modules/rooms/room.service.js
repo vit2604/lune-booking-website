@@ -85,7 +85,12 @@ export async function listPublicRooms(query = {}) {
       let availabilityStatus = 'available';
       let available = true;
       if (query.checkIn && query.checkOut) {
-        const check = await isRoomAvailable(room.id, toHotelDate(query.checkIn), toHotelDate(query.checkOut));
+        const check = await isRoomAvailable(
+          room.id,
+          toHotelDate(query.checkIn),
+          toHotelDate(query.checkOut),
+          query.guests || 1,
+        );
         availabilityStatus = check.available ? 'available' : 'not_available';
         available = check.available;
       }

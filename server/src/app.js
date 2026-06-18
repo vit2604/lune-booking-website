@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { prisma } from './config/prisma.js';
 import { corsMiddleware } from './config/cors.js';
+import { env } from './config/env.js';
 import { authRateLimit } from './middlewares/rateLimitMiddleware.js';
 import { errorMiddleware, notFoundMiddleware } from './middlewares/errorMiddleware.js';
 import { authRouter } from './modules/auth/auth.routes.js';
@@ -24,17 +25,23 @@ export function createApp() {
   app.use(morgan('dev'));
 
   app.get('/api/health', async (_req, res) => {
-    let database = 'ok';
+    let databaseConnected = true;
     try {
-      await prisma.$queryRaw`SELECT 1`;
+      await Promise.race([
+        prisma.$queryRaw`SELECT 1`,
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Database health check timeout')), 1500);
+        }),
+      ]);
     } catch (_error) {
-      database = 'error';
+      databaseConnected = false;
     }
 
     sendSuccess(res, {
       status: 'ok',
-      serverTime: new Date().toISOString(),
-      database,
+      databaseConnected,
+      currentTime: new Date().toISOString(),
+      environment: env.NODE_ENV,
     });
   });
 

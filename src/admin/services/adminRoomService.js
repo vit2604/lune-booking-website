@@ -2,6 +2,8 @@ import { rooms as defaultRooms } from '../../data/rooms.js';
 import { legacyStorageKeys, readJsonStorage, storageKeys, writeJsonStorage } from '../../constants/storageKeys.js';
 
 const ROOMS_KEY = storageKeys.rooms;
+const ROOMS_DATA_VERSION_KEY = 'lune_rooms_data_version';
+const ROOMS_DATA_VERSION = '2026-05-26-type3-split-room-types';
 
 const toSlug = (value) =>
   value
@@ -58,8 +60,13 @@ const seedRooms = () => defaultRooms.map((room) => normalizeRoom({ ...room, stat
 
 function readRooms() {
   const stored = readJsonStorage(ROOMS_KEY, null, legacyStorageKeys.rooms);
-  if (Array.isArray(stored) && stored.length) return stored.map(normalizeRoom);
-  return seedRooms();
+  const isCurrentVersion = localStorage.getItem(ROOMS_DATA_VERSION_KEY) === ROOMS_DATA_VERSION;
+  if (Array.isArray(stored) && stored.length && isCurrentVersion) return stored.map(normalizeRoom);
+
+  const seeded = seedRooms();
+  writeJsonStorage(ROOMS_KEY, seeded);
+  localStorage.setItem(ROOMS_DATA_VERSION_KEY, ROOMS_DATA_VERSION);
+  return seeded;
 }
 
 function writeRooms(rooms) {
@@ -114,6 +121,7 @@ export function toggleRoomStatus(id) {
 
 export function resetRooms() {
   writeRooms(seedRooms());
+  localStorage.setItem(ROOMS_DATA_VERSION_KEY, ROOMS_DATA_VERSION);
 }
 
 export function generateRoomSlug(name) {

@@ -164,7 +164,17 @@ export async function updateBookingStatus(bookingCode, bookingStatus) {
 }
 
 export async function updatePaymentStatus(bookingCode, paymentStatus) {
-  return prisma.booking.update({ where: { bookingCode }, data: { paymentStatus }, include: bookingInclude });
+  return prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.update({ where: { bookingCode }, data: { paymentStatus }, include: bookingInclude });
+    await tx.payment.updateMany({
+      where: { bookingId: booking.id },
+      data: {
+        status: paymentStatus,
+        paidAt: paymentStatus === 'PAID' ? new Date() : null,
+      },
+    });
+    return tx.booking.findUnique({ where: { bookingCode }, include: bookingInclude });
+  });
 }
 
 export async function updateInternalNote(bookingCode, internalNote) {

@@ -1,7 +1,15 @@
 import { Eye, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AdminTable from '../components/AdminTable.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
+import { canUseMockFallback } from '../../config/apiConfig.js';
+import {
+  adminDeleteBooking,
+  adminListBookings,
+  adminUpdateBookingStatus,
+  adminUpdateInternalNote,
+  adminUpdatePaymentStatus,
+} from '../../services/adminApiService.js';
 import {
   addInternalNote,
   deleteBooking,
@@ -11,15 +19,61 @@ import {
 } from '../services/adminBookingService.js';
 import { formatCurrency, getPaymentMethodLabel } from '../../utils/booking.js';
 
+function normalizeBooking(booking) {
+  return {
+    ...booking,
+    guestInfo: booking.guestInfo || {
+      fullName: booking.guest?.fullName,
+      email: booking.guest?.email,
+      phone: `${booking.guest?.phoneCode || ''} ${booking.guest?.phoneNumber || ''}`.trim(),
+      specialRequest: booking.specialRequest,
+    },
+    roomName: booking.roomName || booking.room?.name,
+    total: booking.total || booking.totalPrice,
+    bookingStatus: String(booking.bookingStatus || 'received').toLowerCase(),
+    paymentStatus: String(booking.paymentStatus || 'pending').toLowerCase(),
+  };
+}
+
+const toApiBookingStatus = (status) => String(status).toUpperCase();
+const toApiPaymentStatus = (status) => String(status).toUpperCase();
+
 export default function AdminBookings() {
   const [bookings, setBookings] = useState(getBookings());
   const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [note, setNote] = useState('');
   const [toast, setToast] = useState('');
+  const [source, setSource] = useState(canUseMockFallback() ? 'local' : 'api');
+  const [loading, setLoading] = useState(false);
 
-  const refresh = (message) => {
-    setBookings(getBookings());
+  const loadBookings = async (message = '') => {
+    setLoading(true);
+    try {
+      const data = await adminListBookings();
+      const items = Array.isArray(data) ? data : data.items || [];
+      setBookings(items.map(normalizeBooking));
+      setSource('api');
+      if (message) setToast(message);
+    } catch (error) {
+      if (!canUseMockFallback()) {
+        setToast(error.message || 'Could not load bookings from backend.');
+      } else {
+        setBookings(getBookings().map(normalizeBooking));
+        setSource('local');
+        if (message) setToast(message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBookings();
+  }, []);
+
+  const refresh = async (message) => {
+    await loadBookings(message);
     setToast(message);
   };
 
@@ -28,29 +82,33 @@ export default function AdminBookings() {
     setNote(booking.internalNote || '');
   };
 
-  const updateStatus = (code, status) => {
-    updateBookingStatus(code, status);
-    refresh('Booking status updated.');
-    setSelected(getBookings().find((booking) => booking.bookingCode === code));
+  const updateStatus = async (code, status) => {
+    if (source === 'api') await adminUpdateBookingStatus(code, toApiBookingStatus(status));
+    else updateBookingStatus(code, status);
+    await refresh('Booking status updated.');
+    setSelected((current) => (current?.bookingCode === code ? { ...current, bookingStatus: status } : current));
   };
 
-  const updatePayment = (code, status) => {
-    updatePaymentStatus(code, status);
-    refresh('Payment status updated.');
-    setSelected(getBookings().find((booking) => booking.bookingCode === code));
+  const updatePayment = async (code, status) => {
+    if (source === 'api') await adminUpdatePaymentStatus(code, toApiPaymentStatus(status));
+    else updatePaymentStatus(code, status);
+    await refresh('Payment status updated.');
+    setSelected((current) => (current?.bookingCode === code ? { ...current, paymentStatus: status } : current));
   };
 
-  const saveNote = () => {
-    addInternalNote(selected.bookingCode, note);
-    refresh('Internal note saved.');
-    setSelected(getBookings().find((booking) => booking.bookingCode === selected.bookingCode));
+  const saveNote = async () => {
+    if (source === 'api') await adminUpdateInternalNote(selected.bookingCode, note);
+    else addInternalNote(selected.bookingCode, note);
+    await refresh('Internal note saved.');
+    setSelected((current) => (current ? { ...current, internalNote: note } : current));
   };
 
-  const confirmDelete = () => {
-    deleteBooking(deleteTarget.bookingCode);
+  const confirmDelete = async () => {
+    if (source === 'api') await adminDeleteBooking(deleteTarget.bookingCode);
+    else deleteBooking(deleteTarget.bookingCode);
     setDeleteTarget(null);
     setSelected(null);
-    refresh('Booking deleted.');
+    await refresh(source === 'api' ? 'Booking cancelled.' : 'Booking deleted.');
   };
 
   return (
@@ -62,6 +120,7 @@ export default function AdminBookings() {
       </div>
 
       {toast ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-700">{toast}</div> : null}
+      {loading ? <div className="rounded-lg border border-stone-200 bg-white p-3 text-sm text-stone-600">Loading bookings...</div> : null}
 
       <AdminTable empty="No bookings yet. Guest bookings will appear here.">
         {bookings.length ? (

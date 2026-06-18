@@ -2,6 +2,7 @@ import { Check, Copy, Home, Mail, ReceiptText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BookingSummary from '../components/BookingSummary.jsx';
+import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import { createBookingCode } from '../utils/booking.js';
 import { formatDisplayDate } from '../utils/dateFormatUtils.js';
@@ -59,9 +60,9 @@ export default function SuccessPage() {
   ].filter(([, value]) => value !== undefined && value !== null && value !== '');
 
   return (
-    <section className="section-space bg-lune-cream">
+    <RevealOnScroll as="section" direction="none" duration={450} className="section-space bg-lune-cream">
       <div className="page-shell">
-        <div className="mx-auto max-w-4xl rounded-lg border border-stone-200 bg-white p-6 text-center shadow-soft sm:p-10">
+        <RevealOnScroll variant="float" className="mx-auto max-w-4xl rounded-lg border border-stone-200 bg-white p-6 text-center shadow-soft sm:p-10">
           <div className="mx-auto grid h-20 w-20 animate-scaleIn place-items-center rounded-full bg-lune-sage text-white">
             <Check className="h-10 w-10" aria-hidden="true" />
           </div>
@@ -107,14 +108,14 @@ export default function SuccessPage() {
               {t('common.viewSummary')}
             </button>
           </div>
-        </div>
+        </RevealOnScroll>
 
         {showSummary && booking?.roomName ? (
-          <div className="mx-auto mt-8 max-w-md">
+          <RevealOnScroll variant="curve-left" className="mx-auto mt-8 max-w-md">
             <BookingSummary booking={booking} />
-          </div>
+          </RevealOnScroll>
         ) : null}
       </div>
-    </section>
+    </RevealOnScroll>
   );
 }

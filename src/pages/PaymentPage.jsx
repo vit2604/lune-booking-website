@@ -5,6 +5,7 @@ import { getRoomById } from '../admin/services/adminRoomService.js';
 import BookingSummary from '../components/BookingSummary.jsx';
 import PaymentMethod from '../components/PaymentMethod.jsx';
 import TrustBadges from '../components/TrustBadges.jsx';
+import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import { persistBooking } from '../services/bookingService.js';
 import { createPaymentWithFallback, getPaymentMethodsWithFallback } from '../services/paymentApiService.js';
@@ -20,6 +21,24 @@ import { loadBookingDraft, saveBookingDraft, saveConfirmedBooking } from '../uti
 
 const gatewayMethods = ['creditCard', 'stripe', 'paypal'];
 const walletMethods = ['vnpay', 'momo', 'zaloPay'];
+
+function roomFromBookingDraft(booking) {
+  if (!booking?.roomId) return null;
+  return {
+    id: booking.roomId,
+    slug: booking.roomId,
+    name: booking.roomName,
+    price: Number(booking.pricePerNight || 0),
+    basePrice: Number(booking.pricePerNight || 0),
+    maxGuests: Number(booking.maxGuests || booking.guests || 1),
+    image: booking.roomImage || '',
+    gallery: booking.roomImage ? [booking.roomImage] : [],
+    type: booking.roomType || 'Apartment',
+    size: booking.size || '',
+    bed: booking.bed || '',
+    amenities: [],
+  };
+}
 
 export default function PaymentPage() {
   const navigate = useNavigate();
@@ -41,12 +60,14 @@ export default function PaymentPage() {
     setBooking(draft);
     setPaymentMethod(methods.some((method) => method.id === storedMethod) ? storedMethod : firstMethod);
 
-    getPaymentMethodsWithFallback().then(({ methods: apiMethods }) => {
-      setEnabledMethods(apiMethods);
-      setPaymentMethod((current) =>
-        apiMethods.some((method) => method.id === current) ? current : apiMethods[0]?.id || 'payAtProperty',
-      );
-    });
+    getPaymentMethodsWithFallback()
+      .then(({ methods: apiMethods }) => {
+        setEnabledMethods(apiMethods);
+        setPaymentMethod((current) =>
+          apiMethods.some((method) => method.id === current) ? current : apiMethods[0]?.id || 'payAtProperty',
+        );
+      })
+      .catch((loadError) => setError(loadError.message || 'Could not load payment methods from backend.'));
 
     const refresh = () => {
       const nextSettings = getPaymentSettings();
@@ -65,7 +86,7 @@ export default function PaymentPage() {
     };
   }, []);
 
-  const room = useMemo(() => getRoomById(booking?.roomId), [booking?.roomId]);
+  const room = useMemo(() => getRoomById(booking?.roomId) || roomFromBookingDraft(booking), [booking]);
   const normalizedPaymentMethod = normalizePaymentMethodId(paymentMethod);
   const selectedMethod = enabledMethods.find((method) => method.id === normalizedPaymentMethod);
   const bankMethod = enabledMethods.find((method) => method.id === 'bankTransfer') || settings.paymentMethods?.bankTransfer || {};
@@ -136,19 +157,24 @@ export default function PaymentPage() {
       bookingStatus: 'received',
     });
 
-    const apiPayment = await createPaymentWithFallback(updated.bookingCode, normalizedPaymentMethod);
-    const paymentRequest =
-      apiPayment.source === 'api' ? apiPayment.payment : await createPaymentRequest(updated, normalizedPaymentMethod);
-    const confirmed = {
-      ...updated,
-      paymentMethod: normalizedPaymentMethod,
-      paymentStatus: paymentRequest.paymentStatus || selectedMethod.statusAfterConfirm || 'pending',
-      createdAt: booking.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    saveConfirmedBooking(confirmed);
-    persistBooking(confirmed);
-    navigate('/success');
+    try {
+      const apiPayment = await createPaymentWithFallback(updated.bookingCode, normalizedPaymentMethod);
+      const paymentRequest =
+        apiPayment.source === 'api' ? apiPayment.payment : await createPaymentRequest(updated, normalizedPaymentMethod);
+      const confirmed = {
+        ...updated,
+        paymentMethod: normalizedPaymentMethod,
+        paymentStatus: paymentRequest.paymentStatus || selectedMethod.statusAfterConfirm || 'pending',
+        createdAt: booking.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      saveConfirmedBooking(confirmed);
+      persistBooking(confirmed);
+      navigate('/success');
+    } catch (paymentError) {
+      setError(paymentError.message || 'Could not create payment request. Please contact Lune support.');
+      setConfirming(false);
+    }
   };
 
   const renderPaymentDetails = () => {
@@ -277,10 +303,10 @@ export default function PaymentPage() {
   };
 
   return (
-    <section className="section-space bg-lune-cream">
+    <RevealOnScroll as="section" direction="none" duration={450} className="section-space bg-lune-cream">
       <div className="page-shell">
         <div className="grid gap-8 lg:grid-cols-[1fr_390px]">
-          <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-soft sm:p-8">
+          <RevealOnScroll variant="curve-right" className="rounded-lg border border-stone-200 bg-white p-5 shadow-soft sm:p-8">
             <p className="eyebrow">{t('common.payment')}</p>
             <h1 className="mt-3 font-display text-4xl font-bold text-lune-ink">{t('payment.reviewConfirm')}</h1>
             <p className="mt-3 text-sm leading-7 text-stone-600">{t('payment.mockNotice')}</p>
@@ -304,11 +330,13 @@ export default function PaymentPage() {
             <button className="btn-gold mt-8 w-full sm:w-auto" type="button" disabled={confirming || !selectedMethod} onClick={handleConfirm}>
               {confirming ? t('common.confirming') : t('payment.confirmBooking')}
             </button>
-          </div>
+          </RevealOnScroll>
 
-          <BookingSummary booking={currentBooking} className="h-fit lg:sticky lg:top-28" />
+          <RevealOnScroll variant="curve-left" delay={100}>
+            <BookingSummary booking={currentBooking} className="h-fit lg:sticky lg:top-28" />
+          </RevealOnScroll>
         </div>
       </div>
-    </section>
+    </RevealOnScroll>
   );
 }

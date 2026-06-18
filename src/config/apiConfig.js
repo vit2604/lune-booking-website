@@ -22,3 +22,7 @@ function isPublicFrontendHost() {
 export function shouldUseMockOnly() {
   return apiConfig.useMockFallback && isPublicFrontendHost() && isLocalUrl(apiConfig.baseUrl);
 }
+
+export function canUseMockFallback() {
+  return apiConfig.useMockFallback;
+}

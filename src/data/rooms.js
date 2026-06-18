@@ -1,402 +1,462 @@
-export const rooms = [
+const luneImages = {
+  exterior: ['/images/lune/exterior/exterior-1.webp', '/images/lune/exterior/exterior-2.webp'],
+  type1R201: [
+    '/images/lune/type-1-r201/type-1-r201-5.webp',
+    '/images/lune/type-1-r201/type-1-r201-2.webp',
+    '/images/lune/type-1-r201/type-1-r201-3.webp',
+    '/images/lune/type-1-r201/type-1-r201-4.webp',
+    '/images/lune/type-1-r201/type-1-r201-6.webp',
+    '/images/lune/type-1-r201/type-1-r201-1.webp',
+  ],
+  type2R601: [
+    '/images/lune/type-2-r601/type-2-r601-5.webp',
+    '/images/lune/type-2-r601/type-2-r601-2.webp',
+    '/images/lune/type-2-r601/type-2-r601-3.webp',
+    '/images/lune/type-2-r601/type-2-r601-4.webp',
+    '/images/lune/type-2-r601/type-2-r601-1.webp',
+  ],
+  type3Compact: [
+    '/images/lune/type-3-standard/type-3-standard-5.webp',
+    '/images/lune/type-3-standard/type-3-standard-6.webp',
+    '/images/lune/type-3-standard/type-3-standard-2.webp',
+    '/images/lune/type-3-standard/type-3-standard-3.webp',
+    '/images/lune/type-3-standard/type-3-standard-4.webp',
+    '/images/lune/type-3-standard/type-3-standard-1.webp',
+  ],
+  type3Kitchen: [
+    '/images/lune/type-3-standard/type-3-standard-10.webp',
+    '/images/lune/type-3-standard/type-3-standard-7.webp',
+    '/images/lune/type-3-standard/type-3-standard-8.webp',
+    '/images/lune/type-3-standard/type-3-standard-9.webp',
+    '/images/lune/type-3-standard/type-3-standard-11.webp',
+    '/images/lune/type-3-standard/type-3-standard-1.webp',
+  ],
+  type4Studio: [
+    '/images/lune/type-4-studio/type-4-studio-2.webp',
+    '/images/lune/type-4-studio/type-4-studio-4.webp',
+    '/images/lune/type-4-studio/type-4-studio-5.webp',
+    '/images/lune/type-4-studio/type-4-studio-3.webp',
+    '/images/lune/type-4-studio/type-4-studio-1.webp',
+  ],
+};
+
+const defaultPolicies = [
+  'Check-in from 14:00',
+  'Check-out before 12:00',
+  'Passport may be required at check-in according to local regulations.',
+  'No smoking inside the room',
+  'Pets are not allowed',
+];
+
+const defaultAvailabilityRules = {
+  minNights: 1,
+  maxNights: 30,
+  allowSameDayBooking: true,
+  advanceBookingDays: 365,
+  cleaningBufferHours: 0,
+};
+
+const makePricingRules = (basePrice) => ({
+  basePrice,
+  weekendPrice: null,
+  holidayPrice: null,
+  longStayDiscount: {
+    enabled: true,
+    minNights: 7,
+    discountPercent: 5,
+  },
+  serviceFeePercent: 0,
+  taxPercent: 0,
+});
+
+const viPolicies = [
+  'Nhận phòng từ 14:00',
+  'Trả phòng trước 12:00',
+  'Có thể cần xuất trình hộ chiếu/giấy tờ tùy thân khi nhận phòng.',
+  'Không hút thuốc trong phòng',
+  'Không nhận thú cưng',
+];
+
+const zhPolicies = ['14:00 后入住', '12:00 前退房', '入住时可能需要出示护照或身份证件。', '房内禁止吸烟', '不可携带宠物'];
+const koPolicies = ['14:00부터 체크인', '12:00 전 체크아웃', '체크인 시 여권 또는 신분증이 필요할 수 있습니다.', '객실 내 금연', '반려동물 동반 불가'];
+
+const baseRooms = [
   {
     id: 'deluxe-studio',
     slug: 'deluxe-studio',
-    name: 'Deluxe Studio',
+    name: 'One Bedroom Studio Apartment',
     type: 'Studio',
     maxGuests: 2,
-    bed: '1 queen bed',
-    size: '32m²',
-    price: 850000,
-    bathroom: 'Private bathroom with walk-in shower',
+    bed: '1 king bed',
+    size: '20m²',
+    price: 860000,
+    bathroom: 'Private bathroom with hot high-pressure shower',
     shortDescription:
-      'A bright studio for couples or solo travelers, designed for calm mornings and easy beach days.',
+      'A compact, polished studio for solo travelers and couples who want a clean room close to My Khe Beach.',
     description:
-      'Deluxe Studio pairs warm textures, a queen bed, a compact work corner, and a private bathroom. It is ideal for short stays in Da Nang when comfort and simplicity matter most.',
-    amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Smart TV', 'Mini fridge'],
-    highlights: ['Quiet room', 'City view', 'Daily housekeeping'],
-    image:
-      'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=85',
-    gallery: [
-      'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1400&q=85',
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=85',
-      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1000&q=85',
-    ],
+      'This studio is designed for easy short stays: a comfortable king bed, private bathroom, smart storage, bright finishes, and the calm boutique feeling guests expect from Lune. It is a practical choice for beach days, business stops, or late-night arrivals in Da Nang.',
+    amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Smart TV', 'Mini fridge', 'Elevator', 'Near beach'],
+    highlights: ['Value stay', 'New clean room', 'Near My Khe Beach'],
+    image: luneImages.type4Studio[0],
+    gallery: luneImages.type4Studio,
+    pricingRules: makePricingRules(860000),
+    availabilityRules: defaultAvailabilityRules,
+    blockedDates: [],
+    translations: {
+      en: {
+        name: 'One Bedroom Studio Apartment',
+        shortDescription:
+          'A compact, polished studio for solo travelers and couples who want a clean room close to My Khe Beach.',
+        description:
+          'This studio is designed for easy short stays: a comfortable king bed, private bathroom, smart storage, bright finishes, and the calm boutique feeling guests expect from Lune. It is a practical choice for beach days, business stops, or late-night arrivals in Da Nang.',
+        fullDescription:
+          'This studio is designed for easy short stays: a comfortable king bed, private bathroom, smart storage, bright finishes, and the calm boutique feeling guests expect from Lune. It is a practical choice for beach days, business stops, or late-night arrivals in Da Nang.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Smart TV', 'Mini fridge', 'Elevator', 'Near beach'],
+        suitableFor: ['Solo travelers', 'Couples', 'Short stays', 'Beach trips'],
+        policies: defaultPolicies,
+        priceNote: 'Room Type 4 rate: 860,000 VND per night. Final payment is charged in VND.',
+      },
+      vi: {
+        name: 'Studio một phòng ngủ',
+        shortDescription: 'Phòng studio gọn đẹp, sạch sẽ, phù hợp khách đi một mình hoặc cặp đôi muốn ở gần biển Mỹ Khê.',
+        description:
+          'Studio được thiết kế cho kỳ lưu trú ngắn ngày với giường king thoải mái, phòng tắm riêng, không gian sáng, tiện ích gọn gàng và cảm giác boutique ấm áp. Phù hợp cho khách đi biển, công tác hoặc cần một điểm nghỉ tiện lợi tại Đà Nẵng.',
+        fullDescription:
+          'Studio được thiết kế cho kỳ lưu trú ngắn ngày với giường king thoải mái, phòng tắm riêng, không gian sáng, tiện ích gọn gàng và cảm giác boutique ấm áp. Phù hợp cho khách đi biển, công tác hoặc cần một điểm nghỉ tiện lợi tại Đà Nẵng.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Smart TV', 'Mini fridge', 'Elevator', 'Near beach'],
+        suitableFor: ['Khách đi một mình', 'Cặp đôi', 'Lưu trú ngắn ngày', 'Đi biển'],
+        policies: viPolicies,
+        priceNote: 'Giá phòng loại 4: 860,000 VND/đêm. Thanh toán chính thức bằng VND.',
+      },
+      zh: {
+        name: '一卧室单间公寓',
+        shortDescription: '精致干净的单间公寓，适合独行旅客和情侣，靠近美溪海滩。',
+        description:
+          '此房型适合轻松短住，配有舒适大床、独立浴室、实用收纳和明亮设计，保留 Lune 温暖安静的精品公寓氛围。',
+        fullDescription:
+          '此房型适合轻松短住，配有舒适大床、独立浴室、实用收纳和明亮设计，保留 Lune 温暖安静的精品公寓氛围。',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Smart TV', 'Mini fridge', 'Elevator', 'Near beach'],
+        suitableFor: ['独行旅客', '情侣', '短期入住', '海边旅行'],
+        policies: zhPolicies,
+        priceNote: '4类房价格：每晚 860,000 VND。正式付款货币为 VND。',
+      },
+      ko: {
+        name: '원 베드룸 스튜디오 아파트',
+        shortDescription: '미케 비치 근처에서 깨끗하고 실용적인 객실을 원하는 1인 여행객과 커플에게 적합합니다.',
+        description:
+          '편안한 킹베드, 전용 욕실, 밝은 마감과 실용적인 수납을 갖춘 짧은 숙박용 스튜디오입니다. 다낭 해변 여행, 출장, 늦은 도착 일정에 잘 맞습니다.',
+        fullDescription:
+          '편안한 킹베드, 전용 욕실, 밝은 마감과 실용적인 수납을 갖춘 짧은 숙박용 스튜디오입니다. 다낭 해변 여행, 출장, 늦은 도착 일정에 잘 맞습니다.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Smart TV', 'Mini fridge', 'Elevator', 'Near beach'],
+        suitableFor: ['1인 여행객', '커플', '단기 숙박', '해변 여행'],
+        policies: koPolicies,
+        priceNote: '4번 객실 타입 요금: 1박 860,000 VND. 최종 결제는 VND로 진행됩니다.',
+      },
+    },
   },
   {
     id: 'superior-apartment',
     slug: 'superior-apartment',
-    name: 'Superior Apartment',
-    type: 'Apartment',
+    name: '1-Bedroom Apartment with Balcony - R601',
+    type: 'Balcony apartment',
     maxGuests: 2,
     bed: '1 queen bed',
     size: '40m²',
-    price: 990000,
+    price: 1100000,
     bathroom: 'Private bathroom with premium amenities',
     shortDescription:
-      'A spacious apartment with a lounge area for travelers who want more room to settle in.',
+      'A bright one-bedroom apartment with balcony-style comfort, warm wood details, and enough room to settle in.',
     description:
-      'Superior Apartment offers a generous layout, separate sitting space, warm lighting, and practical storage. It works beautifully for couples or business travelers staying a few nights.',
-    amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Kitchenette', 'Elevator'],
-    highlights: ['Lounge area', 'Kitchenette', 'Soft natural light'],
-    image:
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=85',
-    gallery: [
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1400&q=85',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=85',
-      'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1000&q=85',
-    ],
+      'R601 is a balanced apartment for couples and short stays. It offers a queen bed, private bathroom, sitting corner, natural light, elevator access, and a quiet residential-apartment feel near restaurants, marts, and the beach.',
+    amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Balcony', 'Sofa', 'Elevator', 'Near beach'],
+    highlights: ['Balcony feel', 'Soft natural light', 'Couple friendly'],
+    image: luneImages.type2R601[0],
+    gallery: luneImages.type2R601,
+    pricingRules: makePricingRules(1100000),
+    availabilityRules: defaultAvailabilityRules,
+    blockedDates: [],
+    translations: {
+      en: {
+        name: '1-Bedroom Apartment with Balcony - R601',
+        shortDescription:
+          'A bright one-bedroom apartment with balcony-style comfort, warm wood details, and enough room to settle in.',
+        description:
+          'R601 is a balanced apartment for couples and short stays. It offers a queen bed, private bathroom, sitting corner, natural light, elevator access, and a quiet residential-apartment feel near restaurants, marts, and the beach.',
+        fullDescription:
+          'R601 is a balanced apartment for couples and short stays. It offers a queen bed, private bathroom, sitting corner, natural light, elevator access, and a quiet residential-apartment feel near restaurants, marts, and the beach.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Balcony', 'Sofa', 'Elevator', 'Near beach'],
+        suitableFor: ['Couples', 'Short stays', 'Business travelers', 'Beach weekends'],
+        policies: defaultPolicies,
+        priceNote: 'Room Type 2 rate: 1,100,000 VND per night. Final payment is charged in VND.',
+      },
+      vi: {
+        name: 'Căn hộ 1 phòng ngủ có ban công - R601',
+        shortDescription: 'Căn hộ một phòng ngủ sáng, ấm, có cảm giác ban công và đủ rộng để nghỉ ngơi thoải mái.',
+        description:
+          'R601 phù hợp cho cặp đôi và khách lưu trú ngắn ngày, có giường queen, phòng tắm riêng, góc ngồi, ánh sáng tự nhiên, thang máy và vị trí thuận tiện gần nhà hàng, cửa hàng tiện lợi và biển.',
+        fullDescription:
+          'R601 phù hợp cho cặp đôi và khách lưu trú ngắn ngày, có giường queen, phòng tắm riêng, góc ngồi, ánh sáng tự nhiên, thang máy và vị trí thuận tiện gần nhà hàng, cửa hàng tiện lợi và biển.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Balcony', 'Sofa', 'Elevator', 'Near beach'],
+        suitableFor: ['Cặp đôi', 'Lưu trú ngắn ngày', 'Khách công tác', 'Kỳ nghỉ gần biển'],
+        policies: viPolicies,
+        priceNote: 'Giá phòng loại 2 R601: 1,100,000 VND/đêm. Thanh toán chính thức bằng VND.',
+      },
+      zh: {
+        name: '一卧室阳台公寓 - R601',
+        shortDescription: '明亮的一卧室公寓，带阳台感和温暖木质细节，空间舒适。',
+        description:
+          'R601 适合情侣和短期入住，配有大床、独立浴室、休息角、自然采光、电梯，并靠近餐厅、便利店和海滩。',
+        fullDescription:
+          'R601 适合情侣和短期入住，配有大床、独立浴室、休息角、自然采光、电梯，并靠近餐厅、便利店和海滩。',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Balcony', 'Sofa', 'Elevator', 'Near beach'],
+        suitableFor: ['情侣', '短期入住', '商务旅客', '海边周末'],
+        policies: zhPolicies,
+        priceNote: '2类房 R601 价格：每晚 1,100,000 VND。正式付款货币为 VND。',
+      },
+      ko: {
+        name: '발코니형 1베드룸 아파트 - R601',
+        shortDescription: '밝은 1베드룸 아파트로 따뜻한 우드 디테일과 여유로운 휴식 공간을 제공합니다.',
+        description:
+          'R601은 커플과 단기 숙박에 적합하며 퀸베드, 전용 욕실, 휴식 코너, 자연 채광, 엘리베이터 접근성을 갖췄습니다. 식당, 마트, 해변과 가까운 조용한 아파트형 객실입니다.',
+        fullDescription:
+          'R601은 커플과 단기 숙박에 적합하며 퀸베드, 전용 욕실, 휴식 코너, 자연 채광, 엘리베이터 접근성을 갖췄습니다. 식당, 마트, 해변과 가까운 조용한 아파트형 객실입니다.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Balcony', 'Sofa', 'Elevator', 'Near beach'],
+        suitableFor: ['커플', '단기 숙박', '출장객', '해변 여행'],
+        policies: koPolicies,
+        priceNote: '2번 객실 타입 R601 요금: 1박 1,100,000 VND. 최종 결제는 VND로 진행됩니다.',
+      },
+    },
   },
   {
     id: 'family-apartment',
     slug: 'family-apartment',
-    name: 'Family Apartment',
-    type: 'Family',
+    name: 'Family Balcony Apartment - R201',
+    type: 'Family apartment',
     maxGuests: 4,
-    bed: '2 beds',
+    bed: '2 queen beds',
     size: '56m²',
-    price: 1350000,
-    bathroom: 'Private family bathroom',
+    price: 2000000,
+    bathroom: '2 private bathrooms',
     shortDescription:
-      'A relaxed apartment for small families, with two beds and space to unwind after exploring.',
+      'A generous apartment for families or groups, with two beds, two bathrooms, and a home-like layout.',
     description:
-      'Family Apartment gives small families a practical base near the beach, with two beds, a comfortable seating area, private bathroom, and thoughtful storage for longer bags.',
-    amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Two beds', 'Dining corner'],
-    highlights: ['Family layout', 'Dining corner', 'Extra storage'],
-    image:
-      'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=1200&q=85',
-    gallery: [
-      'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=1400&q=85',
-      'https://images.unsplash.com/photo-1560448075-bb485b067938?auto=format&fit=crop&w=1000&q=85',
-      'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1000&q=85',
-    ],
+      'R201 is the most spacious Lune option for families and groups. It is designed around comfort: two queen beds, two private bathrooms, warm lighting, thoughtful storage, and room to relax after the beach or a full day exploring Da Nang.',
+    amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Balcony', 'Kitchen', 'Sofa', 'Elevator', 'Near beach'],
+    highlights: ['Best for families', 'Two bathrooms', 'Spacious layout'],
+    image: luneImages.type1R201[0],
+    gallery: luneImages.type1R201,
+    pricingRules: makePricingRules(2000000),
+    availabilityRules: defaultAvailabilityRules,
+    blockedDates: [],
+    translations: {
+      en: {
+        name: 'Family Balcony Apartment - R201',
+        shortDescription:
+          'A generous apartment for families or groups, with two beds, two bathrooms, and a home-like layout.',
+        description:
+          'R201 is the most spacious Lune option for families and groups. It is designed around comfort: two queen beds, two private bathrooms, warm lighting, thoughtful storage, and room to relax after the beach or a full day exploring Da Nang.',
+        fullDescription:
+          'R201 is the most spacious Lune option for families and groups. It is designed around comfort: two queen beds, two private bathrooms, warm lighting, thoughtful storage, and room to relax after the beach or a full day exploring Da Nang.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Balcony', 'Kitchen', 'Sofa', 'Elevator', 'Near beach'],
+        suitableFor: ['Families', 'Groups of friends', 'Two couples', 'Longer stays'],
+        policies: defaultPolicies,
+        priceNote: 'Room Type 1 R201 rate: 2,000,000 VND per night. Final payment is charged in VND.',
+      },
+      vi: {
+        name: 'Căn hộ gia đình có ban công - R201',
+        shortDescription: 'Căn hộ rộng cho gia đình hoặc nhóm bạn, có hai giường, hai phòng tắm và bố cục như ở nhà.',
+        description:
+          'R201 là lựa chọn rộng rãi nhất của Lune cho gia đình hoặc nhóm khách. Phòng có hai giường queen, hai phòng tắm riêng, ánh sáng ấm, nhiều không gian lưu trữ và khu vực thư giãn sau một ngày đi biển hoặc khám phá Đà Nẵng.',
+        fullDescription:
+          'R201 là lựa chọn rộng rãi nhất của Lune cho gia đình hoặc nhóm khách. Phòng có hai giường queen, hai phòng tắm riêng, ánh sáng ấm, nhiều không gian lưu trữ và khu vực thư giãn sau một ngày đi biển hoặc khám phá Đà Nẵng.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Balcony', 'Kitchen', 'Sofa', 'Elevator', 'Near beach'],
+        suitableFor: ['Gia đình', 'Nhóm bạn', 'Hai cặp đôi', 'Lưu trú dài hơn'],
+        policies: viPolicies,
+        priceNote: 'Giá phòng loại 1 R201: 2,000,000 VND/đêm. Thanh toán chính thức bằng VND.',
+      },
+      zh: {
+        name: '家庭阳台公寓 - R201',
+        shortDescription: '宽敞的家庭或团体公寓，配有两张床、两个浴室和居家式布局。',
+        description:
+          'R201 是 Lune 最宽敞的房型，适合家庭和团体。配有两张大床、两个独立浴室、温暖灯光、实用收纳和舒适休息空间。',
+        fullDescription:
+          'R201 是 Lune 最宽敞的房型，适合家庭和团体。配有两张大床、两个独立浴室、温暖灯光、实用收纳和舒适休息空间。',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Balcony', 'Kitchen', 'Sofa', 'Elevator', 'Near beach'],
+        suitableFor: ['家庭', '朋友团体', '两对情侣', '较长住宿'],
+        policies: zhPolicies,
+        priceNote: '1类房 R201 价格：每晚 2,000,000 VND。正式付款货币为 VND。',
+      },
+      ko: {
+        name: '패밀리 발코니 아파트 - R201',
+        shortDescription: '가족 또는 그룹을 위한 넓은 아파트로 침대 2개, 욕실 2개와 집처럼 편한 구조를 갖췄습니다.',
+        description:
+          'R201은 가족과 그룹을 위한 Lune의 가장 넓은 객실입니다. 퀸베드 2개, 전용 욕실 2개, 따뜻한 조명, 실용적인 수납과 해변 또는 다낭 여행 후 쉴 수 있는 여유 공간을 제공합니다.',
+        fullDescription:
+          'R201은 가족과 그룹을 위한 Lune의 가장 넓은 객실입니다. 퀸베드 2개, 전용 욕실 2개, 따뜻한 조명, 실용적인 수납과 해변 또는 다낭 여행 후 쉴 수 있는 여유 공간을 제공합니다.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Balcony', 'Kitchen', 'Sofa', 'Elevator', 'Near beach'],
+        suitableFor: ['가족', '친구 그룹', '두 커플', '긴 숙박'],
+        policies: koPolicies,
+        priceNote: '1번 객실 타입 R201 요금: 1박 2,000,000 VND. 최종 결제는 VND로 진행됩니다.',
+      },
+    },
   },
   {
     id: 'long-stay-apartment',
     slug: 'long-stay-apartment',
-    name: 'Long Stay Apartment',
-    type: 'Long stay',
+    name: 'Deluxe Double Apartment, City View',
+    type: 'Deluxe double',
     maxGuests: 2,
-    bed: '1 queen bed',
-    size: '45m²',
-    price: 1150000,
-    bathroom: 'Private bathroom with shower',
+    bed: '1 king bed',
+    size: '40m²',
+    price: 1600000,
+    bathroom: 'Private bathroom with walk-in shower',
     shortDescription:
-      'A self-contained apartment with kitchen and washing machine for extended stays in Da Nang.',
+      'A refined double apartment with city-view comfort, ideal for couples and two guests who want a calm boutique stay.',
     description:
-      'Long Stay Apartment is built for guests who need independence: a kitchen, washing machine, work-friendly table, queen bed, and a quiet layout for weekly or monthly stays.',
-    amenities: ['Free Wi-Fi', 'Air conditioning', 'Kitchen', 'Washing machine', 'Private bathroom'],
-    highlights: ['Kitchen', 'Washing machine', 'Work table'],
-    image:
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=85',
-    gallery: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1400&q=85',
-      'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1000&q=85',
-      'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1000&q=85',
-    ],
+      'This deluxe apartment combines Lune’s warm boutique design with everyday convenience: a comfortable bed, seating area, kitchenette-style amenities, strong shower, and an easy location near My Khe Beach, seafood restaurants, convenience stores, and local cafés.',
+    amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Work desk', 'Elevator', 'Near beach'],
+    highlights: ['City-view comfort', 'Compact Type 3 layout', 'Best for two guests'],
+    image: luneImages.type3Compact[0],
+    gallery: luneImages.type3Compact,
+    pricingRules: makePricingRules(1600000),
+    availabilityRules: defaultAvailabilityRules,
+    blockedDates: [],
+    translations: {
+      en: {
+        name: 'Deluxe Double Apartment, City View',
+        shortDescription:
+          'A refined double apartment with city-view comfort, ideal for couples and two guests who want a calm boutique stay.',
+        description:
+          'This deluxe apartment combines Lune’s warm boutique design with everyday convenience: a comfortable bed, seating area, kitchenette-style amenities, strong shower, and an easy location near My Khe Beach, seafood restaurants, convenience stores, and local cafés.',
+        fullDescription:
+          'This deluxe apartment combines Lune’s warm boutique design with everyday convenience: a comfortable bed, seating area, kitchenette-style amenities, strong shower, and an easy location near My Khe Beach, seafood restaurants, convenience stores, and local cafés.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Work desk', 'Elevator', 'Near beach'],
+        suitableFor: ['Couples', 'Two guests', 'Business travelers', 'Short stays'],
+        policies: defaultPolicies,
+        priceNote: 'Room Type 3 rate: 1,600,000 VND per night. Final payment is charged in VND.',
+      },
+      vi: {
+        name: 'Căn hộ Deluxe Double hướng phố',
+        shortDescription: 'Căn hộ giường đôi hướng phố, phù hợp cho cặp đôi hoặc 2 khách muốn lưu trú gọn gàng và yên tĩnh.',
+        description:
+          'Căn hộ Deluxe Double sử dụng bố cục loại 3 gọn gàng với giường king thoải mái, chi tiết gỗ ấm, bàn làm việc, tủ đồ, phòng tắm riêng và vị trí thuận tiện gần biển Mỹ Khê.',
+        fullDescription:
+          'Căn hộ Deluxe Double sử dụng bố cục loại 3 gọn gàng với giường king thoải mái, chi tiết gỗ ấm, bàn làm việc, tủ đồ, phòng tắm riêng và vị trí thuận tiện gần biển Mỹ Khê.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Work desk', 'Elevator', 'Near beach'],
+        suitableFor: ['Cặp đôi', '2 khách', 'Khách công tác', 'Lưu trú ngắn ngày'],
+        policies: viPolicies,
+        priceNote: 'Giá phòng loại 3: 1,600,000 VND/đêm. Thanh toán chính thức bằng VND.',
+      },
+      zh: {
+        name: '豪华双人城市景观公寓',
+        shortDescription: '精致的城市景观双人公寓，适合情侣或两位客人安静入住。',
+        description:
+          '此豪华双人公寓采用紧凑的 3 类房布局，配有舒适大床、温暖木质细节、书桌、衣柜、独立浴室，并靠近美溪海滩。',
+        fullDescription:
+          '此豪华双人公寓采用紧凑的 3 类房布局，配有舒适大床、温暖木质细节、书桌、衣柜、独立浴室，并靠近美溪海滩。',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Work desk', 'Elevator', 'Near beach'],
+        suitableFor: ['情侣', '两位客人', '商务旅客', '短期入住'],
+        policies: zhPolicies,
+        priceNote: '3类房价格：每晚 1,600,000 VND。正式付款货币为 VND。',
+      },
+      ko: {
+        name: '디럭스 더블 아파트, 시티뷰',
+        shortDescription: '커플 또는 2인 고객에게 적합한 조용하고 아늑한 시티뷰 더블 아파트입니다.',
+        description:
+          '디럭스 더블 아파트는 컴팩트한 3번 객실 타입으로, 편안한 킹베드, 따뜻한 우드 디테일, 업무용 책상, 수납공간, 전용 욕실을 갖추고 미케 비치와 가깝습니다.',
+        fullDescription:
+          '디럭스 더블 아파트는 컴팩트한 3번 객실 타입으로, 편안한 킹베드, 따뜻한 우드 디테일, 업무용 책상, 수납공간, 전용 욕실을 갖추고 미케 비치와 가깝습니다.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Work desk', 'Elevator', 'Near beach'],
+        suitableFor: ['커플', '2인 고객', '출장객', '단기 숙박'],
+        policies: koPolicies,
+        priceNote: '3번 객실 타입 요금: 1박 1,600,000 VND. 최종 결제는 VND로 진행됩니다.',
+      },
+    },
+  },
+  {
+    id: 'type-3-kitchen-apartment',
+    slug: 'type-3-kitchen-apartment',
+    name: 'Type 3 Kitchen Apartment',
+    type: 'Type 3 kitchen',
+    maxGuests: 3,
+    bed: '1 king bed + sofa area',
+    size: '45m²',
+    price: 1600000,
+    bathroom: 'Private bathroom with walk-in shower',
+    shortDescription:
+      'A Type 3 apartment with a more open kitchen and living layout, suitable for guests who want extra daily comfort.',
+    description:
+      'This Type 3 kitchen apartment is a separate room style from the compact double layout. It features a brighter open space, kitchen area, sofa-style living corner, washing machine, private bathroom, and the same convenient Lune location near the beach.',
+    amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Kitchen', 'Washing machine', 'Sofa', 'Work desk', 'Elevator', 'Near beach'],
+    highlights: ['Open kitchen layout', 'Living corner', 'Long-stay friendly'],
+    image: luneImages.type3Kitchen[0],
+    gallery: luneImages.type3Kitchen,
+    pricingRules: makePricingRules(1600000),
+    availabilityRules: defaultAvailabilityRules,
+    blockedDates: [],
+    translations: {
+      en: {
+        name: 'Type 3 Kitchen Apartment',
+        shortDescription:
+          'A Type 3 apartment with a more open kitchen and living layout, suitable for guests who want extra daily comfort.',
+        description:
+          'This Type 3 kitchen apartment is a separate room style from the compact double layout. It features a brighter open space, kitchen area, sofa-style living corner, washing machine, private bathroom, and the same convenient Lune location near the beach.',
+        fullDescription:
+          'This Type 3 kitchen apartment is a separate room style from the compact double layout. It features a brighter open space, kitchen area, sofa-style living corner, washing machine, private bathroom, and the same convenient Lune location near the beach.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Kitchen', 'Washing machine', 'Sofa', 'Work desk', 'Elevator', 'Near beach'],
+        suitableFor: ['Couples', 'Small families', 'Long stays', 'Guests who want a kitchen'],
+        policies: defaultPolicies,
+        priceNote: 'Type 3 kitchen apartment rate: 1,600,000 VND per night. Final payment is charged in VND.',
+      },
+      vi: {
+        name: 'Căn hộ loại 3 có bếp',
+        shortDescription:
+          'Căn hộ loại 3 với bố cục bếp và khu sinh hoạt thoáng hơn, phù hợp khách muốn tiện nghi như ở nhà.',
+        description:
+          'Đây là phong cách phòng riêng biệt với phòng Deluxe Double loại 3. Phòng có không gian sáng hơn, khu bếp, góc sofa, máy giặt, phòng tắm riêng và vị trí thuận tiện gần biển.',
+        fullDescription:
+          'Đây là phong cách phòng riêng biệt với phòng Deluxe Double loại 3. Phòng có không gian sáng hơn, khu bếp, góc sofa, máy giặt, phòng tắm riêng và vị trí thuận tiện gần biển.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Kitchen', 'Washing machine', 'Sofa', 'Work desk', 'Elevator', 'Near beach'],
+        suitableFor: ['Cặp đôi', 'Gia đình nhỏ', 'Lưu trú dài ngày', 'Khách cần khu bếp'],
+        policies: viPolicies,
+        priceNote: 'Giá căn hộ loại 3 có bếp: 1,600,000 VND/đêm. Thanh toán chính thức bằng VND.',
+      },
+      zh: {
+        name: '3类厨房公寓',
+        shortDescription: '3类公寓，拥有更开放的厨房和生活空间，适合希望拥有更多日常便利的客人。',
+        description:
+          '这是一种不同于紧凑双人 3 类房的房型，配有更明亮的开放空间、厨房区、沙发角、洗衣机、独立浴室，并靠近海滩。',
+        fullDescription:
+          '这是一种不同于紧凑双人 3 类房的房型，配有更明亮的开放空间、厨房区、沙发角、洗衣机、独立浴室，并靠近海滩。',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Kitchen', 'Washing machine', 'Sofa', 'Work desk', 'Elevator', 'Near beach'],
+        suitableFor: ['情侣', '小家庭', '长期入住', '需要厨房的客人'],
+        policies: zhPolicies,
+        priceNote: '3类厨房公寓价格：每晚 1,600,000 VND。正式付款货币为 VND。',
+      },
+      ko: {
+        name: '3번 타입 키친 아파트',
+        shortDescription: '더 넓은 주방과 생활 공간을 갖춘 3번 타입 아파트로, 일상 편의를 원하는 고객에게 적합합니다.',
+        description:
+          '컴팩트한 3번 더블 타입과 다른 별도 객실 스타일입니다. 밝은 오픈 공간, 주방, 소파 코너, 세탁기, 전용 욕실을 갖추고 해변과 가까운 위치에 있습니다.',
+        fullDescription:
+          '컴팩트한 3번 더블 타입과 다른 별도 객실 스타일입니다. 밝은 오픈 공간, 주방, 소파 코너, 세탁기, 전용 욕실을 갖추고 해변과 가까운 위치에 있습니다.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Kitchen', 'Washing machine', 'Sofa', 'Work desk', 'Elevator', 'Near beach'],
+        suitableFor: ['커플', '소가족', '장기 숙박', '주방이 필요한 고객'],
+        policies: koPolicies,
+        priceNote: '3번 타입 키친 아파트 요금: 1박 1,600,000 VND. 최종 결제는 VND로 진행됩니다.',
+      },
+    },
   },
 ];
 
-export const roomTypes = ['Studio', 'Apartment', 'Family', 'Long stay'];
+const fallbackLanguages = ['zh-TW', 'ja', 'th', 'ru', 'fr', 'de', 'es', 'it', 'id', 'ms', 'ar', 'hi'];
 
-const roomTranslationMap = {
-  'deluxe-studio': {
-    en: {
-      name: 'Deluxe Studio',
-      shortDescription:
-        'A bright studio for couples or solo travelers, designed for calm mornings and easy beach days.',
-      description:
-        'Deluxe Studio pairs warm textures, a queen bed, a compact work corner, and a private bathroom. It is ideal for short stays in Da Nang when comfort and simplicity matter most.',
-      policyNote: 'Quiet studio room for short beach stays.',
-    },
-    vi: {
-      name: 'Studio Deluxe',
-      shortDescription:
-        'Studio sáng sủa cho cặp đôi hoặc khách đi một mình, phù hợp cho những ngày gần biển.',
-      description:
-        'Studio Deluxe có giường queen, góc làm việc nhỏ, phòng tắm riêng và không gian ấm áp cho kỳ nghỉ ngắn tại Đà Nẵng.',
-      policyNote: 'Phòng studio yên tĩnh cho kỳ nghỉ ngắn gần biển.',
-    },
-    zh: {
-      name: '豪华一室房',
-      shortDescription: '明亮的一室房，适合情侣或独自旅行者，适合轻松的海边假期。',
-      description:
-        '豪华一室房配有大床、小型工作角和独立浴室，适合在岘港短住并享受舒适简洁的空间。',
-      policyNote: '适合短期海边住宿的安静一室房。',
-    },
-    ko: {
-      name: '디럭스 스튜디오',
-      shortDescription: '커플 또는 1인 여행객에게 적합한 밝고 편안한 스튜디오입니다.',
-      description:
-        '디럭스 스튜디오는 퀸 침대, 작은 업무 공간, 전용 욕실을 갖춘 따뜻한 분위기의 객실로 다낭 단기 숙박에 적합합니다.',
-      policyNote: '해변 근처 단기 숙박에 좋은 조용한 스튜디오입니다.',
-    },
-  },
-  'superior-apartment': {
-    en: {
-      name: 'Superior Apartment',
-      shortDescription: 'A spacious apartment with a lounge area for travelers who want more room to settle in.',
-      description:
-        'Superior Apartment offers a generous layout, separate sitting space, warm lighting, and practical storage. It works beautifully for couples or business travelers staying a few nights.',
-      policyNote: 'Comfortable apartment for couples and short stays.',
-    },
-    vi: {
-      name: 'Căn hộ Superior',
-      shortDescription: 'Căn hộ rộng rãi có khu vực ngồi riêng cho khách muốn không gian thoải mái hơn.',
-      description:
-        'Căn hộ Superior có bố cục rộng, khu vực ngồi riêng, ánh sáng ấm và tiện ích lưu trữ phù hợp cho cặp đôi hoặc khách công tác.',
-      policyNote: 'Căn hộ thoải mái phù hợp cho cặp đôi và lưu trú ngắn ngày.',
-    },
-    zh: {
-      name: '高级公寓',
-      shortDescription: '带休息区的宽敞公寓，适合希望拥有更多空间的旅客。',
-      description: '高级公寓空间宽敞，配有独立休息区、温暖灯光和实用收纳，适合情侣或商务旅客。',
-      policyNote: '适合情侣和短期入住的舒适公寓。',
-    },
-    ko: {
-      name: '슈페리어 아파트',
-      shortDescription: '더 넓은 공간을 원하는 여행객을 위한 라운지 공간이 있는 아파트입니다.',
-      description: '슈페리어 아파트는 넉넉한 구조, 별도 휴식 공간, 따뜻한 조명과 실용적인 수납을 제공합니다.',
-      policyNote: '커플과 단기 숙박에 적합한 편안한 아파트입니다.',
-    },
-  },
-  'family-apartment': {
-    en: {
-      name: 'Family Apartment',
-      shortDescription: 'A relaxed apartment for small families, with two beds and space to unwind after exploring.',
-      description:
-        'Family Apartment gives small families a practical base near the beach, with two beds, a comfortable seating area, private bathroom, and thoughtful storage.',
-      policyNote: 'Family-friendly room for up to four guests.',
-    },
-    vi: {
-      name: 'Căn hộ Gia đình',
-      shortDescription: 'Căn hộ thoải mái cho gia đình nhỏ, có hai giường và không gian nghỉ ngơi.',
-      description:
-        'Căn hộ Gia đình là lựa chọn thực tế gần biển với hai giường, khu vực ngồi, phòng tắm riêng và không gian để hành lý.',
-      policyNote: 'Phòng phù hợp gia đình nhỏ tối đa bốn khách.',
-    },
-    zh: {
-      name: '家庭公寓',
-      shortDescription: '适合小家庭的舒适公寓，配有两张床和休息空间。',
-      description: '家庭公寓靠近海滩，配有两张床、舒适休息区、独立浴室和实用收纳空间。',
-      policyNote: '适合最多四位客人的家庭房。',
-    },
-    ko: {
-      name: '패밀리 아파트',
-      shortDescription: '침대 2개와 휴식 공간을 갖춘 소규모 가족용 아파트입니다.',
-      description: '패밀리 아파트는 해변 근처에서 가족이 편하게 머물 수 있는 실용적인 객실입니다.',
-      policyNote: '최대 4인까지 머물 수 있는 가족 친화 객실입니다.',
-    },
-  },
-  'long-stay-apartment': {
-    en: {
-      name: 'Long Stay Apartment',
-      shortDescription: 'A self-contained apartment with kitchen and washing machine for extended stays in Da Nang.',
-      description:
-        'Long Stay Apartment is built for guests who need independence: a kitchen, washing machine, work-friendly table, queen bed, and a quiet layout.',
-      policyNote: 'Designed for weekly or monthly stays.',
-    },
-    vi: {
-      name: 'Căn hộ Lưu trú dài ngày',
-      shortDescription: 'Căn hộ có bếp và máy giặt, phù hợp cho khách lưu trú dài ngày tại Đà Nẵng.',
-      description:
-        'Căn hộ Lưu trú dài ngày có bếp, máy giặt, bàn làm việc, giường queen và bố cục yên tĩnh cho khách ở tuần hoặc tháng.',
-      policyNote: 'Thiết kế cho lưu trú theo tuần hoặc theo tháng.',
-    },
-    zh: {
-      name: '长住公寓',
-      shortDescription: '带厨房和洗衣机的独立公寓，适合在岘港长期入住。',
-      description: '长住公寓配有厨房、洗衣机、工作桌、大床和安静布局，适合周租或月租客人。',
-      policyNote: '适合按周或按月入住。',
-    },
-    ko: {
-      name: '장기 숙박 아파트',
-      shortDescription: '주방과 세탁기가 있는 독립형 아파트로 다낭 장기 숙박에 적합합니다.',
-      description: '장기 숙박 아파트는 주방, 세탁기, 업무용 테이블, 퀸 침대와 조용한 구조를 갖추고 있습니다.',
-      policyNote: '주 단위 또는 월 단위 숙박에 적합합니다.',
-    },
-  },
-};
-
-rooms.forEach((room) => {
-  room.translations = roomTranslationMap[room.id] || {
-    en: {
-      name: room.name,
-      shortDescription: room.shortDescription,
-      description: room.description,
-      policyNote: '',
-    },
-  };
+export const rooms = baseRooms.map((room) => {
+  const translations = { ...room.translations };
+  fallbackLanguages.forEach((language) => {
+    translations[language] = translations[language] || translations.en;
+  });
+  return { ...room, translations };
 });
 
-const roomNameTranslations = {
-  'deluxe-studio': {
-    'zh-TW': '豪華一室房',
-    ja: 'デラックス スタジオ',
-    th: 'ดีลักซ์สตูดิโอ',
-    ru: 'Делюкс студио',
-    fr: 'Studio Deluxe',
-    de: 'Deluxe Studio',
-    es: 'Estudio Deluxe',
-    it: 'Studio Deluxe',
-    id: 'Studio Deluxe',
-    ms: 'Studio Deluxe',
-    ar: 'استوديو ديلوكس',
-    hi: 'डीलक्स स्टूडियो',
-  },
-  'superior-apartment': {
-    'zh-TW': '高級公寓',
-    ja: 'スーペリア アパートメント',
-    th: 'ซูพีเรียร์อพาร์ตเมนต์',
-    ru: 'Апартаменты Superior',
-    fr: 'Appartement Supérieur',
-    de: 'Superior Apartment',
-    es: 'Apartamento Superior',
-    it: 'Appartamento Superior',
-    id: 'Apartemen Superior',
-    ms: 'Apartmen Superior',
-    ar: 'شقة سوبيريور',
-    hi: 'सुपीरियर अपार्टमेंट',
-  },
-  'family-apartment': {
-    'zh-TW': '家庭公寓',
-    ja: 'ファミリー アパートメント',
-    th: 'แฟมิลี่อพาร์ตเมนต์',
-    ru: 'Семейные апартаменты',
-    fr: 'Appartement Familial',
-    de: 'Familienapartment',
-    es: 'Apartamento Familiar',
-    it: 'Appartamento Family',
-    id: 'Apartemen Keluarga',
-    ms: 'Apartmen Keluarga',
-    ar: 'شقة عائلية',
-    hi: 'फैमिली अपार्टमेंट',
-  },
-  'long-stay-apartment': {
-    'zh-TW': '長住公寓',
-    ja: 'ロングステイ アパートメント',
-    th: 'ลองสเตย์อพาร์ตเมนต์',
-    ru: 'Апартаменты для длительного проживания',
-    fr: 'Appartement Long Séjour',
-    de: 'Long-Stay Apartment',
-    es: 'Apartamento de larga estancia',
-    it: 'Appartamento Long Stay',
-    id: 'Apartemen Long Stay',
-    ms: 'Apartmen Long Stay',
-    ar: 'شقة للإقامة الطويلة',
-    hi: 'लॉन्ग स्टे अपार्टमेंट',
-  },
-};
-
-const roomCopyByLanguage = {
-  'zh-TW': {
-    short: '靠近海灘、乾淨舒適的精品公寓房型，適合輕鬆入住峴港。',
-    full: '此房型結合明亮空間、實用設備與溫暖材質，適合情侶、小家庭、商務旅客或長住客在峴港享受便利且安靜的住宿。',
-    suitableFor: ['情侶', '小家庭', '商務旅客', '長住客'],
-    policies: ['14:00 後入住', '12:00 前退房', '房內禁止吸菸', '不可攜帶寵物'],
-    priceNote: '房價以 VND 為正式付款金額。',
-  },
-  ja: {
-    short: 'ビーチ近くで清潔に過ごせる、快適なブティックアパートメント客室です。',
-    full: '明るい空間、実用的な設備、温かい素材感を備え、カップル、小さな家族、出張者、長期滞在の方に便利で落ち着いたダナン滞在を提供します。',
-    suitableFor: ['カップル', '小さな家族', '出張者', '長期滞在'],
-    policies: ['チェックインは14:00から', 'チェックアウトは12:00まで', '室内禁煙', 'ペット不可'],
-    priceNote: '正式なお支払い金額はVNDです。',
-  },
-  th: {
-    short: 'ห้องพักบูทีคอพาร์ตเมนต์สะอาด ใกล้ชายหาด และพักผ่อนได้สบายในดานัง',
-    full: 'ห้องนี้ออกแบบให้สว่าง ใช้งานง่าย และอบอุ่น เหมาะสำหรับคู่รัก ครอบครัวเล็ก นักธุรกิจ และผู้เข้าพักระยะยาวที่ต้องการฐานพักสงบในดานัง',
-    suitableFor: ['คู่รัก', 'ครอบครัวเล็ก', 'นักธุรกิจ', 'พักระยะยาว'],
-    policies: ['เช็คอินตั้งแต่ 14:00', 'เช็คเอาต์ก่อน 12:00', 'ห้ามสูบบุหรี่ในห้อง', 'ไม่อนุญาตให้นำสัตว์เลี้ยงเข้าพัก'],
-    priceNote: 'ยอดชำระจริงใช้สกุลเงิน VND',
-  },
-  ru: {
-    short: 'Чистые и светлые бутик-апартаменты рядом с пляжем для спокойного отдыха в Дананге.',
-    full: 'Номер сочетает светлое пространство, практичные удобства и теплые материалы. Он подходит парам, небольшим семьям, деловым гостям и тем, кто планирует длительное проживание.',
-    suitableFor: ['Пары', 'Небольшие семьи', 'Деловые гости', 'Длительное проживание'],
-    policies: ['Заезд с 14:00', 'Выезд до 12:00', 'Курение в номере запрещено', 'Размещение с животными не допускается'],
-    priceNote: 'Официальная сумма оплаты указана в VND.',
-  },
-  fr: {
-    short: 'Un appartement boutique propre et lumineux près de la plage pour un séjour simple à Da Nang.',
-    full: 'Cette chambre associe espace lumineux, équipements pratiques et matières chaleureuses, idéale pour couples, petites familles, voyageurs d’affaires et longs séjours.',
-    suitableFor: ['Couples', 'Petites familles', 'Voyageurs d’affaires', 'Longs séjours'],
-    policies: ['Arrivée à partir de 14:00', 'Départ avant 12:00', 'Non-fumeur dans la chambre', 'Animaux non admis'],
-    priceNote: 'Le montant officiel de paiement est en VND.',
-  },
-  de: {
-    short: 'Saubere, helle Boutique-Apartments nahe dem Strand für einen entspannten Aufenthalt in Da Nang.',
-    full: 'Dieses Zimmer verbindet helle Räume, praktische Ausstattung und warme Materialien. Es eignet sich für Paare, kleine Familien, Geschäftsreisende und Langzeitgäste.',
-    suitableFor: ['Paare', 'Kleine Familien', 'Geschäftsreisende', 'Langzeitgäste'],
-    policies: ['Check-in ab 14:00', 'Check-out vor 12:00', 'Nichtraucherzimmer', 'Haustiere nicht erlaubt'],
-    priceNote: 'Der offizielle Zahlungsbetrag ist in VND.',
-  },
-  es: {
-    short: 'Apartamento boutique limpio y luminoso cerca de la playa para una estancia cómoda en Da Nang.',
-    full: 'La habitación combina luz natural, servicios prácticos y materiales cálidos. Es ideal para parejas, familias pequeñas, viajeros de negocios y estancias largas.',
-    suitableFor: ['Parejas', 'Familias pequeñas', 'Viajeros de negocios', 'Estancias largas'],
-    policies: ['Check-in desde las 14:00', 'Check-out antes de las 12:00', 'No fumar dentro de la habitación', 'No se admiten mascotas'],
-    priceNote: 'El importe oficial de pago es en VND.',
-  },
-  it: {
-    short: 'Un appartamento boutique pulito e luminoso vicino alla spiaggia per soggiorni comodi a Da Nang.',
-    full: 'La camera unisce luce naturale, dotazioni pratiche e materiali caldi. È ideale per coppie, piccole famiglie, viaggiatori business e soggiorni lunghi.',
-    suitableFor: ['Coppie', 'Piccole famiglie', 'Business traveler', 'Soggiorni lunghi'],
-    policies: ['Check-in dalle 14:00', 'Check-out prima delle 12:00', 'Vietato fumare in camera', 'Animali non ammessi'],
-    priceNote: 'L’importo ufficiale di pagamento è in VND.',
-  },
-  id: {
-    short: 'Apartemen boutique bersih dan terang dekat pantai untuk menginap nyaman di Da Nang.',
-    full: 'Kamar ini memadukan ruang terang, fasilitas praktis, dan sentuhan hangat. Cocok untuk pasangan, keluarga kecil, tamu bisnis, dan long stay.',
-    suitableFor: ['Pasangan', 'Keluarga kecil', 'Tamu bisnis', 'Long stay'],
-    policies: ['Check-in mulai 14:00', 'Check-out sebelum 12:00', 'Dilarang merokok di kamar', 'Hewan peliharaan tidak diperbolehkan'],
-    priceNote: 'Nominal pembayaran resmi menggunakan VND.',
-  },
-  ms: {
-    short: 'Apartmen butik bersih dan cerah berhampiran pantai untuk penginapan selesa di Da Nang.',
-    full: 'Bilik ini menggabungkan ruang terang, kemudahan praktikal dan suasana hangat. Sesuai untuk pasangan, keluarga kecil, tetamu bisnes dan penginapan panjang.',
-    suitableFor: ['Pasangan', 'Keluarga kecil', 'Tetamu bisnes', 'Penginapan panjang'],
-    policies: ['Daftar masuk dari 14:00', 'Daftar keluar sebelum 12:00', 'Dilarang merokok di bilik', 'Haiwan peliharaan tidak dibenarkan'],
-    priceNote: 'Jumlah bayaran rasmi adalah dalam VND.',
-  },
-  ar: {
-    short: 'شقة بوتيك نظيفة ومشرقة بالقرب من الشاطئ لإقامة مريحة في دا نانغ.',
-    full: 'تجمع هذه الغرفة بين المساحة المضيئة والمرافق العملية واللمسات الدافئة، وهي مناسبة للأزواج والعائلات الصغيرة ورجال الأعمال والإقامات الطويلة.',
-    suitableFor: ['الأزواج', 'العائلات الصغيرة', 'رحلات العمل', 'الإقامات الطويلة'],
-    policies: ['تسجيل الوصول من 14:00', 'تسجيل المغادرة قبل 12:00', 'ممنوع التدخين داخل الغرفة', 'الحيوانات الأليفة غير مسموحة'],
-    priceNote: 'المبلغ الرسمي للدفع هو بالـ VND.',
-  },
-  hi: {
-    short: 'डा नांग में समुद्र तट के पास साफ और उजला बुटीक अपार्टमेंट कमरा।',
-    full: 'यह कमरा उजले स्पेस, उपयोगी सुविधाओं और गर्माहट भरे डिज़ाइन को जोड़ता है। यह कपल्स, छोटे परिवारों, बिज़नेस यात्रियों और लंबी अवधि के मेहमानों के लिए उपयुक्त है।',
-    suitableFor: ['कपल्स', 'छोटे परिवार', 'बिज़नेस यात्री', 'लॉन्ग स्टे'],
-    policies: ['चेक-इन 14:00 से', 'चेक-आउट 12:00 से पहले', 'कमरे में धूम्रपान नहीं', 'पालतू जानवर की अनुमति नहीं'],
-    priceNote: 'आधिकारिक भुगतान राशि VND में है।',
-  },
-};
-
-rooms.forEach((room) => {
-  const english = room.translations.en || {};
-  Object.entries(roomCopyByLanguage).forEach(([language, copy]) => {
-    room.translations[language] = {
-      ...english,
-      name: roomNameTranslations[room.id]?.[language] || english.name || room.name,
-      shortDescription: copy.short,
-      description: copy.full,
-      fullDescription: copy.full,
-      amenities: room.amenities,
-      suitableFor: copy.suitableFor,
-      policies: copy.policies,
-      policyNote: copy.policies[0],
-      priceNote: copy.priceNote,
-    };
-  });
-
-  Object.values(room.translations).forEach((translation) => {
-    translation.fullDescription = translation.fullDescription || translation.description;
-    translation.amenities = translation.amenities || room.amenities;
-    translation.suitableFor = translation.suitableFor || ['Couples', 'Small families', 'Business travelers'];
-    translation.policies = translation.policies || ['Check-in from 14:00', 'Check-out before 12:00'];
-    translation.priceNote = translation.priceNote || 'VND is the official payment currency.';
-  });
-});
+export const roomTypes = ['Studio', 'Balcony apartment', 'Family apartment', 'Deluxe double', 'Type 3 kitchen'];

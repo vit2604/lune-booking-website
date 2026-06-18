@@ -1,0 +1,66 @@
+services:
+  - type: web
+    name: lune-booking-api
+    runtime: node
+    rootDir: server
+    region: singapore
+    buildCommand: npm ci && npm run prisma:generate
+    preDeployCommand: npm run prisma:deploy && npm run prisma:seed
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lune-booking-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGIN
+        sync: false
+      - key: SOCKET_CORS_ORIGIN
+        sync: false
+      - key: BCRYPT_SALT_ROUNDS
+        value: 10
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: CURRENCY_PROVIDER
+        value: frankfurter
+      - key: FRANKFURTER_BASE_URL
+        value: https://api.frankfurter.dev/v1
+      - key: BLUEJAY_ENABLED
+        value: 'false'
+      - key: BLUEJAY_API_BASE_URL
+        sync: false
+      - key: BLUEJAY_AVAILABILITY_PATH
+        value: /availability
+      - key: BLUEJAY_AVAILABILITY_METHOD
+        value: POST
+      - key: BLUEJAY_API_TOKEN
+        sync: false
+      - key: BLUEJAY_AUTH_HEADER_NAME
+        value: Authorization
+      - key: BLUEJAY_AUTH_HEADER_PREFIX
+        value: Bearer
+      - key: BLUEJAY_PROPERTY_ID
+        sync: false
+      - key: BLUEJAY_ROOM_MAPPING_JSON
+        sync: false
+      - key: BLUEJAY_TIMEOUT_MS
+        value: '6000'
+      - key: BLUEJAY_FAIL_CLOSED
+        value: 'true'
+
+databases:
+  - name: lune-booking-db
+    region: singapore
+    plan: basic-256mb
+    databaseName: lune_booking_db
+    user: lune_user

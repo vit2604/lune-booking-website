@@ -16,9 +16,56 @@ export function adminListRooms() {
   return apiRequest('/admin/rooms');
 }
 
+export function adminDeleteRoom(roomId) {
+  return apiRequest(`/admin/rooms/${roomId}`, { method: 'DELETE' });
+}
+
+export function adminUpdateRoomStatus(roomId, status) {
+  return apiRequest(`/admin/rooms/${roomId}/status`, {
+    method: 'PATCH',
+    body: { status },
+  });
+}
+
 export function adminListBookings(query = {}) {
   const params = new URLSearchParams(query);
   return apiRequest(`/admin/bookings${params.toString() ? `?${params}` : ''}`);
+}
+
+export function adminUpdateBookingStatus(bookingCode, bookingStatus) {
+  return apiRequest(`/admin/bookings/${bookingCode}/status`, {
+    method: 'PATCH',
+    body: { bookingStatus },
+  });
+}
+
+export function adminUpdatePaymentStatus(bookingCode, paymentStatus) {
+  return apiRequest(`/admin/bookings/${bookingCode}/payment-status`, {
+    method: 'PATCH',
+    body: { paymentStatus },
+  });
+}
+
+export function adminUpdateInternalNote(bookingCode, internalNote) {
+  return apiRequest(`/admin/bookings/${bookingCode}/internal-note`, {
+    method: 'PATCH',
+    body: { internalNote },
+  });
+}
+
+export function adminDeleteBooking(bookingCode) {
+  return apiRequest(`/admin/bookings/${bookingCode}`, { method: 'DELETE' });
+}
+
+export function adminGetPaymentSettings() {
+  return apiRequest('/admin/payment-settings');
+}
+
+export function adminSavePaymentSettings(paymentMethods) {
+  return apiRequest('/admin/payment-settings', {
+    method: 'PUT',
+    body: { paymentMethods },
+  });
 }
 
 export function adminListChatSessions(query = {}) {

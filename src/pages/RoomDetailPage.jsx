@@ -14,6 +14,7 @@ import { getBookings } from '../admin/services/adminBookingService.js';
 import AmenityList from '../components/AmenityList.jsx';
 import BookingPolicy from '../components/BookingPolicy.jsx';
 import DateSelector from '../components/DateSelector.jsx';
+import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useCurrency } from '../i18n/useCurrency.js';
 import { getLocalizedRoom } from '../i18n/roomTranslations.js';
 import { useTranslation } from '../i18n/useTranslation.js';
@@ -29,6 +30,7 @@ import {
 import { getApproxPriceText } from '../utils/currencyUtils.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
 import { saveBookingDraft } from '../utils/storage.js';
+import { fetchRoomWithFallback } from '../services/roomApiService.js';
 
 export default function RoomDetailPage() {
   const { slug } = useParams();
@@ -60,6 +62,24 @@ export default function RoomDetailPage() {
       window.removeEventListener('lune:bookings-updated', refresh);
     };
   }, []);
+
+  useEffect(() => {
+    let ignore = false;
+    fetchRoomWithFallback(slug, { lang: currentLanguage })
+      .then(({ room: apiRoom }) => {
+        if (ignore || !apiRoom) return;
+        setRooms((current) => {
+          const exists = current.some((item) => item.id === apiRoom.id || item.slug === apiRoom.slug);
+          return exists
+            ? current.map((item) => (item.id === apiRoom.id || item.slug === apiRoom.slug ? apiRoom : item))
+            : [apiRoom, ...current];
+        });
+      })
+      .catch(() => {});
+    return () => {
+      ignore = true;
+    };
+  }, [slug, currentLanguage]);
 
   const totals = useMemo(() => {
     if (!room) return { nights: 0, roomSubtotal: 0, total: 0 };
@@ -148,7 +168,7 @@ export default function RoomDetailPage() {
 
       <div className="page-shell grid gap-8 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start">
         <div className="space-y-10">
-          <div className="flex snap-x gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0">
+          <RevealOnScroll variant="zoom" className="flex snap-x gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0">
             {room.gallery.map((image, index) => (
               <img
                 key={image}
@@ -159,9 +179,9 @@ export default function RoomDetailPage() {
                 }`}
               />
             ))}
-          </div>
+          </RevealOnScroll>
 
-          <div>
+          <RevealOnScroll variant="float">
             <p className="eyebrow">{room.type}</p>
             <div className="mt-3 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div>
@@ -175,7 +195,7 @@ export default function RoomDetailPage() {
                 {approxNight ? <p className="mt-1 text-sm text-stone-500">{approxNight}</p> : null}
               </div>
             </div>
-          </div>
+          </RevealOnScroll>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
@@ -183,21 +203,21 @@ export default function RoomDetailPage() {
               { label: t('common.guests'), value: `${room.maxGuests} ${t('common.guestsPlural')}`, icon: Users },
               { label: t('roomDetail.bedType'), value: room.bed, icon: BedDouble },
               { label: t('roomDetail.bathroom'), value: t('roomDetail.private'), icon: Bath },
-            ].map((item) => {
+            ].map((item, index) => {
               const Icon = item.icon;
               return (
-                <div key={item.label} className="rounded-lg border border-stone-200 bg-white p-4">
+                <RevealOnScroll key={item.label} variant="zoom" delay={index * 70} className="rounded-lg border border-stone-200 bg-white p-4">
                   <Icon className="h-5 w-5 text-lune-goldDark" aria-hidden="true" />
                   <span className="mt-3 block text-xs font-semibold uppercase text-stone-500">
                     {item.label}
                   </span>
                   <strong className="mt-1 block text-base text-lune-ink">{item.value}</strong>
-                </div>
+                </RevealOnScroll>
               );
             })}
           </div>
 
-          <section>
+          <RevealOnScroll as="section" variant="curve-left">
             <p className="eyebrow">{t('roomDetail.roomDetails')}</p>
             <h2 className="section-title mt-3">{t('roomDetail.detailsTitle')}</h2>
             <p className="muted-text mt-5">{localizedRoom.description}</p>
@@ -215,19 +235,21 @@ export default function RoomDetailPage() {
                 {localizedRoom.priceNote}
               </p>
             ) : null}
-          </section>
+          </RevealOnScroll>
 
-          <section>
+          <RevealOnScroll as="section" variant="curve-right">
             <h3 className="font-display text-3xl font-bold text-lune-ink">{t('roomDetail.amenities')}</h3>
             <div className="mt-5">
               <AmenityList amenities={room.amenities} />
             </div>
-          </section>
+          </RevealOnScroll>
 
-          <BookingPolicy />
+          <RevealOnScroll variant="float">
+            <BookingPolicy />
+          </RevealOnScroll>
         </div>
 
-        <aside ref={bookingBoxRef} className="card h-fit scroll-mt-28 p-5 lg:sticky lg:top-28">
+        <RevealOnScroll as="aside" variant="curve-left" ref={bookingBoxRef} className="card h-fit scroll-mt-28 p-5 lg:sticky lg:top-28">
           <p className="eyebrow">{t('roomDetail.reserveStay')}</p>
           <h2 className="mt-2 font-display text-3xl font-bold text-lune-ink">{localizedRoom.name}</h2>
           <p className="mt-2 text-base font-semibold text-lune-ink">
@@ -280,7 +302,7 @@ export default function RoomDetailPage() {
             {isProcessing ? t('common.processing') : t('roomDetail.reserveThisRoom')}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
-        </aside>
+        </RevealOnScroll>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 p-3 shadow-[0_-12px_30px_rgba(23,20,18,0.12)] backdrop-blur lg:hidden">

@@ -1,4 +1,5 @@
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
+import { canUseMockFallback } from '../config/apiConfig.js';
 import { apiRequest } from './apiClient.js';
 
 function normalizeApiRoom(room) {
@@ -24,7 +25,8 @@ export async function fetchRoomsWithFallback(query = {}) {
     });
     const data = await apiRequest(`/rooms${params.toString() ? `?${params}` : ''}`);
     return { source: 'api', rooms: data.map(normalizeApiRoom) };
-  } catch (_error) {
+  } catch (error) {
+    if (!canUseMockFallback()) throw error;
     return { source: 'local', rooms: getVisibleRooms() };
   }
 }
@@ -37,7 +39,8 @@ export async function fetchRoomWithFallback(slug, query = {}) {
     });
     const data = await apiRequest(`/rooms/${slug}${params.toString() ? `?${params}` : ''}`);
     return { source: 'api', room: normalizeApiRoom(data.room), availability: data.availability };
-  } catch (_error) {
+  } catch (error) {
+    if (!canUseMockFallback()) throw error;
     return { source: 'local', room: null, availability: null };
   }
 }

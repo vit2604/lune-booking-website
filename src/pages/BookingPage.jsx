@@ -7,6 +7,7 @@ import BookingPolicy from '../components/BookingPolicy.jsx';
 import BookingSummary from '../components/BookingSummary.jsx';
 import DateSelector from '../components/DateSelector.jsx';
 import TrustBadges from '../components/TrustBadges.jsx';
+import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import { createBookingWithFallback } from '../services/bookingApiService.js';
 import { buildBookingDraft, validateStay } from '../utils/booking.js';
@@ -59,6 +60,25 @@ const countries = [
   'Other',
 ];
 
+function roomFromBookingDraft(booking) {
+  if (!booking?.roomId) return null;
+  return {
+    id: booking.roomId,
+    slug: booking.roomId,
+    name: booking.roomName,
+    price: Number(booking.pricePerNight || 0),
+    basePrice: Number(booking.pricePerNight || 0),
+    maxGuests: Number(booking.maxGuests || booking.guests || 1),
+    image: booking.roomImage || '',
+    gallery: booking.roomImage ? [booking.roomImage] : [],
+    type: booking.roomType || 'Apartment',
+    size: booking.size || '',
+    bed: booking.bed || '',
+    amenities: [],
+    availabilityRules: { minNights: 1, maxNights: 30 },
+  };
+}
+
 export default function BookingPage() {
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
@@ -98,7 +118,7 @@ export default function BookingPage() {
     if (upgradedDraft?.guestInfo) setForm(upgradedDraft.guestInfo);
   }, []);
 
-  const room = useMemo(() => getRoomById(booking?.roomId), [booking?.roomId]);
+  const room = useMemo(() => getRoomById(booking?.roomId) || roomFromBookingDraft(booking), [booking]);
 
   if (!booking || !room) {
     return (
@@ -216,10 +236,10 @@ export default function BookingPage() {
   });
 
   return (
-    <section className="section-space bg-lune-cream">
+    <RevealOnScroll as="section" direction="none" duration={450} className="section-space bg-lune-cream">
       <div className="page-shell">
         <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
-          <form className="rounded-lg border border-stone-200 bg-white p-5 shadow-soft sm:p-8" onSubmit={handleSubmit}>
+          <RevealOnScroll as="form" variant="curve-right" className="rounded-lg border border-stone-200 bg-white p-5 shadow-soft sm:p-8" onSubmit={handleSubmit}>
             <div className="flex items-center gap-3">
               <span className="grid h-11 w-11 place-items-center rounded-md bg-lune-ink text-white">
                 <UserRound className="h-5 w-5" aria-hidden="true" />
@@ -329,11 +349,13 @@ export default function BookingPage() {
               {isSubmitting ? t('common.processing') : t('booking.continueToPayment')}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
-          </form>
+          </RevealOnScroll>
 
-          <BookingSummary booking={previewBooking} className="h-fit lg:sticky lg:top-28" />
+          <RevealOnScroll variant="curve-left" delay={100}>
+            <BookingSummary booking={previewBooking} className="h-fit lg:sticky lg:top-28" />
+          </RevealOnScroll>
         </div>
       </div>
-    </section>
+    </RevealOnScroll>
   );
 }

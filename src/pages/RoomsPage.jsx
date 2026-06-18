@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import { getBookings } from '../admin/services/adminBookingService.js';
 import RoomCard from '../components/RoomCard.jsx';
+import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import { fetchRoomsWithFallback } from '../services/roomApiService.js';
 import { buildBookingDraft, getDefaultDates, validateStay } from '../utils/booking.js';
@@ -58,6 +59,8 @@ export default function RoomsPage() {
       guests: filters.guests,
     }).then(({ rooms: nextRooms }) => {
       if (!ignore) setRooms(nextRooms);
+    }).catch((error) => {
+      if (!ignore) setBookingError(error.message || 'Could not load rooms from backend.');
     });
     return () => {
       ignore = true;
@@ -116,10 +119,10 @@ export default function RoomsPage() {
   };
 
   return (
-    <section className="section-space bg-lune-cream">
+    <RevealOnScroll as="section" direction="none" duration={450} className="section-space bg-lune-cream">
       <div className="page-shell">
         <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
-          <aside className="h-fit rounded-lg border border-stone-200 bg-white p-5 shadow-soft lg:sticky lg:top-28">
+          <RevealOnScroll as="aside" variant="curve-right" className="h-fit rounded-lg border border-stone-200 bg-white p-5 shadow-soft lg:sticky lg:top-28">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="h-5 w-5 text-lune-goldDark" aria-hidden="true" />
               <h1 className="font-display text-3xl font-bold text-lune-ink">{t('rooms.filters')}</h1>
@@ -198,10 +201,10 @@ export default function RoomsPage() {
                 </select>
               </label>
             </div>
-          </aside>
+          </RevealOnScroll>
 
           <div>
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <RevealOnScroll variant="float" className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div>
                 <p className="eyebrow">Available stays</p>
                 <h2 className="section-title mt-3">{t('rooms.title')}</h2>
@@ -209,7 +212,7 @@ export default function RoomsPage() {
               <p className="text-sm font-medium text-stone-600">
                 {t('rooms.roomsFound', { count: filteredRooms.length })}
               </p>
-            </div>
+            </RevealOnScroll>
 
             {bookingError ? (
               <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
@@ -218,13 +221,14 @@ export default function RoomsPage() {
             ) : null}
 
             <div className="mt-8 grid gap-6 xl:grid-cols-2">
-              {filteredRooms.map((room) => (
-                <RoomCard
-                  key={room.id}
-                  room={room}
-                  onBook={handleBook}
-                  isBooking={processingRoom === room.id}
-                />
+              {filteredRooms.map((room, index) => (
+                <RevealOnScroll key={room.id} variant={index % 2 === 0 ? 'curve-left' : 'curve-right'} delay={index * 80}>
+                  <RoomCard
+                    room={room}
+                    onBook={handleBook}
+                    isBooking={processingRoom === room.id}
+                  />
+                </RevealOnScroll>
               ))}
             </div>
 
@@ -239,6 +243,6 @@ export default function RoomsPage() {
           </div>
         </div>
       </div>
-    </section>
+    </RevealOnScroll>
   );
 }

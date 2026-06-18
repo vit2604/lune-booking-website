@@ -13,13 +13,15 @@ export default function Footer() {
     window.addEventListener('lune:settings-updated', refresh);
     return () => window.removeEventListener('lune:settings-updated', refresh);
   }, []);
-
   return (
     <footer className="border-t border-stone-200 bg-lune-ink text-white">
       <div className="page-shell grid gap-10 py-12 md:grid-cols-[1.3fr_1fr_1fr]">
         <div>
-          <Link to="/" className="font-display text-3xl font-bold">
-            {branding.hotelName}
+          <Link to="/" className="inline-flex items-center gap-3">
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt={branding.hotelName} className="h-16 w-20 object-contain" />
+            ) : null}
+            <span className="font-display text-3xl font-bold">{branding.hotelName}</span>
           </Link>
           <p className="mt-4 max-w-md text-sm leading-7 text-white/65">
             {branding.footerDescription}

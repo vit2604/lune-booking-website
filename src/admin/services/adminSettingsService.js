@@ -6,14 +6,16 @@ const PAYMENT_KEY = 'lune_payment_settings';
 const POLICIES_KEY = 'lune_policy_settings';
 const WEBSITE_KEY = 'lune_website_settings';
 const LANGUAGE_SETTINGS_KEY = 'lune_language_settings';
+const BRANDING_ASSETS_VERSION_KEY = 'lune_branding_assets_version';
+const BRANDING_ASSETS_VERSION = '2026-05-25-thach-lam-real-assets';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const defaultBrandingSettings = {
   hotelName: brand.name,
   shortName: brand.shortName,
-  shortSlogan: 'A boutique apartment experience near the beach',
-  address: '92-94 Thach Lam, Son Tra, Da Nang, Viet Nam',
+  shortSlogan: 'Your peaceful stay near My Khe Beach',
+  address: brand.address,
   phone: '+84 236 000 0000',
   email: 'hello@luneboutique.vn',
   zalo: '',
@@ -21,19 +23,19 @@ export const defaultBrandingSettings = {
   facebook: '#',
   instagram: '#',
   googleMapsLink: '#',
-  logoUrl: '',
+  logoUrl: brand.logoUrl,
   primaryColor: '#171412',
   accentColor: '#b08a4b',
   backgroundColor: '#fbfaf7',
   buttonColor: '#b08a4b',
-  heroTitle: 'Stay Comfortably in Da Nang',
-  heroSubtitle: 'A boutique apartment experience near the beach',
-  heroButtonText: 'Search Rooms',
+  heroTitle: 'Feel at home, away from home',
+  heroSubtitle: 'Warm boutique apartments near My Khe Beach with thoughtful details, clean rooms, and direct Lune support.',
+  heroButtonText: 'Check Availability',
   heroImage: brand.heroImage,
   introImage: brand.introImage,
   bookDirectTitle: 'Why choose Lune',
   footerDescription:
-    'Boutique apartment stays near the beach for travelers, couples, small families, and long-stay guests in Da Nang.',
+    'New, clean boutique apartment stays near My Khe Beach for couples, families, business travelers, and long-stay guests in Da Nang.',
   whyBookDirect: [
     'Official Lune direct booking',
     'Secure payment placeholder',
@@ -145,7 +147,34 @@ function writeSettings(key, value) {
 }
 
 export function getBrandingSettings() {
-  return readSettings(BRANDING_KEY, defaultBrandingSettings);
+  const settings = readSettings(BRANDING_KEY, defaultBrandingSettings);
+  const needsAssetRefresh = localStorage.getItem(BRANDING_ASSETS_VERSION_KEY) !== BRANDING_ASSETS_VERSION;
+  if (!needsAssetRefresh) return settings;
+
+  const nextSettings = {
+    ...settings,
+    address: settings.address?.includes('Tháº') ? defaultBrandingSettings.address : settings.address,
+    logoUrl: settings.logoUrl || defaultBrandingSettings.logoUrl,
+    heroImage:
+      !settings.heroImage || settings.heroImage.includes('images.unsplash.com')
+        ? defaultBrandingSettings.heroImage
+        : settings.heroImage,
+    introImage:
+      !settings.introImage || settings.introImage.includes('images.unsplash.com')
+        ? defaultBrandingSettings.introImage
+        : settings.introImage,
+    shortSlogan:
+      !settings.shortSlogan || settings.shortSlogan === 'A boutique apartment experience near the beach'
+        ? defaultBrandingSettings.shortSlogan
+        : settings.shortSlogan,
+    footerDescription:
+      !settings.footerDescription || settings.footerDescription.includes('Boutique apartment stays near the beach')
+        ? defaultBrandingSettings.footerDescription
+        : settings.footerDescription,
+  };
+  localStorage.setItem(BRANDING_KEY, JSON.stringify(nextSettings));
+  localStorage.setItem(BRANDING_ASSETS_VERSION_KEY, BRANDING_ASSETS_VERSION);
+  return nextSettings;
 }
 
 export function saveBrandingSettings(settings) {
@@ -251,6 +280,7 @@ export function resetDemoData() {
   localStorage.removeItem(POLICIES_KEY);
   localStorage.removeItem(WEBSITE_KEY);
   localStorage.removeItem(LANGUAGE_SETTINGS_KEY);
+  localStorage.removeItem(BRANDING_ASSETS_VERSION_KEY);
   window.dispatchEvent(new Event('lune:settings-updated'));
   window.dispatchEvent(new Event('lune:language-settings-updated'));
 }
