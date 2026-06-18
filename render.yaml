@@ -4,6 +4,7 @@ services:
     runtime: node
     rootDir: server
     region: singapore
+    plan: free
     buildCommand: npm ci && npm run prisma:generate
     preDeployCommand: npm run prisma:deploy && npm run prisma:seed
     startCommand: npm run start
@@ -12,9 +13,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: lune-booking-db
-          property: connectionString
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
@@ -57,10 +56,3 @@ services:
         value: '6000'
       - key: BLUEJAY_FAIL_CLOSED
         value: 'true'
-
-databases:
-  - name: lune-booking-db
-    region: singapore
-    plan: basic-256mb
-    databaseName: lune_booking_db
-    user: lune_user
