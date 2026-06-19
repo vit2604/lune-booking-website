@@ -21,8 +21,8 @@ Root Directory: repository root
 Set these in Vercel Project Settings:
 
 ```env
-VITE_API_BASE_URL=https://api.your-domain.com/api
-VITE_SOCKET_URL=https://api.your-domain.com
+VITE_API_BASE_URL=https://api.luneboutiquedanang.id.vn/api
+VITE_SOCKET_URL=https://api.luneboutiquedanang.id.vn
 VITE_USE_MOCK_FALLBACK=false
 ```
 
@@ -38,28 +38,28 @@ For production booking, keep `VITE_USE_MOCK_FALLBACK=false`. When false:
 Use Vercel Domains to connect:
 
 ```text
-luneboutique.vn
-www.luneboutique.vn
+luneboutiquedanang.id.vn
+www.luneboutiquedanang.id.vn
 ```
 
 Use your backend host DNS to connect:
 
 ```text
-api.luneboutique.vn
+api.luneboutiquedanang.id.vn
 ```
 
 Then update:
 
 ```env
-VITE_API_BASE_URL=https://api.luneboutique.vn/api
-VITE_SOCKET_URL=https://api.luneboutique.vn
+VITE_API_BASE_URL=https://api.luneboutiquedanang.id.vn/api
+VITE_SOCKET_URL=https://api.luneboutiquedanang.id.vn
 ```
 
 Also update backend:
 
 ```env
-CORS_ORIGIN=https://luneboutique.vn,https://www.luneboutique.vn
-SOCKET_CORS_ORIGIN=https://luneboutique.vn,https://www.luneboutique.vn
+CORS_ORIGIN=https://luneboutiquedanang.id.vn,https://www.luneboutiquedanang.id.vn
+SOCKET_CORS_ORIGIN=https://luneboutiquedanang.id.vn,https://www.luneboutiquedanang.id.vn
 ```
 
 ## Final Frontend Test

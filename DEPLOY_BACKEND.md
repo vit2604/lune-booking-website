@@ -13,7 +13,7 @@ Use one of:
 The backend should be public at a separate API domain, for example:
 
 ```text
-https://api.luneboutique.vn
+https://api.luneboutiquedanang.id.vn
 ```
 
 ## Environment Variables
@@ -26,12 +26,12 @@ JWT_SECRET=replace_with_a_long_random_secret
 JWT_EXPIRES_IN=7d
 NODE_ENV=production
 PORT=4000
-CORS_ORIGIN=https://luneboutique.vn,https://www.luneboutique.vn
-SOCKET_CORS_ORIGIN=https://luneboutique.vn,https://www.luneboutique.vn
+CORS_ORIGIN=https://luneboutiquedanang.id.vn,https://www.luneboutiquedanang.id.vn
+SOCKET_CORS_ORIGIN=https://luneboutiquedanang.id.vn,https://www.luneboutiquedanang.id.vn
 BCRYPT_SALT_ROUNDS=10
 ADMIN_USERNAME=your_admin_username
 ADMIN_PASSWORD=your_strong_admin_password
-ADMIN_EMAIL=admin@luneboutique.vn
+ADMIN_EMAIL=admin@luneboutiquedanang.id.vn
 CURRENCY_PROVIDER=frankfurter
 FRANKFURTER_BASE_URL=https://api.frankfurter.dev/v1
 ```
@@ -109,7 +109,7 @@ For production VPS, run the server behind Nginx/Caddy with HTTPS and a process m
 Open:
 
 ```text
-https://api.your-domain.com/api/health
+https://api.luneboutiquedanang.id.vn/api/health
 ```
 
 Expected response:

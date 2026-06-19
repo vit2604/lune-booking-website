@@ -13,7 +13,7 @@ export function corsMiddleware() {
   return cors({
     origin(origin, callback) {
       if (!origin || origins.includes(origin)) return callback(null, true);
-      return callback(new Error('Not allowed by CORS'));
+      return callback(null, false);
     },
     credentials: true,
   });
