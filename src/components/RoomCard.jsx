@@ -25,7 +25,7 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="eyebrow">{room.type}</p>
+            <p className="eyebrow">{localizedRoom.type}</p>
             <h3 className="mt-2 font-display text-3xl font-bold text-lune-ink">{localizedRoom.name}</h3>
           </div>
           <div className="text-right">
@@ -46,7 +46,7 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
           </span>
           <span className="flex items-center gap-1.5 rounded-md bg-lune-mist px-2 py-2">
             <BedDouble className="h-3.5 w-3.5 text-lune-sage" aria-hidden="true" />
-            {room.bed}
+            {localizedRoom.bed}
           </span>
         </div>
 

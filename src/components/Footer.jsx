@@ -1,12 +1,16 @@
 import { Facebook, Instagram, Mail, MapPin, Phone } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getBrandingSettings } from '../admin/services/adminSettingsService.js';
+import { defaultBrandingSettings, getBrandingSettings } from '../admin/services/adminSettingsService.js';
 import { useTranslation } from '../i18n/useTranslation.js';
 
 export default function Footer() {
   const [branding, setBranding] = useState(getBrandingSettings());
   const { t } = useTranslation();
+  const footerDescription =
+    branding.footerDescription && branding.footerDescription !== defaultBrandingSettings.footerDescription
+      ? branding.footerDescription
+      : t('footer.description');
 
   useEffect(() => {
     const refresh = () => setBranding(getBrandingSettings());
@@ -24,7 +28,7 @@ export default function Footer() {
             <span className="font-display text-3xl font-bold">{branding.hotelName}</span>
           </Link>
           <p className="mt-4 max-w-md text-sm leading-7 text-white/65">
-            {branding.footerDescription}
+            {footerDescription}
           </p>
         </div>
 

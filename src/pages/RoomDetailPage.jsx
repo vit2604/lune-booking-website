@@ -182,7 +182,7 @@ export default function RoomDetailPage() {
           </RevealOnScroll>
 
           <RevealOnScroll variant="float">
-            <p className="eyebrow">{room.type}</p>
+            <p className="eyebrow">{localizedRoom.type}</p>
             <div className="mt-3 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div>
                 <h1 className="font-display text-5xl font-bold leading-tight text-lune-ink">
@@ -201,7 +201,7 @@ export default function RoomDetailPage() {
             {[
               { label: t('roomDetail.roomSize'), value: room.size, icon: Maximize2 },
               { label: t('common.guests'), value: `${room.maxGuests} ${t('common.guestsPlural')}`, icon: Users },
-              { label: t('roomDetail.bedType'), value: room.bed, icon: BedDouble },
+              { label: t('roomDetail.bedType'), value: localizedRoom.bed, icon: BedDouble },
               { label: t('roomDetail.bathroom'), value: t('roomDetail.private'), icon: Bath },
             ].map((item, index) => {
               const Icon = item.icon;

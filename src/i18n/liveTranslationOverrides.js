@@ -135,6 +135,93 @@ const overrides = {
   },
 };
 
+const polishOverrides = {
+  en: {
+    home: {
+      guestInfoItems: [
+        'Check-in from 14:00',
+        'Check-out before 12:00',
+        'Passport may be required at check-in according to local regulations.',
+        'Payment can be made by selected available methods.',
+        'Our team can support guests in multiple languages.',
+        'The hotel is located at 92-94 Thach Lam, Son Tra, Da Nang.',
+        'Please contact us if you need airport pickup, early check-in, or long-stay support.',
+      ],
+    },
+    footer: {
+      description:
+        'New, clean boutique apartment stays near My Khe Beach for couples, families, business travelers, and long-stay guests in Da Nang.',
+    },
+  },
+  vi: {
+    home: {
+      guestInfoItems: [
+        'Nhận phòng từ 14:00',
+        'Trả phòng trước 12:00',
+        'Có thể cần xuất trình hộ chiếu/giấy tờ tùy thân khi nhận phòng theo quy định địa phương.',
+        'Có thể thanh toán bằng các phương thức đang được hỗ trợ.',
+        'Đội ngũ Lune có thể hỗ trợ khách bằng nhiều ngôn ngữ.',
+        'Khách sạn nằm tại 92-94 Thạch Lam, Sơn Trà, Đà Nẵng.',
+        'Vui lòng liên hệ nếu quý khách cần đưa đón sân bay, nhận phòng sớm hoặc hỗ trợ lưu trú dài ngày.',
+      ],
+    },
+    footer: {
+      description:
+        'Căn hộ boutique mới, sạch, gần biển Mỹ Khê, phù hợp cho cặp đôi, gia đình, khách công tác và khách lưu trú dài ngày tại Đà Nẵng.',
+    },
+  },
+  zh: {
+    home: {
+      guestInfoItems: [
+        '14:00 后办理入住',
+        '12:00 前退房',
+        '根据当地规定，入住时可能需要出示护照。',
+        '可使用当前可选的付款方式付款。',
+        'Lune 团队可为客人提供多语言支持。',
+        '酒店地址：92-94 Thạch Lam, Sơn Trà, Đà Nẵng。',
+        '如需接机、提前入住或长住协助，请联系我们。',
+      ],
+    },
+    footer: {
+      description: '靠近美溪海滩的全新洁净精品公寓住宿，适合情侣、家庭、商务旅客和长住客人。',
+    },
+  },
+  ko: {
+    home: {
+      guestInfoItems: [
+        '14:00부터 체크인',
+        '12:00 전 체크아웃',
+        '현지 규정에 따라 체크인 시 여권이 필요할 수 있습니다.',
+        '선택 가능한 결제 방법으로 결제하실 수 있습니다.',
+        'Lune 팀은 여러 언어로 고객을 지원할 수 있습니다.',
+        '호텔 위치: 92-94 Thạch Lam, Sơn Trà, Đà Nẵng.',
+        '공항 픽업, 얼리 체크인 또는 장기 숙박 지원이 필요하시면 문의해 주세요.',
+      ],
+    },
+    footer: {
+      description:
+        '미케 해변 근처의 새롭고 깨끗한 부티크 아파트 숙소로, 커플, 가족, 출장객, 장기 투숙객에게 적합합니다.',
+    },
+  },
+  ja: {
+    home: {
+      guestInfoItems: [
+        'チェックインは14:00から',
+        'チェックアウトは12:00まで',
+        '現地規定によりチェックイン時にパスポート提示が必要な場合があります。',
+        '利用可能な支払い方法でお支払いいただけます。',
+        'Luneチームは複数言語でサポートできます。',
+        'ホテル所在地: 92-94 Thạch Lam, Sơn Trà, Đà Nẵng。',
+        '空港送迎、早めのチェックイン、長期滞在サポートが必要な場合はご連絡ください。',
+      ],
+    },
+    footer: {
+      description:
+        'ミーケービーチ近くの新しく清潔なブティックアパートメント。カップル、ご家族、出張、長期滞在に適しています。',
+    },
+  },
+};
+
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
@@ -168,6 +255,10 @@ export function applyLiveTranslationOverrides(translations, languageOptions) {
   ]);
 
   Object.entries(overrides).forEach(([language, pack]) => {
+    translations[language] = mergeDeep(translations[language] || translations.en, pack);
+  });
+
+  Object.entries(polishOverrides).forEach(([language, pack]) => {
     translations[language] = mergeDeep(translations[language] || translations.en, pack);
   });
 }
