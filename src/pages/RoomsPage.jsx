@@ -7,7 +7,7 @@ import RoomCard from '../components/RoomCard.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import { fetchRoomsWithFallback } from '../services/roomApiService.js';
-import { buildBookingDraft, getDefaultDates, validateStay } from '../utils/booking.js';
+import { addDays, buildBookingDraft, getDefaultDates, toDateInputValue, validateStay } from '../utils/booking.js';
 import { isRoomAvailable } from '../utils/bookingAvailabilityUtils.js';
 import { saveBookingDraft } from '../utils/storage.js';
 
@@ -36,6 +36,7 @@ export default function RoomsPage() {
   const [processingRoom, setProcessingRoom] = useState('');
   const roomTypes = [...new Set(rooms.map((room) => room.type).filter(Boolean))];
   const { t, currentLanguage } = useTranslation();
+  const today = toDateInputValue(new Date());
 
   useEffect(() => {
     const refresh = () => {
@@ -60,7 +61,7 @@ export default function RoomsPage() {
     }).then(({ rooms: nextRooms }) => {
       if (!ignore) setRooms(nextRooms);
     }).catch((error) => {
-      if (!ignore) setBookingError(error.message || 'Could not load rooms from backend.');
+      if (!ignore) setBookingError(error.message || t('errors.apiUnavailable'));
     });
     return () => {
       ignore = true;
@@ -77,7 +78,24 @@ export default function RoomsPage() {
   }, [bookings, filters, rooms]);
 
   const updateFilter = (key, value) => {
-    setFilters((current) => ({ ...current, [key]: value }));
+    setFilters((current) => {
+      if (key === 'checkIn') {
+        const safeCheckIn = value && value < today ? today : value;
+        const minCheckout = safeCheckIn ? toDateInputValue(addDays(new Date(`${safeCheckIn}T12:00:00`), 1)) : '';
+        return {
+          ...current,
+          checkIn: safeCheckIn,
+          checkOut: current.checkOut && safeCheckIn && current.checkOut <= safeCheckIn ? minCheckout : current.checkOut,
+        };
+      }
+      if (key === 'checkOut' && current.checkIn && value <= current.checkIn) {
+        return {
+          ...current,
+          checkOut: toDateInputValue(addDays(new Date(`${current.checkIn}T12:00:00`), 1)),
+        };
+      }
+      return { ...current, [key]: value };
+    });
     setBookingError('');
   };
 
@@ -133,6 +151,7 @@ export default function RoomsPage() {
                 <input
                   className="input-field"
                   type="date"
+                  min={today}
                   value={filters.checkIn}
                   onChange={(event) => updateFilter('checkIn', event.target.value)}
                 />
@@ -142,6 +161,7 @@ export default function RoomsPage() {
                 <input
                   className="input-field"
                   type="date"
+                  min={filters.checkIn ? toDateInputValue(addDays(new Date(`${filters.checkIn}T12:00:00`), 1)) : today}
                   value={filters.checkOut}
                   onChange={(event) => updateFilter('checkOut', event.target.value)}
                 />
@@ -206,7 +226,7 @@ export default function RoomsPage() {
           <div>
             <RevealOnScroll variant="float" className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div>
-                <p className="eyebrow">Available stays</p>
+                <p className="eyebrow">{t('rooms.availableStays')}</p>
                 <h2 className="section-title mt-3">{t('rooms.title')}</h2>
               </div>
               <p className="text-sm font-medium text-stone-600">

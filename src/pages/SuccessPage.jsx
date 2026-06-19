@@ -4,9 +4,8 @@ import { Link } from 'react-router-dom';
 import BookingSummary from '../components/BookingSummary.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
-import { createBookingCode } from '../utils/booking.js';
 import { formatDisplayDate } from '../utils/dateFormatUtils.js';
-import { loadConfirmedBooking, saveConfirmedBooking } from '../utils/storage.js';
+import { loadConfirmedBooking } from '../utils/storage.js';
 
 export default function SuccessPage() {
   const [booking, setBooking] = useState(null);
@@ -18,16 +17,30 @@ export default function SuccessPage() {
     const confirmed = loadConfirmedBooking();
     if (confirmed) {
       setBooking(confirmed);
-      return;
     }
-    const fallback = { bookingCode: createBookingCode(), bookingStatus: 'received', paymentStatus: 'pending' };
-    saveConfirmedBooking(fallback);
-    setBooking(fallback);
   }, []);
 
   const copyCode = async () => {
-    await navigator.clipboard?.writeText(booking?.bookingCode || '');
-    setCopied(true);
+    const code = booking?.bookingCode || '';
+    if (!code) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = code;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
   };
 
   const paymentMethodLabel = {
@@ -48,6 +61,13 @@ export default function SuccessPage() {
   }[booking?.paymentMethod] || booking?.paymentMethod;
 
   const guestName = booking?.guestInfo?.fullName || booking?.guest?.fullName;
+  const statusLabel = (type, value) => {
+    if (!value) return '';
+    const normalized = String(value).toLowerCase();
+    const key = `status.${type}.${normalized}`;
+    const label = t(key);
+    return label === key ? String(value).replaceAll('_', ' ') : label;
+  };
 
   const detailRows = [
     [t('common.guestName'), guestName],
@@ -57,9 +77,25 @@ export default function SuccessPage() {
     [t('common.nights'), booking?.nights],
     [t('common.guests'), booking?.guests],
     [t('common.selectedPaymentMethod'), paymentMethodLabel],
-    [t('common.paymentStatus'), booking?.paymentStatus?.replaceAll('_', ' ')],
-    [t('common.bookingStatus'), booking?.bookingStatus],
+    [t('common.paymentStatus'), statusLabel('payment', booking?.paymentStatus)],
+    [t('common.bookingStatus'), statusLabel('booking', booking?.bookingStatus)],
   ].filter(([, value]) => value !== undefined && value !== null && value !== '');
+
+  if (!booking?.bookingCode) {
+    return (
+      <section className="section-space bg-lune-cream">
+        <div className="page-shell">
+          <div className="mx-auto max-w-xl rounded-lg border border-stone-200 bg-white p-8 text-center shadow-soft">
+            <h1 className="font-display text-4xl font-bold text-lune-ink">{t('success.noBookingTitle')}</h1>
+            <p className="mt-3 text-sm leading-7 text-stone-600">{t('success.noBookingBody')}</p>
+            <Link to="/rooms" className="btn-gold mt-6">
+              {t('booking.browseRooms')}
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <RevealOnScroll as="section" direction="none" duration={450} className="section-space bg-lune-cream">

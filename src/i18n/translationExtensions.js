@@ -466,6 +466,174 @@ function mergeDeep(target, source) {
   return result;
 }
 
+const productionFixPacks = {
+  en: {
+    rooms: {
+      availableStays: 'Available stays',
+      noRoomsAvailable: 'No rooms available for selected dates. Please try another date or contact us.',
+    },
+    payment: {
+      securityNotice:
+        'For your safety, do not enter card numbers, OTP codes, passwords, or banking app credentials on this website. Lune will only confirm payment through official bank transfer or direct support.',
+    },
+    success: {
+      noBookingTitle: 'No confirmed booking found',
+      noBookingBody: 'Please complete a room reservation first. A booking code is only shown after a successful booking.',
+    },
+    status: {
+      booking: { received: 'Received', confirmed: 'Confirmed', cancelled: 'Cancelled' },
+      payment: {
+        pending: 'Pending',
+        paid: 'Paid',
+        pay_at_property: 'Pay at property',
+        paid_mock: 'Paid',
+        failed: 'Failed',
+        refunded: 'Refunded',
+      },
+    },
+    chat: {
+      aiTranslated: 'Auto translated',
+      originalMessage: 'Original message',
+      waitMoment: 'Thank you. Please wait a moment, our Lune team will reply shortly.',
+    },
+    errors: {
+      apiUnavailable: 'We could not connect to the booking system. Please try again or contact Lune support.',
+    },
+  },
+  vi: {
+    rooms: {
+      availableStays: 'Các phòng đang có',
+      noRoomsAvailable: 'Không có phòng trống cho ngày đã chọn. Vui lòng thử ngày khác hoặc liên hệ Lune.',
+    },
+    payment: {
+      securityNotice:
+        'Để đảm bảo an toàn, vui lòng không nhập số thẻ, mã OTP, mật khẩu hoặc thông tin đăng nhập ngân hàng trên website này. Lune chỉ xác nhận thanh toán qua chuyển khoản chính thức hoặc hỗ trợ trực tiếp.',
+    },
+    success: {
+      noBookingTitle: 'Chưa có đặt phòng được xác nhận',
+      noBookingBody: 'Vui lòng hoàn tất đặt phòng trước. Mã đặt phòng chỉ hiển thị sau khi gửi booking thành công.',
+    },
+    status: {
+      booking: { received: 'Đã tiếp nhận', confirmed: 'Đã xác nhận', cancelled: 'Đã hủy' },
+      payment: {
+        pending: 'Đang chờ',
+        paid: 'Đã thanh toán',
+        pay_at_property: 'Thanh toán tại nơi lưu trú',
+        paid_mock: 'Đã thanh toán',
+        failed: 'Thất bại',
+        refunded: 'Đã hoàn tiền',
+      },
+    },
+    chat: {
+      aiTranslated: 'Dịch tự động',
+      originalMessage: 'Tin nhắn gốc',
+      waitMoment: 'Cảm ơn quý khách. Vui lòng chờ trong giây lát, đội ngũ Lune sẽ phản hồi sớm.',
+    },
+    errors: {
+      apiUnavailable: 'Không thể kết nối hệ thống đặt phòng. Vui lòng thử lại hoặc liên hệ Lune.',
+    },
+  },
+  zh: {
+    rooms: {
+      availableStays: '可预订房型',
+      noRoomsAvailable: '所选日期暂无可订房间。请更换日期或联系 Lune。',
+    },
+    payment: {
+      securityNotice:
+        '为确保安全，请勿在本网站输入银行卡号、OTP 验证码、密码或银行应用登录信息。Lune 仅通过官方银行转账或直接客服确认付款。',
+    },
+    success: {
+      noBookingTitle: '未找到已确认的预订',
+      noBookingBody: '请先完成房间预订。预订成功后才会显示预订编号。',
+    },
+    status: {
+      booking: { received: '已收到', confirmed: '已确认', cancelled: '已取消' },
+      payment: {
+        pending: '待处理',
+        paid: '已付款',
+        pay_at_property: '到店付款',
+        paid_mock: '已付款',
+        failed: '失败',
+        refunded: '已退款',
+      },
+    },
+    chat: {
+      aiTranslated: '自动翻译',
+      originalMessage: '原始消息',
+      waitMoment: '谢谢您。请稍候，Lune 团队会尽快回复。',
+    },
+    errors: {
+      apiUnavailable: '无法连接预订系统。请重试或联系 Lune 客服。',
+    },
+  },
+  ko: {
+    rooms: {
+      availableStays: '예약 가능한 객실',
+      noRoomsAvailable: '선택하신 날짜에 예약 가능한 객실이 없습니다. 다른 날짜를 선택하시거나 Lune에 문의해 주세요.',
+    },
+    payment: {
+      securityNotice:
+        '안전을 위해 이 웹사이트에 카드 번호, OTP 코드, 비밀번호 또는 은행 앱 로그인 정보를 입력하지 마세요. Lune은 공식 계좌 이체 또는 직접 상담을 통해서만 결제를 확인합니다.',
+    },
+    success: {
+      noBookingTitle: '확인된 예약이 없습니다',
+      noBookingBody: '먼저 객실 예약을 완료해 주세요. 예약 코드는 예약이 성공적으로 접수된 후에만 표시됩니다.',
+    },
+    status: {
+      booking: { received: '접수됨', confirmed: '확정됨', cancelled: '취소됨' },
+      payment: {
+        pending: '대기 중',
+        paid: '결제 완료',
+        pay_at_property: '현장 결제',
+        paid_mock: '결제 완료',
+        failed: '실패',
+        refunded: '환불됨',
+      },
+    },
+    chat: {
+      aiTranslated: '자동 번역',
+      originalMessage: '원문 메시지',
+      waitMoment: '감사합니다. 잠시만 기다려 주세요. Lune 팀이 곧 답변드리겠습니다.',
+    },
+    errors: {
+      apiUnavailable: '예약 시스템에 연결할 수 없습니다. 다시 시도하시거나 Lune에 문의해 주세요.',
+    },
+  },
+  ru: {
+    rooms: {
+      availableStays: 'Доступные номера',
+      noRoomsAvailable: 'На выбранные даты нет доступных номеров. Попробуйте другие даты или свяжитесь с Lune.',
+    },
+    payment: {
+      securityNotice:
+        'В целях безопасности не вводите на этом сайте номера карт, OTP-коды, пароли или данные входа в банковское приложение. Lune подтверждает оплату только через официальный банковский перевод или прямую поддержку.',
+    },
+    success: {
+      noBookingTitle: 'Подтвержденное бронирование не найдено',
+      noBookingBody: 'Пожалуйста, сначала завершите бронирование номера. Код бронирования появится только после успешной отправки заявки.',
+    },
+    status: {
+      booking: { received: 'Получено', confirmed: 'Подтверждено', cancelled: 'Отменено' },
+      payment: {
+        pending: 'Ожидает оплаты',
+        paid: 'Оплачено',
+        pay_at_property: 'Оплата на месте',
+        paid_mock: 'Оплачено',
+        failed: 'Ошибка',
+        refunded: 'Возврат выполнен',
+      },
+    },
+    chat: {
+      aiTranslated: 'Автоматический перевод',
+      originalMessage: 'Исходное сообщение',
+      waitMoment: 'Спасибо. Пожалуйста, подождите немного, команда Lune скоро ответит.',
+    },
+    errors: {
+      apiUnavailable: 'Не удалось подключиться к системе бронирования. Попробуйте еще раз или свяжитесь с Lune.',
+    },
+  },
+};
+
 export function applyTranslationExtensions(translations, languageOptions, futureLanguages) {
   languageOptions.splice(0, languageOptions.length, ...allLanguageOptions);
   futureLanguages.splice(0, futureLanguages.length, ...futureLanguageOptions);
@@ -483,5 +651,9 @@ export function applyTranslationExtensions(translations, languageOptions, future
 
   Object.entries(paymentOnlyPacks).forEach(([language, pack]) => {
     translations[language] = mergeDeep(translations.en, pack);
+  });
+
+  Object.entries(productionFixPacks).forEach(([language, pack]) => {
+    translations[language] = mergeDeep(translations[language] || translations.en, pack);
   });
 }

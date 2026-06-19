@@ -19,6 +19,57 @@ function toSlug(value) {
     .replace(/^-+|-+$/g, '');
 }
 
+function splitAdminRoomInput(input) {
+  const {
+    image,
+    gallery,
+    amenities,
+    priceNote,
+    ...roomData
+  } = input;
+
+  return {
+    roomData,
+    image: image || '',
+    gallery: Array.isArray(gallery) ? gallery : [],
+    amenities: Array.isArray(amenities) ? amenities : [],
+    priceNote: priceNote || '',
+  };
+}
+
+async function syncRoomImages(tx, roomId, { image, gallery, name }) {
+  const urls = [...new Set([image, ...gallery].filter(Boolean))];
+  await tx.roomImage.deleteMany({ where: { roomId } });
+  if (!urls.length) return;
+
+  await tx.roomImage.createMany({
+    data: urls.map((url, index) => ({
+      roomId,
+      url,
+      altText: `${name} image ${index + 1}`,
+      isMain: index === 0,
+      sortOrder: index,
+    })),
+  });
+}
+
+async function syncRoomAmenities(tx, roomId, amenities) {
+  await tx.roomAmenity.deleteMany({ where: { roomId } });
+  const uniqueAmenities = [...new Set(amenities.filter(Boolean))];
+  if (!uniqueAmenities.length) return;
+
+  for (const key of uniqueAmenities) {
+    const amenity = await tx.amenity.upsert({
+      where: { key },
+      update: {},
+      create: { key },
+    });
+    await tx.roomAmenity.create({
+      data: { roomId, amenityId: amenity.id },
+    });
+  }
+}
+
 function localizeRoom(room, lang = 'en') {
   const translation =
     room.translations?.find((item) => item.languageCode === lang) ||
@@ -149,29 +200,57 @@ export async function getAdminRoom(id) {
 }
 
 export async function createAdminRoom(input) {
-  return prisma.room.create({
-    data: {
-      ...input,
-      slug: input.slug || toSlug(input.name),
-      translations: {
-        create: {
-          languageCode: 'en',
-          name: input.name,
-          shortDescription: input.shortDescription,
-          fullDescription: input.fullDescription,
+  const { roomData, image, gallery, amenities, priceNote } = splitAdminRoomInput(input);
+  return prisma.$transaction(async (tx) => {
+    const room = await tx.room.create({
+      data: {
+        ...roomData,
+        slug: roomData.slug || toSlug(roomData.name),
+        translations: {
+          create: {
+            languageCode: 'en',
+            name: roomData.name,
+            shortDescription: roomData.shortDescription,
+            fullDescription: roomData.fullDescription,
+            priceNote,
+          },
         },
       },
-    },
-    include: roomInclude,
+    });
+    await syncRoomImages(tx, room.id, { image, gallery, name: roomData.name });
+    await syncRoomAmenities(tx, room.id, amenities);
+    return tx.room.findUnique({ where: { id: room.id }, include: roomInclude });
   });
 }
 
 export async function updateAdminRoom(id, input) {
   await getAdminRoom(id);
-  return prisma.room.update({
-    where: { id },
-    data: { ...input, slug: input.slug || toSlug(input.name) },
-    include: roomInclude,
+  const { roomData, image, gallery, amenities, priceNote } = splitAdminRoomInput(input);
+  return prisma.$transaction(async (tx) => {
+    const room = await tx.room.update({
+      where: { id },
+      data: { ...roomData, slug: roomData.slug || toSlug(roomData.name) },
+    });
+    await tx.roomTranslation.upsert({
+      where: { roomId_languageCode: { roomId: id, languageCode: 'en' } },
+      update: {
+        name: roomData.name,
+        shortDescription: roomData.shortDescription,
+        fullDescription: roomData.fullDescription,
+        priceNote,
+      },
+      create: {
+        roomId: id,
+        languageCode: 'en',
+        name: roomData.name,
+        shortDescription: roomData.shortDescription,
+        fullDescription: roomData.fullDescription,
+        priceNote,
+      },
+    });
+    await syncRoomImages(tx, id, { image, gallery, name: roomData.name });
+    await syncRoomAmenities(tx, id, amenities);
+    return tx.room.findUnique({ where: { id: room.id }, include: roomInclude });
   });
 }
 

@@ -1,5 +1,6 @@
 import { MessageCircle, Send, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { storageKeys } from '../../constants/storageKeys.js';
 import { useTranslation } from '../../i18n/useTranslation.js';
 import {
@@ -28,6 +29,8 @@ export default function CustomerChatWidget() {
   const [unread, setUnread] = useState(0);
   const [translatedMessages, setTranslatedMessages] = useState({});
   const listRef = useRef(null);
+  const location = useLocation();
+  const hasMobileBookingBar = location.pathname.startsWith('/rooms/');
 
   useEffect(() => {
     const sessionCode = localStorage.getItem(storageKeys.chatSessionCode);
@@ -135,7 +138,7 @@ export default function CustomerChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-5 right-4 z-50 sm:right-6">
+    <div className={`fixed right-4 z-50 sm:right-6 ${hasMobileBookingBar ? 'bottom-24 md:bottom-5' : 'bottom-5'}`}>
       {open ? (
         <section className="mb-3 flex h-[min(620px,calc(100vh-120px))] w-[calc(100vw-32px)] max-w-sm flex-col overflow-hidden rounded-lg border border-stone-200 bg-white shadow-2xl">
           <header className="flex items-center justify-between bg-lune-ink px-4 py-3 text-white">

@@ -32,3 +32,14 @@ export const paymentRateLimit = rateLimit({
     message: 'Too many payment requests. Please wait a moment and try again.',
   },
 });
+
+export const chatRateLimit = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many chat messages. Please wait a moment and try again.',
+  },
+});

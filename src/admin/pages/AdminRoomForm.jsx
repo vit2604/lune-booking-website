@@ -1,5 +1,5 @@
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AdminFormInput from '../components/AdminFormInput.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
@@ -11,6 +11,13 @@ import {
   getRoomById,
   updateRoom,
 } from '../services/adminRoomService.js';
+import { canUseMockFallback } from '../../config/apiConfig.js';
+import {
+  adminCreateRoom,
+  adminDeleteRoom,
+  adminGetRoom,
+  adminUpdateRoom,
+} from '../../services/adminApiService.js';
 
 const amenities = [
   'Free Wi-Fi',
@@ -58,16 +65,98 @@ const emptyRoom = {
   },
 };
 
+function normalizeAdminRoom(room) {
+  if (!room) return null;
+  const mainImage = room.image || room.mainImage || room.images?.find((image) => image.isMain)?.url || room.images?.[0]?.url || '';
+  const gallery = room.gallery?.length ? room.gallery : room.images?.map((image) => image.url) || (mainImage ? [mainImage] : []);
+  return {
+    ...emptyRoom,
+    ...room,
+    name: room.name || room.translations?.find?.((item) => item.languageCode === 'en')?.name || '',
+    shortDescription: room.shortDescription || '',
+    description: room.description || room.fullDescription || '',
+    price: Number(room.price || room.basePrice || 0),
+    bed: room.bed || room.bedType || '',
+    status: room.status === 'ACTIVE' ? 'active' : String(room.status || 'active').toLowerCase(),
+    image: mainImage,
+    gallery,
+    amenities: room.amenities?.map?.((item) => item.amenity?.key || item).filter(Boolean) || emptyRoom.amenities,
+    priceNote: room.priceNote || room.translations?.find?.((item) => item.languageCode === 'en')?.priceNote || '',
+  };
+}
+
+function toApiStatus(status) {
+  if (status === 'hidden') return 'HIDDEN';
+  if (status === 'unavailable') return 'UNAVAILABLE';
+  return 'ACTIVE';
+}
+
+function toRoomApiPayload(room) {
+  const gallery = room.gallery?.length ? room.gallery : [room.image || placeholderImage];
+  return {
+    slug: room.slug || generateRoomSlug(room.name),
+    name: room.name.trim(),
+    shortDescription: room.shortDescription || '',
+    fullDescription: room.description || room.fullDescription || room.shortDescription || '',
+    priceNote: room.priceNote || '',
+    basePrice: Number(room.price),
+    weekendPrice: null,
+    holidayPrice: null,
+    size: room.size || '32m2',
+    maxGuests: Number(room.maxGuests),
+    bedType: room.bed || room.bedType || 'Queen bed',
+    numberOfBeds: Number(room.numberOfBeds || 1),
+    status: toApiStatus(room.status),
+    isFeatured: Boolean(room.isFeatured),
+    sortOrder: Number(room.sortOrder || 0),
+    image: room.image || gallery[0] || placeholderImage,
+    gallery,
+    amenities: room.amenities || [],
+  };
+}
+
 export default function AdminRoomForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const existingRoom = useMemo(() => (id ? getRoomById(id) : null), [id]);
-  const [room, setRoom] = useState(() => (existingRoom ? { ...emptyRoom, ...existingRoom } : emptyRoom));
+  const [room, setRoom] = useState(emptyRoom);
   const [errors, setErrors] = useState({});
   const [toast, setToast] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(isEdit);
+  const [source, setSource] = useState('api');
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+    async function loadRoom() {
+      if (!isEdit) return;
+      setLoading(true);
+      try {
+        const data = await adminGetRoom(id);
+        if (!ignore) {
+          setRoom(normalizeAdminRoom(data));
+          setSource('api');
+        }
+      } catch (error) {
+        if (!canUseMockFallback()) {
+          if (!ignore) setErrors((current) => ({ ...current, load: error.message || 'Could not load room from backend.' }));
+          return;
+        }
+        const localRoom = getRoomById(id);
+        if (!ignore) {
+          setRoom(localRoom ? normalizeAdminRoom(localRoom) : emptyRoom);
+          setSource('local');
+        }
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+    loadRoom();
+    return () => {
+      ignore = true;
+    };
+  }, [id, isEdit]);
 
   const updateField = (field, value) => {
     setRoom((current) => ({ ...current, [field]: value }));
@@ -106,7 +195,7 @@ export default function AdminRoomForm() {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSave = (event) => {
+  const handleSave = async (event) => {
     event.preventDefault();
     if (!validate()) return;
     setSaving(true);
@@ -124,18 +213,42 @@ export default function AdminRoomForm() {
       gallery,
     };
 
-    if (isEdit) updateRoom(id, payload);
-    else createRoom(payload);
+    try {
+      if (source === 'api') {
+        const apiPayload = toRoomApiPayload(payload);
+        if (isEdit) await adminUpdateRoom(id, apiPayload);
+        else await adminCreateRoom(apiPayload);
+      } else if (isEdit) updateRoom(id, payload);
+      else createRoom(payload);
 
-    setToast('Room saved. Guest website will use the updated room data.');
-    setSaving(false);
-    setTimeout(() => navigate('/admin/rooms'), 450);
+      setToast(source === 'api'
+        ? 'Room saved to database. Guest website will use the updated room data.'
+        : 'Room saved to local demo data.');
+      setTimeout(() => navigate('/admin/rooms'), 450);
+    } catch (error) {
+      if (canUseMockFallback()) {
+        if (isEdit) updateRoom(id, payload);
+        else createRoom(payload);
+        setSource('local');
+        setToast('Backend unavailable. Room saved to local demo data only.');
+        setTimeout(() => navigate('/admin/rooms'), 450);
+        return;
+      }
+      setErrors((current) => ({ ...current, submit: error.message || 'Could not save room.' }));
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = () => {
-    deleteRoom(id);
+  const handleDelete = async () => {
+    if (source === 'api') await adminDeleteRoom(id);
+    else deleteRoom(id);
     navigate('/admin/rooms');
   };
+
+  if (loading) {
+    return <div className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">Loading room...</div>;
+  }
 
   return (
     <form className="space-y-6" onSubmit={handleSave}>
@@ -165,6 +278,11 @@ export default function AdminRoomForm() {
       </div>
 
       {toast ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-700">{toast}</div> : null}
+      {errors.load || errors.submit ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
+          {errors.load || errors.submit}
+        </div>
+      ) : null}
 
       <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
         <h3 className="font-display text-3xl font-bold text-lune-ink">Basic information</h3>

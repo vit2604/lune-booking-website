@@ -16,6 +16,24 @@ export function adminListRooms() {
   return apiRequest('/admin/rooms');
 }
 
+export function adminGetRoom(roomId) {
+  return apiRequest(`/admin/rooms/${roomId}`);
+}
+
+export function adminCreateRoom(room) {
+  return apiRequest('/admin/rooms', {
+    method: 'POST',
+    body: room,
+  });
+}
+
+export function adminUpdateRoom(roomId, room) {
+  return apiRequest(`/admin/rooms/${roomId}`, {
+    method: 'PUT',
+    body: room,
+  });
+}
+
 export function adminDeleteRoom(roomId) {
   return apiRequest(`/admin/rooms/${roomId}`, { method: 'DELETE' });
 }

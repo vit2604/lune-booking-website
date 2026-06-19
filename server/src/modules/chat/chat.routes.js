@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAdmin, requireAuth } from '../../middlewares/authMiddleware.js';
+import { chatRateLimit } from '../../middlewares/rateLimitMiddleware.js';
 import { validate } from '../../middlewares/validateMiddleware.js';
 import {
   adminChatStats,
@@ -19,6 +20,7 @@ import { adminMessageSchema, createSessionSchema, guestMessageSchema } from './c
 export const publicChatRouter = Router();
 export const adminChatRouter = Router();
 
+publicChatRouter.use(chatRateLimit);
 publicChatRouter.post('/sessions', validate(createSessionSchema), createSession);
 publicChatRouter.get('/sessions/:sessionCode/messages', publicMessages);
 publicChatRouter.post('/sessions/:sessionCode/messages', validate(guestMessageSchema), publicSendMessage);

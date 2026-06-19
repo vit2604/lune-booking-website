@@ -19,6 +19,12 @@ export default function BookingSummary({ booking, room, className = '' }) {
   const { currentCurrency } = useCurrency();
   const approxTotal = getApproxPriceText(total, currentCurrency, currentLanguage);
   const approxNight = getApproxPriceText(pricePerNight, currentCurrency, currentLanguage);
+  const statusLabel = (type, value) => {
+    if (!value) return '';
+    const key = `status.${type}.${String(value).toLowerCase()}`;
+    const label = t(key);
+    return label === key ? String(value).replaceAll('_', ' ') : label;
+  };
   const paymentLabelKey = {
     'pay-at-property': 'payment.payAtProperty',
     payAtProperty: 'payment.payAtProperty',
@@ -117,12 +123,12 @@ export default function BookingSummary({ booking, room, className = '' }) {
             </span>
             {booking.paymentStatus ? (
               <span className="rounded-md bg-white px-2 py-1 uppercase tracking-wide text-stone-500">
-                {t('common.payment')}: {booking.paymentStatus.replaceAll('_', ' ')}
+                {t('common.payment')}: {statusLabel('payment', booking.paymentStatus)}
               </span>
             ) : null}
             {booking.bookingStatus ? (
               <span className="rounded-md bg-white px-2 py-1 uppercase tracking-wide text-stone-500">
-                {t('common.booking')}: {booking.bookingStatus}
+                {t('common.booking')}: {statusLabel('booking', booking.bookingStatus)}
               </span>
             ) : null}
           </div>
