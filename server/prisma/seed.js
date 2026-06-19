@@ -290,9 +290,22 @@ async function seedAdmin() {
   }
 
   const existing = await prisma.user.findUnique({ where: { username: adminUsername } });
-  if (existing) return;
-
   const passwordHash = await bcrypt.hash(adminPassword, saltRounds);
+
+  if (existing) {
+    await prisma.user.update({
+      where: { username: adminUsername },
+      data: {
+        name: 'Lune Admin',
+        email: adminEmail,
+        passwordHash,
+        role: 'ADMIN',
+        isActive: true,
+      },
+    });
+    return;
+  }
+
   await prisma.user.create({
     data: {
       name: 'Lune Admin',
