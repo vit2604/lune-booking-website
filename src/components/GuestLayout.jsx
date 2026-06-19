@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { getWebsiteSettings } from '../admin/services/adminSettingsService.js';
 import Footer from './Footer.jsx';
 import Navbar from './Navbar.jsx';
-import CustomerChatWidget from './chat/CustomerChatWidget.jsx';
+
+const CustomerChatWidget = lazy(() => import('./chat/CustomerChatWidget.jsx'));
 
 export default function GuestLayout() {
   const [settings, setSettings] = useState(getWebsiteSettings());
@@ -33,7 +34,9 @@ export default function GuestLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      <CustomerChatWidget />
+      <Suspense fallback={null}>
+        <CustomerChatWidget />
+      </Suspense>
       <Footer />
     </div>
   );
