@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { paymentMethodKeys } from '../../constants/paymentMethods.js';
 
 export const createBookingSchema = z.object({
   body: z.object({
@@ -16,7 +17,7 @@ export const createBookingSchema = z.object({
     }),
     specialRequest: z.string().optional(),
     arrivalTime: z.string().optional(),
-    paymentMethod: z.string().optional(),
+    paymentMethod: z.enum(paymentMethodKeys).optional(),
   }),
   query: z.object({}).passthrough(),
   params: z.object({}).passthrough(),

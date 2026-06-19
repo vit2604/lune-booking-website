@@ -127,6 +127,8 @@ export const translations = {
       confirmBooking: 'Confirm Booking',
       safetyNote:
         'Please only make payment using the official bank information shown on this website. After payment, our team will contact you to confirm your booking.',
+      securityNotice:
+        'For your safety, do not enter card numbers, OTP codes, passwords, or banking app credentials on this website. Lune will only confirm payment through official bank transfer or direct support.',
     },
     success: {
       received: 'Your booking has been received',

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAdmin, requireAuth } from '../../middlewares/authMiddleware.js';
+import { paymentRateLimit } from '../../middlewares/rateLimitMiddleware.js';
 import { validate } from '../../middlewares/validateMiddleware.js';
 import {
   adminPaymentSettings,
@@ -16,8 +17,8 @@ export const adminPaymentRouter = Router();
 export const paymentWebhookRouter = Router();
 
 publicPaymentRouter.get('/payment-methods', publicPaymentMethods);
-publicPaymentRouter.post('/payments/create', validate(createPaymentSchema), createPayment);
-publicPaymentRouter.post('/payments/verify', validate(verifyPaymentSchema), verifyPayment);
+publicPaymentRouter.post('/payments/create', paymentRateLimit, validate(createPaymentSchema), createPayment);
+publicPaymentRouter.post('/payments/verify', paymentRateLimit, validate(verifyPaymentSchema), verifyPayment);
 
 adminPaymentRouter.use(requireAuth, requireAdmin);
 adminPaymentRouter.get('/payment-settings', adminPaymentSettings);

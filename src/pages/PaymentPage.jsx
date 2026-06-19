@@ -22,6 +22,18 @@ import { loadBookingDraft, saveBookingDraft, saveConfirmedBooking } from '../uti
 const gatewayMethods = ['creditCard', 'stripe', 'paypal'];
 const walletMethods = ['vnpay', 'momo', 'zaloPay'];
 
+function safePaymentImageSrc(src) {
+  const value = String(src || '').trim();
+  if (!value) return '';
+  if (value.startsWith('/images/') || value.startsWith('data:image/')) return value;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' ? url.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
 function roomFromBookingDraft(booking) {
   if (!booking?.roomId) return null;
   return {
@@ -91,6 +103,8 @@ export default function PaymentPage() {
   const selectedMethod = enabledMethods.find((method) => method.id === normalizedPaymentMethod);
   const bankMethod = enabledMethods.find((method) => method.id === 'bankTransfer') || settings.paymentMethods?.bankTransfer || {};
   const vietQrMethod = enabledMethods.find((method) => method.id === 'vietQr') || settings.paymentMethods?.vietQr || {};
+  const bankQrSrc = safePaymentImageSrc(bankMethod.qrImageUrl || settings.qrImageUrl);
+  const vietQrSrc = safePaymentImageSrc(vietQrMethod.qrImageUrl || settings.qrImageUrl);
 
   if (!booking || !room) {
     return (
@@ -225,9 +239,9 @@ export default function PaymentPage() {
             </div>
           </dl>
           <div className="mt-4 grid place-items-center rounded-lg bg-white p-5">
-            {bankMethod.qrImageUrl || settings.qrImageUrl ? (
+            {bankQrSrc ? (
               <img
-                src={bankMethod.qrImageUrl || settings.qrImageUrl}
+                src={bankQrSrc}
                 alt={t('payment.qrPlaceholder')}
                 className="h-56 w-56 rounded-md object-contain"
               />
@@ -246,9 +260,9 @@ export default function PaymentPage() {
         <div className="mt-6 rounded-lg border border-stone-200 bg-white p-5">
           <h2 className="text-lg font-semibold text-lune-ink">{t('payment.vietQr')}</h2>
           <div className="mt-4 grid place-items-center rounded-lg bg-lune-cream p-5">
-            {vietQrMethod.qrImageUrl || settings.qrImageUrl ? (
+            {vietQrSrc ? (
               <img
-                src={vietQrMethod.qrImageUrl || settings.qrImageUrl}
+                src={vietQrSrc}
                 alt={t('payment.qrPlaceholder')}
                 className="h-56 w-56 rounded-md object-contain"
               />
@@ -312,6 +326,9 @@ export default function PaymentPage() {
             <p className="mt-3 text-sm leading-7 text-stone-600">{t('payment.mockNotice')}</p>
             <p className="mt-3 rounded-lg bg-lune-cream p-4 text-sm leading-7 text-stone-700">
               {t('payment.safetyNote')}
+            </p>
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">
+              {t('payment.securityNotice')}
             </p>
 
             <div className="mt-6">
