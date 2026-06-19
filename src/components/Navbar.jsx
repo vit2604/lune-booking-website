@@ -44,10 +44,14 @@ export default function Navbar() {
           : 'sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur'
       }
     >
-      <nav className="page-shell flex h-20 items-center justify-between gap-6">
+      <nav className="page-shell flex h-24 items-center justify-between gap-6 md:h-28">
         <Link to="/" className="flex min-w-0 items-center gap-3" onClick={() => setOpen(false)}>
           {branding.logoUrl ? (
-            <img src={branding.logoUrl} alt={branding.shortName} className="h-16 w-20 shrink-0 object-contain sm:h-[76px] sm:w-24" />
+            <img
+              src={branding.logoUrl}
+              alt={branding.shortName}
+              className="h-20 w-28 shrink-0 object-contain sm:h-24 sm:w-32 lg:h-28 lg:w-36"
+            />
           ) : (
             <span
               className={`grid h-10 w-10 place-items-center rounded-md font-display text-xl font-bold ${
@@ -58,7 +62,7 @@ export default function Navbar() {
             </span>
           )}
           <span
-            className={`max-w-[150px] text-[11px] font-bold uppercase leading-4 tracking-[0.18em] sm:max-w-[220px] sm:text-xs ${
+            className={`max-w-[190px] text-xs font-bold uppercase leading-5 tracking-[0.16em] sm:max-w-[270px] sm:text-sm ${
               isHome ? 'text-white' : 'text-lune-ink'
             }`}
           >

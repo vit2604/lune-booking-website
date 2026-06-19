@@ -7,7 +7,7 @@ const POLICIES_KEY = 'lune_policy_settings';
 const WEBSITE_KEY = 'lune_website_settings';
 const LANGUAGE_SETTINGS_KEY = 'lune_language_settings';
 const BRANDING_ASSETS_VERSION_KEY = 'lune_branding_assets_version';
-const BRANDING_ASSETS_VERSION = '2026-06-19-brand-font-home-polish';
+const BRANDING_ASSETS_VERSION = '2026-06-19-solid-search-logo-proof-polish';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

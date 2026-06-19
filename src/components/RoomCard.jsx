@@ -14,13 +14,20 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
   const approxText = getApproxPriceText(room.price, currentCurrency, currentLanguage);
 
   return (
-    <article className="card flex h-full flex-col overflow-hidden">
-      <Link to={`/rooms/${room.slug}`} className="block overflow-hidden">
+    <article className="group flex h-full flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-[0_18px_55px_rgba(23,20,18,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_80px_rgba(23,20,18,0.14)]">
+      <Link to={`/rooms/${room.slug}`} className="relative block overflow-hidden">
         <img
           src={room.image}
           alt={localizedRoom.name}
-          className="h-64 w-full object-cover transition duration-500 hover:scale-105"
+          className="h-72 w-full object-cover transition duration-700 group-hover:scale-105"
         />
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/58 to-transparent" />
+        <span className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-lune-ink shadow-soft backdrop-blur">
+          {t('rooms.availableStays')}
+        </span>
+        <div className="absolute bottom-4 left-4 rounded-full bg-lune-gold px-4 py-2 text-sm font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]">
+          {formatVnd(room.price)} {t('common.perNight')}
+        </div>
       </Link>
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-4">
@@ -28,7 +35,7 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
             <p className="eyebrow">{localizedRoom.type}</p>
             <h3 className="mt-2 font-display text-3xl font-bold text-lune-ink">{localizedRoom.name}</h3>
           </div>
-          <div className="text-right">
+          <div className="hidden text-right sm:block">
             <p className="text-lg font-bold text-lune-ink">{formatVnd(room.price)}</p>
             <p className="text-xs text-stone-500">{t('common.perNight')}</p>
             {approxText ? <p className="mt-1 text-xs text-stone-500">{approxText}</p> : null}
