@@ -76,6 +76,21 @@
     @apply text-base leading-7 text-stone-600 sm:text-sm;
   }
 
+  .lune-hero-title {
+    text-shadow:
+      0 3px 1px rgba(0, 0, 0, 0.16),
+      0 16px 42px rgba(0, 0, 0, 0.36),
+      0 0 1px rgba(255, 255, 255, 0.55);
+    -webkit-text-stroke: 0.55px rgba(255, 255, 255, 0.2);
+  }
+
+  .lune-hero-depth-layer {
+    clip-path: polygon(58% 0, 100% 0, 100% 100%, 69% 100%, 64% 76%, 72% 48%, 63% 23%);
+    filter: saturate(1.05) contrast(1.05);
+    mask-image: linear-gradient(90deg, transparent 0%, transparent 53%, rgba(0, 0, 0, 0.2) 61%, #000 78%);
+    opacity: 0.86;
+  }
+
   .reveal-on-scroll {
     opacity: 0;
     transform: var(--reveal-transform, translate3d(0, 28px, 0));

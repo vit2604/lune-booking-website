@@ -6,6 +6,7 @@ import { corsMiddleware } from './config/cors.js';
 import { env } from './config/env.js';
 import { authRateLimit } from './middlewares/rateLimitMiddleware.js';
 import { errorMiddleware, notFoundMiddleware } from './middlewares/errorMiddleware.js';
+import { aiRouter } from './modules/ai/ai.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { adminBookingRouter, publicBookingRouter } from './modules/bookings/booking.routes.js';
 import { adminChatRouter, publicChatRouter } from './modules/chat/chat.routes.js';
@@ -51,6 +52,7 @@ export function createApp() {
   app.use('/api', publicPaymentRouter);
   app.use('/api/settings', publicSettingRouter);
   app.use('/api/currency', currencyRouter);
+  app.use('/api/ai', aiRouter);
   app.use('/api/chat', publicChatRouter);
   app.use('/api/admin/rooms', adminRoomRouter);
   app.use('/api/admin/bookings', adminBookingRouter);

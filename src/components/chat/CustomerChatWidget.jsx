@@ -7,6 +7,7 @@ import {
   getChatMessagesWithFallback,
   sendGuestMessageWithFallback,
 } from '../../services/chatApiService.js';
+import { translateForGuest } from '../../services/aiTranslationService.js';
 import { connectChatSocket } from '../../services/socketChatClient.js';
 
 const quickQuestionKeys = [
@@ -25,6 +26,7 @@ export default function CustomerChatWidget() {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [translatedMessages, setTranslatedMessages] = useState({});
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -49,9 +51,45 @@ export default function CustomerChatWidget() {
   }, [currentLanguage, open, session?.sessionCode]);
 
   useEffect(() => {
+    if (!session?.sessionCode) return undefined;
+    const refreshMessages = () => {
+      getChatMessagesWithFallback(session.sessionCode)
+        .then(({ messages: nextMessages }) => {
+          setMessages((current) => {
+            const pendingMessages = current.filter((item) => String(item.id || '').startsWith('pending-'));
+            const systemMessages = current.filter((item) => item.senderType === 'SYSTEM');
+            const merged = [...nextMessages, ...pendingMessages, ...systemMessages];
+            return merged.filter(
+              (message, index, all) =>
+                all.findIndex((item) => (item.id || item.createdAt) === (message.id || message.createdAt)) === index,
+            );
+          });
+        })
+        .catch(() => {});
+    };
+    refreshMessages();
+    const interval = window.setInterval(refreshMessages, open ? 4500 : 9000);
+    return () => window.clearInterval(interval);
+  }, [open, session?.sessionCode]);
+
+  useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
     if (open) setUnread(0);
   }, [messages, open]);
+
+  useEffect(() => {
+    messages.forEach((message) => {
+      const key = message.id || message.createdAt;
+      const isAdmin = message.senderType === 'ADMIN' || message.sender === 'admin';
+      if (!key || !isAdmin || currentLanguage === 'vi' || translatedMessages[key]) return;
+      translateForGuest(message.message || message.text || '', currentLanguage).then((result) => {
+        setTranslatedMessages((current) => ({
+          ...current,
+          [key]: result,
+        }));
+      });
+    });
+  }, [currentLanguage, messages, translatedMessages]);
 
   const ensureSession = async () => {
     if (session?.sessionCode) return session;
@@ -65,21 +103,35 @@ export default function CustomerChatWidget() {
     const clean = text.trim();
     if (!clean || sending) return;
     setSending(true);
-    const currentSession = await ensureSession();
-    const optimisticMessage = {
-      id: `pending-${Date.now()}`,
-      sessionCode: currentSession.sessionCode,
-      senderType: 'GUEST',
-      message: clean,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((current) => [...current, optimisticMessage]);
-    const { message } = await sendGuestMessageWithFallback(currentSession.sessionCode, clean, {
-      language: currentLanguage,
-    });
-    setMessages((current) => current.map((item) => (item.id === optimisticMessage.id ? message : item)));
-    setDraft('');
-    setSending(false);
+    try {
+      const currentSession = await ensureSession();
+      const now = Date.now();
+      const optimisticMessage = {
+        id: `pending-${now}`,
+        sessionCode: currentSession.sessionCode,
+        senderType: 'GUEST',
+        message: clean,
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((current) => [...current, optimisticMessage]);
+      const { message } = await sendGuestMessageWithFallback(currentSession.sessionCode, clean, {
+        language: currentLanguage,
+      });
+      const waitMessage = {
+        id: `system-wait-${now}`,
+        sessionCode: currentSession.sessionCode,
+        senderType: 'SYSTEM',
+        message: t('chat.waitMoment'),
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((current) => [
+        ...current.map((item) => (item.id === optimisticMessage.id ? message : item)),
+        waitMessage,
+      ]);
+      setDraft('');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -104,14 +156,24 @@ export default function CustomerChatWidget() {
             ) : null}
             {messages.map((message) => {
               const isGuest = message.senderType === 'GUEST' || message.sender === 'guest';
+              const isSystem = message.senderType === 'SYSTEM';
+              const translation = translatedMessages[message.id || message.createdAt];
+              const displayText = translation?.translated ? translation.translatedText : message.message || message.text;
               return (
-                <div key={message.id || message.createdAt} className={`flex ${isGuest ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  key={message.id || message.createdAt}
+                  className={`flex ${isSystem ? 'justify-center' : isGuest ? 'justify-end' : 'justify-start'}`}
+                >
                   <p
                     className={`max-w-[82%] rounded-lg px-3 py-2 text-sm leading-6 ${
-                      isGuest ? 'bg-lune-ink text-white' : 'bg-white text-stone-700'
+                      isSystem
+                        ? 'bg-white/70 text-center text-xs font-semibold text-stone-600'
+                        : isGuest
+                          ? 'bg-lune-ink text-white'
+                          : 'bg-white text-stone-700'
                     }`}
                   >
-                    {message.message || message.text}
+                    {displayText}
                   </p>
                 </div>
               );

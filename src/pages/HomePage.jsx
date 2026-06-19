@@ -17,7 +17,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
-import { getBrandingSettings } from '../admin/services/adminSettingsService.js';
+import { defaultBrandingSettings, getBrandingSettings } from '../admin/services/adminSettingsService.js';
 import RoomCard from '../components/RoomCard.jsx';
 import BookingPolicy from '../components/BookingPolicy.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
@@ -42,9 +42,12 @@ export default function HomePage() {
   const { t } = useTranslation();
   const featured = rooms.slice(0, 3);
   const guestInfoItems = t('home.guestInfoItems');
-  const heroTitle = branding.heroTitle || t('home.heroTitle');
-  const heroSubtitle = branding.heroSubtitle || t('home.heroSubtitle');
-  const heroButtonText = branding.heroButtonText || t('home.searchRooms');
+  const translatedBranding = (key, translationKey) =>
+    !branding[key] || branding[key] === defaultBrandingSettings[key] ? t(translationKey) : branding[key];
+  const heroTitle = translatedBranding('heroTitle', 'home.heroTitle');
+  const heroSubtitle = translatedBranding('heroSubtitle', 'home.heroSubtitle');
+  const heroButtonText = translatedBranding('heroButtonText', 'home.searchRooms');
+  const heroSlogan = translatedBranding('shortSlogan', 'home.shortSlogan');
   const heroHighlights = [
     {
       title: t('home.featuredRooms'),
@@ -68,16 +71,12 @@ export default function HomePage() {
     },
   ];
   const reviewStats = [
-    { value: '9.3/10', label: 'Guest review score' },
-    { value: '9.9', label: 'Service' },
-    { value: '9.8', label: 'Location' },
-    { value: '9.5', label: 'Cleanliness' },
+    { value: '9.3/10', label: t('home.reviewScore') },
+    { value: '9.9', label: t('home.reviewService') },
+    { value: '9.8', label: t('home.reviewLocation') },
+    { value: '9.5', label: t('home.reviewCleanliness') },
   ];
-  const guestLoved = [
-    'New, clean rooms with warm wood details and a boutique apartment feel.',
-    'Around a short walk to My Khe Beach, seafood restaurants, marts, and local cafes.',
-    'Kitchen amenities, washing machine access, hot high-pressure shower, and daily support.',
-  ];
+  const guestLoved = t('home.guestLovedItems');
   const reasons = [
     {
       title: t('amenities.Near beach'),
@@ -133,21 +132,27 @@ export default function HomePage() {
 
   return (
     <>
-      <RevealOnScroll as="section" direction="none" duration={500} className="relative isolate overflow-hidden bg-lune-ink text-white">
+      <RevealOnScroll as="section" direction="none" duration={500} className="lune-hero-section relative isolate overflow-hidden bg-lune-ink text-white">
         <img
           src={branding.heroImage}
           alt="Boutique hotel pool and exterior"
-          className="absolute inset-0 -z-20 h-full w-full object-cover"
+          className="absolute inset-0 z-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_62%_32%,rgba(255,255,255,0.18),transparent_30%),linear-gradient(90deg,rgba(21,16,11,0.82),rgba(60,43,26,0.44)_42%,rgba(23,18,13,0.12)_78%)]" />
-        <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-black/45 to-transparent" />
+        <div className="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_62%_32%,rgba(255,255,255,0.18),transparent_30%),linear-gradient(90deg,rgba(21,16,11,0.82),rgba(60,43,26,0.44)_42%,rgba(23,18,13,0.12)_78%)]" />
+        <img
+          src={branding.heroImage}
+          alt=""
+          aria-hidden="true"
+          className="lune-hero-depth-layer pointer-events-none absolute inset-0 z-[12] hidden h-full w-full object-cover lg:block"
+        />
+        <div className="absolute inset-x-0 bottom-0 z-[2] h-40 bg-gradient-to-t from-black/45 to-transparent" />
 
-        <div className="page-shell flex min-h-[760px] flex-col justify-end pb-0 pt-32 sm:min-h-[820px] lg:min-h-screen">
+        <div className="page-shell relative z-10 flex min-h-[760px] flex-col justify-end pb-0 pt-32 sm:min-h-[820px] lg:min-h-screen">
           <div className="max-w-3xl pb-10 sm:pb-14">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-lune-gold sm:text-base">
-              {branding.shortSlogan || branding.hotelName}
+              {heroSlogan || branding.hotelName}
             </p>
-            <h1 className="mt-5 max-w-2xl font-display text-5xl font-bold leading-[0.98] tracking-normal sm:text-7xl lg:text-8xl">
+            <h1 className="lune-hero-title mt-5 max-w-2xl font-display text-5xl font-bold leading-[0.98] tracking-normal sm:text-7xl lg:text-8xl">
               {heroTitle}
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-white/88 sm:text-xl">{heroSubtitle}</p>
@@ -160,7 +165,7 @@ export default function HomePage() {
           </div>
 
           <form
-            className="relative z-10 -mb-16 grid gap-0 overflow-hidden rounded-2xl border border-white/45 bg-white/92 text-lune-ink shadow-[0_28px_80px_rgba(23,20,18,0.26)] backdrop-blur-xl md:grid-cols-[1fr_1fr_0.95fr_auto]"
+            className="relative z-20 -mb-16 grid gap-0 overflow-hidden rounded-2xl border border-white/45 bg-white/92 text-lune-ink shadow-[0_28px_80px_rgba(23,20,18,0.26)] backdrop-blur-xl md:grid-cols-[1fr_1fr_0.95fr_auto]"
             onSubmit={handleSearch}
           >
             <label className="border-b border-stone-200/80 p-5 md:border-b-0 md:border-r">
@@ -237,11 +242,12 @@ export default function HomePage() {
       <RevealOnScroll as="section" variant="curve-left" className="bg-lune-cream py-10">
         <div className="page-shell grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div>
-            <p className="eyebrow">Guest-loved stay</p>
+            <p className="eyebrow">{t('home.guestLovedEyebrow')}</p>
             <h2 className="mt-3 font-display text-4xl font-bold leading-tight text-lune-ink sm:text-5xl">
-              A new, spotless boutique base close to the beach.
+              {t('home.guestLovedTitle')}
             </h2>
-            <p className="mt-5 text-sm leading-7 text-stone-600">
+            <p className="mt-5 text-sm leading-7 text-stone-600">{t('home.guestLovedBody')}</p>
+            <p className="hidden">
               Lune is built for travelers who want the comfort of an apartment and the ease of a hotel:
               clean rooms, practical amenities, responsive support, and a calm location in Sơn Trà.
             </p>
@@ -258,7 +264,7 @@ export default function HomePage() {
               ))}
             </div>
             <div className="grid gap-3">
-              {guestLoved.map((item) => (
+              {(Array.isArray(guestLoved) ? guestLoved : []).map((item) => (
                 <div key={item} className="rounded-lg border border-white bg-white/80 p-4 text-sm leading-6 text-stone-700">
                   {item}
                 </div>

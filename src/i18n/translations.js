@@ -1,4 +1,5 @@
 import { applyTranslationExtensions } from './translationExtensions.js';
+import { applyLiveTranslationOverrides } from './liveTranslationOverrides.js';
 
 export const languageOptions = [
   { code: 'en', label: 'English', shortLabel: 'EN' },
@@ -465,3 +466,4 @@ export const translations = {
 };
 
 applyTranslationExtensions(translations, languageOptions, futureLanguageOptions);
+applyLiveTranslationOverrides(translations, languageOptions);

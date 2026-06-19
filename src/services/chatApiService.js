@@ -37,9 +37,11 @@ function createLocalSession(input = {}) {
 }
 
 export async function createChatSessionWithFallback(input = {}) {
-  const localSession = createLocalSession(input);
-  apiRequest('/chat/sessions', { method: 'POST', body: input, timeoutMs: 1200 }).catch(() => {});
-  return { source: 'local', session: localSession };
+  try {
+    return { source: 'api', session: await apiRequest('/chat/sessions', { method: 'POST', body: input, timeoutMs: 3500 }) };
+  } catch (_error) {
+    return { source: 'local', session: createLocalSession(input) };
+  }
 }
 
 export async function getChatMessagesWithFallback(sessionCode) {
@@ -51,6 +53,19 @@ export async function getChatMessagesWithFallback(sessionCode) {
 }
 
 export async function sendGuestMessageWithFallback(sessionCode, message, meta = {}) {
+  try {
+    return {
+      source: 'api',
+      message: await apiRequest(`/chat/sessions/${sessionCode}/messages`, {
+        method: 'POST',
+        body: { message, ...meta },
+        timeoutMs: 3500,
+      }),
+    };
+  } catch (_error) {
+    // Continue with local demo storage if the backend or socket is unavailable.
+  }
+
   const created = {
     id: crypto.randomUUID(),
     sessionCode,
@@ -70,10 +85,5 @@ export async function sendGuestMessageWithFallback(sessionCode, message, meta = 
         : session,
     ),
   );
-  apiRequest(`/chat/sessions/${sessionCode}/messages`, {
-    method: 'POST',
-    body: { message, ...meta },
-    timeoutMs: 1200,
-  }).catch(() => {});
   return { source: 'local', message: created };
 }

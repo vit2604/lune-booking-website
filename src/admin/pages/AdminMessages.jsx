@@ -2,6 +2,7 @@ import { MessageCircle, Send } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { readJsonStorage, storageKeys } from '../../constants/storageKeys.js';
 import { adminGetChatSession, adminListChatSessions, adminSendChatMessage } from '../../services/adminApiService.js';
+import { translateForAdmin, translateForGuest } from '../../services/aiTranslationService.js';
 
 function getLocalSessions() {
   return readJsonStorage(storageKeys.chatSessions, []);
@@ -17,6 +18,8 @@ export default function AdminMessages() {
   const [messages, setMessages] = useState([]);
   const [reply, setReply] = useState('');
   const [filter, setFilter] = useState('all');
+  const [translatedMessages, setTranslatedMessages] = useState({});
+  const [translationNotice, setTranslationNotice] = useState('');
 
   const refresh = async () => {
     try {
@@ -42,26 +45,49 @@ export default function AdminMessages() {
       .catch(() => {});
   }, [selected]);
 
+  useEffect(() => {
+    messages.forEach((message) => {
+      const key = message.id || message.createdAt;
+      const isGuest = message.senderType === 'GUEST' || message.sender === 'guest';
+      if (!key || !isGuest || translatedMessages[key]) return;
+      translateForAdmin(message.message || message.text || '', selected?.language || 'auto').then((result) => {
+        setTranslatedMessages((current) => ({ ...current, [key]: result }));
+      });
+    });
+  }, [messages, selected?.language, translatedMessages]);
+
   const visibleSessions = useMemo(() => sessions, [sessions]);
 
   const sendReply = async () => {
     const clean = reply.trim();
     if (!clean || !selected) return;
+
+    setTranslationNotice('');
+    const guestLanguage = selected.language || 'en';
+    const translation =
+      guestLanguage === 'vi' ? { translatedText: clean, translated: false } : await translateForGuest(clean, guestLanguage);
+    const outgoingMessage = translation.translatedText || clean;
+
     try {
-      const created = await adminSendChatMessage(selected.sessionCode, clean);
-      setMessages((current) => [...current, created]);
+      const created = await adminSendChatMessage(selected.sessionCode, outgoingMessage);
+      setMessages((current) => [...current, { ...created, adminOriginalText: clean }]);
     } catch {
       const localMessages = readJsonStorage(storageKeys.chatMessages, []);
       const created = {
         id: crypto.randomUUID(),
         sessionCode: selected.sessionCode,
         senderType: 'ADMIN',
-        message: clean,
+        message: outgoingMessage,
+        adminOriginalText: clean,
         createdAt: new Date().toISOString(),
       };
       localStorage.setItem(storageKeys.chatMessages, JSON.stringify([...localMessages, created]));
       setMessages((current) => [...current, created]);
       window.dispatchEvent(new Event('lune:chat-updated'));
+    }
+
+    if (translation.translated) {
+      setTranslationNotice(`AI translated your reply to ${guestLanguage.toUpperCase()} before sending.`);
     }
     setReply('');
   };
@@ -71,7 +97,9 @@ export default function AdminMessages() {
       <div>
         <p className="eyebrow">Guest support</p>
         <h2 className="mt-2 font-display text-4xl font-bold text-lune-ink">Messages</h2>
-        <p className="mt-2 text-sm text-stone-600">Reply to website chat sessions. API mode uses Socket.IO-ready backend; local mode uses demo storage.</p>
+        <p className="mt-2 text-sm text-stone-600">
+          Guest messages are translated to Vietnamese for staff. Vietnamese staff replies are translated back to the guest language.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -97,7 +125,10 @@ export default function AdminMessages() {
                   selected?.sessionCode === session.sessionCode ? 'bg-lune-cream' : ''
                 }`}
                 type="button"
-                onClick={() => setSelected(session)}
+                onClick={() => {
+                  setSelected(session);
+                  setTranslationNotice('');
+                }}
               >
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-semibold text-lune-ink">{session.guestName || 'Guest'}</p>
@@ -106,7 +137,9 @@ export default function AdminMessages() {
                   ) : null}
                 </div>
                 <p className="mt-1 text-xs text-stone-500">{session.sessionCode}</p>
-                <p className="mt-1 text-xs uppercase text-stone-500">{session.status || 'OPEN'}</p>
+                <p className="mt-1 text-xs uppercase text-stone-500">
+                  {session.status || 'OPEN'} · {session.language || 'en'}
+                </p>
               </button>
             ))
           ) : (
@@ -120,29 +153,45 @@ export default function AdminMessages() {
               <header className="border-b border-stone-200 p-4">
                 <p className="font-semibold text-lune-ink">{selected.guestName || 'Guest'}</p>
                 <p className="mt-1 text-xs text-stone-500">
-                  {selected.guestPhone || 'No phone'} · {selected.guestEmail || 'No email'} · {selected.language || 'en'}
+                  {selected.guestPhone || 'No phone'} · {selected.guestEmail || 'No email'} · Guest language: {selected.language || 'en'}
                 </p>
               </header>
+
               <div className="flex-1 space-y-3 overflow-y-auto bg-lune-cream p-4">
                 {messages.map((message) => {
                   const isAdmin = message.senderType === 'ADMIN';
+                  const translation = translatedMessages[message.id || message.createdAt];
                   return (
                     <div key={message.id || message.createdAt} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
-                      <p className={`max-w-[78%] rounded-lg px-3 py-2 text-sm leading-6 ${isAdmin ? 'bg-lune-ink text-white' : 'bg-white text-stone-700'}`}>
-                        {message.message || message.text}
-                      </p>
+                      <div className={`max-w-[78%] rounded-lg px-3 py-2 text-sm leading-6 ${isAdmin ? 'bg-lune-ink text-white' : 'bg-white text-stone-700'}`}>
+                        <p>{message.message || message.text}</p>
+                        {!isAdmin && translation?.translated ? (
+                          <p className="mt-2 rounded-md bg-lune-cream px-2 py-1 text-xs font-medium text-lune-ink">
+                            AI Vietnamese: {translation.translatedText}
+                          </p>
+                        ) : null}
+                        {isAdmin && message.adminOriginalText && message.adminOriginalText !== message.message ? (
+                          <p className="mt-2 rounded-md bg-white/10 px-2 py-1 text-xs text-white/80">
+                            Original VI: {message.adminOriginalText}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                   );
                 })}
               </div>
+
               <footer className="flex gap-2 border-t border-stone-200 p-4">
-                <input
-                  className="input-field flex-1"
-                  value={reply}
-                  onChange={(event) => setReply(event.target.value)}
-                  placeholder="Type a reply..."
-                />
-                <button className="btn-gold" type="button" onClick={sendReply}>
+                <div className="flex-1">
+                  {translationNotice ? <p className="mb-2 text-xs font-medium text-green-700">{translationNotice}</p> : null}
+                  <input
+                    className="input-field"
+                    value={reply}
+                    onChange={(event) => setReply(event.target.value)}
+                    placeholder="Type a reply in Vietnamese. AI will translate it to the guest language."
+                  />
+                </div>
+                <button className="btn-gold self-end" type="button" onClick={sendReply}>
                   <Send className="h-4 w-4" />
                   Send
                 </button>
