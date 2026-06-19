@@ -15,8 +15,8 @@ Add these records in the DNS manager for `luneboutiquedanang.id.vn`.
 
 ```text
 Type   Host/Name   Value
-A      @           76.76.21.21
-CNAME  www         Use the exact CNAME value shown in Vercel Domains
+A      @           216.198.79.1
+CNAME  www         acff09cf09d7d79b.vercel-dns-017.com.
 CNAME  api         lune-booking-api.onrender.com
 ```
 
@@ -26,6 +26,11 @@ Notes:
 - The `www` subdomain should point to the Vercel CNAME value shown in the project Domains page.
 - The `api` subdomain should point to Render with `lune-booking-api.onrender.com`.
 - DNS can take a few minutes to 24 hours to fully propagate.
+- Current observed DNS before switching:
+  - `luneboutiquedanang.id.vn` points to `112.213.89.148`.
+  - `www.luneboutiquedanang.id.vn` points to `112.213.89.148`.
+  - `api.luneboutiquedanang.id.vn` has no record.
+  Replace those with the records above.
 
 ## Vercel Frontend
 
