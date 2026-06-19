@@ -45,9 +45,9 @@ export default function Navbar() {
       }
     >
       <nav className="page-shell flex h-20 items-center justify-between gap-6">
-        <Link to="/" className="flex items-center gap-4" onClick={() => setOpen(false)}>
+        <Link to="/" className="flex min-w-0 items-center gap-3" onClick={() => setOpen(false)}>
           {branding.logoUrl ? (
-            <img src={branding.logoUrl} alt={branding.shortName} className="h-16 w-24 object-contain sm:h-20 sm:w-32" />
+            <img src={branding.logoUrl} alt={branding.shortName} className="h-16 w-20 shrink-0 object-contain sm:h-[76px] sm:w-24" />
           ) : (
             <span
               className={`grid h-10 w-10 place-items-center rounded-md font-display text-xl font-bold ${
@@ -58,7 +58,7 @@ export default function Navbar() {
             </span>
           )}
           <span
-            className={`max-w-[180px] font-display text-2xl font-bold uppercase tracking-[0.14em] leading-5 sm:max-w-none sm:text-3xl ${
+            className={`max-w-[150px] text-[11px] font-bold uppercase leading-4 tracking-[0.18em] sm:max-w-[220px] sm:text-xs ${
               isHome ? 'text-white' : 'text-lune-ink'
             }`}
           >

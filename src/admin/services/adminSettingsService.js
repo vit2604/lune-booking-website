@@ -7,7 +7,7 @@ const POLICIES_KEY = 'lune_policy_settings';
 const WEBSITE_KEY = 'lune_website_settings';
 const LANGUAGE_SETTINGS_KEY = 'lune_language_settings';
 const BRANDING_ASSETS_VERSION_KEY = 'lune_branding_assets_version';
-const BRANDING_ASSETS_VERSION = '2026-06-19-i18n-hero-chat-refresh';
+const BRANDING_ASSETS_VERSION = '2026-06-19-brand-font-home-polish';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -159,6 +159,10 @@ export function getBrandingSettings() {
         ? defaultBrandingSettings.address
         : settings.address,
     logoUrl: settings.logoUrl || defaultBrandingSettings.logoUrl,
+    shortName:
+      !settings.shortName || settings.shortName === 'Lune'
+        ? defaultBrandingSettings.shortName
+        : settings.shortName,
     heroImage:
       !settings.heroImage || settings.heroImage.includes('images.unsplash.com')
         ? defaultBrandingSettings.heroImage

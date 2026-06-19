@@ -26,12 +26,12 @@ import { buildBookingDraft, getDefaultDates } from '../utils/booking.js';
 import { saveBookingDraft } from '../utils/storage.js';
 
 const defaultAmenities = [
-  { label: 'Free Wi-Fi', icon: Wifi },
-  { label: 'Air conditioning', icon: Snowflake },
-  { label: 'Private bathroom', icon: Bath },
-  { label: 'Elevator', icon: Building2 },
-  { label: 'Near beach', icon: Waves },
-  { label: '24/7 support', icon: Headphones },
+  { label: 'Free Wi-Fi', icon: Wifi, descKey: 'home.amenityWifiDesc' },
+  { label: 'Air conditioning', icon: Snowflake, descKey: 'home.amenityAirDesc' },
+  { label: 'Private bathroom', icon: Bath, descKey: 'home.amenityBathroomDesc' },
+  { label: 'Elevator', icon: Building2, descKey: 'home.amenityElevatorDesc' },
+  { label: 'Near beach', icon: Waves, descKey: 'home.amenityBeachDesc' },
+  { label: '24/7 support', icon: Headphones, descKey: 'home.amenitySupportDesc' },
 ];
 
 export default function HomePage() {
@@ -165,7 +165,7 @@ export default function HomePage() {
           </div>
 
           <form
-            className="hero-search-panel relative z-20 -mb-16 grid gap-0 overflow-hidden rounded-2xl border border-white/70 bg-[#fffaf2] text-lune-ink shadow-[0_28px_80px_rgba(23,20,18,0.26)] md:grid-cols-[1fr_1fr_0.95fr_auto]"
+            className="hero-search-panel relative z-20 mb-10 grid gap-0 overflow-hidden rounded-2xl border border-white/70 bg-[#fffaf2] text-lune-ink shadow-[0_28px_80px_rgba(23,20,18,0.26)] md:grid-cols-[1fr_1fr_0.95fr_auto]"
             onSubmit={handleSearch}
           >
             <label className="bg-white/90 p-5 md:border-r md:border-stone-200">
@@ -222,7 +222,7 @@ export default function HomePage() {
         </div>
       </RevealOnScroll>
 
-      <RevealOnScroll as="section" variant="float" className="bg-white pb-8 pt-24 shadow-[0_-1px_0_rgba(0,0,0,0.05)]">
+      <RevealOnScroll as="section" variant="float" className="bg-white py-10 shadow-[0_-1px_0_rgba(0,0,0,0.05)]">
         <div className="page-shell grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {heroHighlights.map((item) => {
             const Icon = item.icon;
@@ -276,8 +276,19 @@ export default function HomePage() {
 
       <RevealOnScroll as="section" variant="curve-right" className="section-space bg-white">
         <div className="page-shell grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div className="overflow-hidden rounded-lg">
-            <img src={branding.introImage} alt="Modern apartment lounge" className="h-full w-full object-cover" />
+          <div className="relative overflow-hidden rounded-2xl">
+            <img src={branding.introImage} alt="Lune Boutique Apartment exterior near My Khe Beach" className="h-full min-h-[520px] w-full object-cover" />
+            <div className="absolute inset-x-5 bottom-5 rounded-2xl bg-white/92 p-5 shadow-soft backdrop-blur">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-lune-goldDark">{t('home.locationSnapshot')}</p>
+              <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                {(Array.isArray(t('home.nearbyItems')) ? t('home.nearbyItems') : []).map((item) => (
+                  <div key={item.title} className="rounded-xl bg-lune-cream p-3">
+                    <strong className="block text-lune-ink">{item.title}</strong>
+                    <span className="mt-1 block text-stone-600">{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <div>
             <p className="eyebrow">{t('home.aboutEyebrow')}</p>
@@ -285,6 +296,14 @@ export default function HomePage() {
             <p className="muted-text mt-5">
               {t('home.aboutBody', { address: branding.address, hotelName: branding.hotelName })}
             </p>
+            <div className="mt-6 grid gap-3">
+              {(Array.isArray(t('home.professionalHighlights')) ? t('home.professionalHighlights') : []).map((item) => (
+                <div key={item} className="flex gap-3 rounded-xl border border-stone-200 bg-lune-cream/70 p-4 text-sm leading-6 text-stone-700">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {[
                 [rooms.length, t('home.roomTypeCountLabel')],
@@ -325,20 +344,29 @@ export default function HomePage() {
 
       <RevealOnScroll as="section" variant="curve-left" className="section-space bg-white">
         <div className="page-shell">
-          <div className="max-w-2xl">
-            <p className="eyebrow">{t('roomDetail.amenities')}</p>
-            <h2 className="section-title mt-3">{t('home.amenitiesTitle')}</h2>
-          </div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {defaultAmenities.map((amenity, index) => {
-              const Icon = amenity.icon;
-              return (
-                <RevealOnScroll key={amenity.label} variant="zoom" delay={index * 70} className="rounded-lg border border-stone-200 bg-white p-6">
-                  <Icon className="h-6 w-6 text-lune-goldDark" aria-hidden="true" />
-                  <h3 className="mt-4 text-base font-semibold text-lune-ink">{t(`amenities.${amenity.label}`)}</h3>
-                </RevealOnScroll>
-              );
-            })}
+          <div className="grid gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
+            <div className="lg:sticky lg:top-28">
+              <p className="eyebrow">{t('roomDetail.amenities')}</p>
+              <h2 className="section-title mt-3">{t('home.amenitiesTitle')}</h2>
+              <p className="mt-5 text-sm leading-7 text-stone-600">{t('home.amenitiesBody')}</p>
+              <div className="mt-6 overflow-hidden rounded-2xl">
+                <img src="/images/lune/type-3-standard/type-3-standard-1.webp" alt="Bright apartment room with practical amenities" className="h-72 w-full object-cover" loading="lazy" />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {defaultAmenities.map((amenity, index) => {
+                const Icon = amenity.icon;
+                return (
+                  <RevealOnScroll key={amenity.label} variant="zoom" delay={index * 70} className="rounded-2xl border border-stone-200 bg-white p-6 shadow-[0_14px_40px_rgba(23,20,18,0.05)]">
+                    <span className="grid h-12 w-12 place-items-center rounded-xl bg-lune-cream text-lune-goldDark">
+                      <Icon className="h-6 w-6" aria-hidden="true" />
+                    </span>
+                    <h3 className="mt-5 text-base font-bold text-lune-ink">{t(`amenities.${amenity.label}`)}</h3>
+                    <p className="mt-2 text-sm leading-6 text-stone-600">{t(amenity.descKey)}</p>
+                  </RevealOnScroll>
+                );
+              })}
+            </div>
           </div>
         </div>
       </RevealOnScroll>

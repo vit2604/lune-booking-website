@@ -475,6 +475,25 @@ const productionFixPacks = {
     home: {
       roomTypeCountLabel: 'apartment types',
       nearBeachStatValue: 'My Khe',
+      locationSnapshot: 'Location snapshot',
+      nearbyItems: [
+        { title: 'My Khe Beach', text: '4-5 min walk' },
+        { title: 'Dragon Bridge', text: 'Around 4 min drive' },
+        { title: 'Da Nang Airport', text: 'Around 14 min drive' },
+      ],
+      professionalHighlights: [
+        'Boutique apartment style with clean rooms, warm wood details, and practical layouts.',
+        'Useful for couples, small families, business travelers, and long-stay guests.',
+        'Near restaurants, coffee shops, convenience stores, My Khe Beach, Han River, and Dragon Bridge.',
+      ],
+      amenitiesBody:
+        'Lune focuses on the things guests actually use every day: stable Wi-Fi, cool air conditioning, private bathrooms, elevator access, easy beach access, and direct support from the team.',
+      amenityWifiDesc: 'Stay connected for work, maps, messages, and travel planning.',
+      amenityAirDesc: 'Cool, quiet rooms for resting after beach days in Da Nang.',
+      amenityBathroomDesc: 'Private bathroom comfort with essentials prepared for each stay.',
+      amenityElevatorDesc: 'Easy access for luggage, families, and longer stays.',
+      amenityBeachDesc: 'A short walk to My Khe Beach and nearby local restaurants.',
+      amenitySupportDesc: 'Direct Lune support for booking questions, arrival time, and local tips.',
     },
     payment: {
       securityNotice:
@@ -512,6 +531,25 @@ const productionFixPacks = {
     home: {
       roomTypeCountLabel: 'loại căn hộ',
       nearBeachStatValue: 'Mỹ Khê',
+      locationSnapshot: 'Vị trí nổi bật',
+      nearbyItems: [
+        { title: 'Biển Mỹ Khê', text: 'Đi bộ khoảng 4-5 phút' },
+        { title: 'Cầu Rồng', text: 'Khoảng 4 phút đi xe' },
+        { title: 'Sân bay Đà Nẵng', text: 'Khoảng 14 phút đi xe' },
+      ],
+      professionalHighlights: [
+        'Phong cách căn hộ boutique với phòng sạch, chi tiết gỗ ấm và bố cục thực dụng.',
+        'Phù hợp cho cặp đôi, gia đình nhỏ, khách công tác và khách lưu trú dài ngày.',
+        'Gần nhà hàng, quán cà phê, cửa hàng tiện lợi, biển Mỹ Khê, sông Hàn và cầu Rồng.',
+      ],
+      amenitiesBody:
+        'Lune tập trung vào những tiện nghi khách dùng hằng ngày: Wi-Fi ổn định, máy lạnh mát, phòng tắm riêng, thang máy, vị trí gần biển và đội ngũ hỗ trợ trực tiếp.',
+      amenityWifiDesc: 'Kết nối ổn định để làm việc, xem bản đồ, nhắn tin và lên kế hoạch du lịch.',
+      amenityAirDesc: 'Không gian mát và yên tĩnh để nghỉ ngơi sau ngày đi biển.',
+      amenityBathroomDesc: 'Phòng tắm riêng sạch sẽ, chuẩn bị đủ tiện nghi cơ bản.',
+      amenityElevatorDesc: 'Di chuyển thuận tiện khi có hành lý, gia đình hoặc lưu trú dài ngày.',
+      amenityBeachDesc: 'Đi bộ ngắn tới biển Mỹ Khê và các hàng quán địa phương.',
+      amenitySupportDesc: 'Đội ngũ Lune hỗ trợ trực tiếp về đặt phòng, giờ đến và gợi ý địa phương.',
     },
     payment: {
       securityNotice:
@@ -549,6 +587,24 @@ const productionFixPacks = {
     home: {
       roomTypeCountLabel: '种公寓房型',
       nearBeachStatValue: '美溪',
+      locationSnapshot: '位置概览',
+      nearbyItems: [
+        { title: '美溪海滩', text: '步行约4-5分钟' },
+        { title: '龙桥', text: '车程约4分钟' },
+        { title: '岘港机场', text: '车程约14分钟' },
+      ],
+      professionalHighlights: [
+        '精品公寓风格，客房干净，木质细节温暖，布局实用。',
+        '适合情侣、小家庭、商务旅客和长住客人。',
+        '靠近餐厅、咖啡馆、便利店、美溪海滩、韩江和龙桥。',
+      ],
+      amenitiesBody: 'Lune 注重旅客每天真正需要的设施：稳定 Wi-Fi、空调、独立浴室、电梯、靠近海滩以及团队直接支持。',
+      amenityWifiDesc: '适合工作、地图、消息和旅行计划。',
+      amenityAirDesc: '在岘港海滩游玩后享受凉爽安静的休息空间。',
+      amenityBathroomDesc: '独立浴室，配备基本用品。',
+      amenityElevatorDesc: '携带行李、家庭入住或长住都更方便。',
+      amenityBeachDesc: '短步行即可到达美溪海滩和本地餐厅。',
+      amenitySupportDesc: 'Lune 团队直接协助预订、到达时间和当地建议。',
     },
     payment: {
       securityNotice:
@@ -586,6 +642,24 @@ const productionFixPacks = {
     home: {
       roomTypeCountLabel: '아파트 타입',
       nearBeachStatValue: '미케',
+      locationSnapshot: '위치 요약',
+      nearbyItems: [
+        { title: '미케 해변', text: '도보 약 4-5분' },
+        { title: '용다리', text: '차로 약 4분' },
+        { title: '다낭 공항', text: '차로 약 14분' },
+      ],
+      professionalHighlights: [
+        '깨끗한 객실, 따뜻한 우드 디테일, 실용적인 구조의 부티크 아파트 스타일.',
+        '커플, 소가족, 비즈니스 여행객, 장기 투숙객에게 적합합니다.',
+        '레스토랑, 카페, 편의점, 미케 해변, 한강, 용다리와 가깝습니다.',
+      ],
+      amenitiesBody: 'Lune은 안정적인 Wi-Fi, 에어컨, 전용 욕실, 엘리베이터, 해변 접근성, 직접 지원처럼 매일 필요한 편의에 집중합니다.',
+      amenityWifiDesc: '업무, 지도, 메시지, 여행 계획에 편리합니다.',
+      amenityAirDesc: '다낭 해변 일정 후 시원하고 조용하게 쉴 수 있습니다.',
+      amenityBathroomDesc: '기본 용품이 준비된 전용 욕실입니다.',
+      amenityElevatorDesc: '짐이 많거나 가족, 장기 숙박 시 편리합니다.',
+      amenityBeachDesc: '미케 해변과 주변 로컬 식당까지 짧은 도보 거리입니다.',
+      amenitySupportDesc: '예약, 도착 시간, 현지 팁을 Lune 팀이 직접 지원합니다.',
     },
     payment: {
       securityNotice:
@@ -623,6 +697,25 @@ const productionFixPacks = {
     home: {
       roomTypeCountLabel: 'типов апартаментов',
       nearBeachStatValue: 'My Khe',
+      locationSnapshot: 'Расположение',
+      nearbyItems: [
+        { title: 'Пляж My Khe', text: 'примерно 4-5 минут пешком' },
+        { title: 'Dragon Bridge', text: 'около 4 минут на машине' },
+        { title: 'Аэропорт Дананга', text: 'около 14 минут на машине' },
+      ],
+      professionalHighlights: [
+        'Стиль boutique apartment: чистые комнаты, теплые деревянные детали и практичная планировка.',
+        'Подходит для пар, небольших семей, деловых поездок и длительного проживания.',
+        'Рядом рестораны, кафе, магазины, пляж My Khe, река Han и Dragon Bridge.',
+      ],
+      amenitiesBody:
+        'Lune делает акцент на ежедневном комфорте: стабильный Wi-Fi, кондиционер, собственная ванная, лифт, близость к пляжу и поддержка команды.',
+      amenityWifiDesc: 'Для работы, карт, сообщений и планирования поездки.',
+      amenityAirDesc: 'Прохладные тихие номера после пляжного дня в Дананге.',
+      amenityBathroomDesc: 'Собственная ванная комната с базовыми удобствами.',
+      amenityElevatorDesc: 'Удобно с багажом, семьей и при долгом проживании.',
+      amenityBeachDesc: 'Короткая прогулка до пляжа My Khe и местных ресторанов.',
+      amenitySupportDesc: 'Команда Lune поможет с бронированием, временем прибытия и советами по району.',
     },
     payment: {
       securityNotice:
