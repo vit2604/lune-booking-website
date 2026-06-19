@@ -70,18 +70,38 @@
 
   .section-title {
     @apply font-display text-4xl font-bold leading-tight text-lune-ink sm:text-5xl;
+    word-break: normal;
+    overflow-wrap: normal;
+    hyphens: none;
+    text-wrap: balance;
   }
 
   .muted-text {
     @apply text-base leading-7 text-stone-600 sm:text-sm;
   }
 
+  .font-display {
+    word-break: normal;
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+
   .lune-hero-title {
+    word-break: normal;
+    overflow-wrap: normal;
+    hyphens: none;
+    text-wrap: balance;
     text-shadow:
       0 3px 1px rgba(0, 0, 0, 0.16),
       0 16px 42px rgba(0, 0, 0, 0.36),
       0 0 1px rgba(255, 255, 255, 0.55);
     -webkit-text-stroke: 0.55px rgba(255, 255, 255, 0.2);
+  }
+
+  .hero-search-panel input,
+  .hero-search-panel select {
+    color: #171412;
+    -webkit-text-fill-color: #171412;
   }
 
   .lune-hero-depth-layer {

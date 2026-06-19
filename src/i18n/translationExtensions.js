@@ -472,6 +472,10 @@ const productionFixPacks = {
       availableStays: 'Available stays',
       noRoomsAvailable: 'No rooms available for selected dates. Please try another date or contact us.',
     },
+    home: {
+      roomTypeCountLabel: 'apartment types',
+      nearBeachStatValue: 'My Khe',
+    },
     payment: {
       securityNotice:
         'For your safety, do not enter card numbers, OTP codes, passwords, or banking app credentials on this website. Lune will only confirm payment through official bank transfer or direct support.',
@@ -504,6 +508,10 @@ const productionFixPacks = {
     rooms: {
       availableStays: 'Các phòng đang có',
       noRoomsAvailable: 'Không có phòng trống cho ngày đã chọn. Vui lòng thử ngày khác hoặc liên hệ Lune.',
+    },
+    home: {
+      roomTypeCountLabel: 'loại căn hộ',
+      nearBeachStatValue: 'Mỹ Khê',
     },
     payment: {
       securityNotice:
@@ -538,6 +546,10 @@ const productionFixPacks = {
       availableStays: '可预订房型',
       noRoomsAvailable: '所选日期暂无可订房间。请更换日期或联系 Lune。',
     },
+    home: {
+      roomTypeCountLabel: '种公寓房型',
+      nearBeachStatValue: '美溪',
+    },
     payment: {
       securityNotice:
         '为确保安全，请勿在本网站输入银行卡号、OTP 验证码、密码或银行应用登录信息。Lune 仅通过官方银行转账或直接客服确认付款。',
@@ -571,6 +583,10 @@ const productionFixPacks = {
       availableStays: '예약 가능한 객실',
       noRoomsAvailable: '선택하신 날짜에 예약 가능한 객실이 없습니다. 다른 날짜를 선택하시거나 Lune에 문의해 주세요.',
     },
+    home: {
+      roomTypeCountLabel: '아파트 타입',
+      nearBeachStatValue: '미케',
+    },
     payment: {
       securityNotice:
         '안전을 위해 이 웹사이트에 카드 번호, OTP 코드, 비밀번호 또는 은행 앱 로그인 정보를 입력하지 마세요. Lune은 공식 계좌 이체 또는 직접 상담을 통해서만 결제를 확인합니다.',
@@ -603,6 +619,10 @@ const productionFixPacks = {
     rooms: {
       availableStays: 'Доступные номера',
       noRoomsAvailable: 'На выбранные даты нет доступных номеров. Попробуйте другие даты или свяжитесь с Lune.',
+    },
+    home: {
+      roomTypeCountLabel: 'типов апартаментов',
+      nearBeachStatValue: 'My Khe',
     },
     payment: {
       securityNotice:

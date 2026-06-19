@@ -165,15 +165,15 @@ export default function HomePage() {
           </div>
 
           <form
-            className="relative z-20 -mb-16 grid gap-0 overflow-hidden rounded-2xl border border-white/45 bg-white/92 text-lune-ink shadow-[0_28px_80px_rgba(23,20,18,0.26)] backdrop-blur-xl md:grid-cols-[1fr_1fr_0.95fr_auto]"
+            className="hero-search-panel relative z-20 -mb-16 grid gap-0 overflow-hidden rounded-2xl border border-white/70 bg-[#fffaf2] text-lune-ink shadow-[0_28px_80px_rgba(23,20,18,0.26)] md:grid-cols-[1fr_1fr_0.95fr_auto]"
             onSubmit={handleSearch}
           >
-            <label className="border-b border-stone-200/80 p-5 md:border-b-0 md:border-r">
-              <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">{t('common.checkInDate')}</span>
-              <span className="mt-2 flex items-center gap-3">
+            <label className="bg-white/90 p-5 md:border-r md:border-stone-200">
+              <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.checkInDate')}</span>
+              <span className="mt-2 flex items-center gap-3 rounded-lg bg-white px-3 py-1.5 ring-1 ring-stone-200">
                 <CalendarDays className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
                 <input
-                  className="min-h-12 w-full bg-transparent text-base font-semibold text-lune-ink outline-none"
+                  className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
                   type="date"
                   name="checkIn"
                   defaultValue={defaults.checkIn}
@@ -181,12 +181,12 @@ export default function HomePage() {
                 />
               </span>
             </label>
-            <label className="border-b border-stone-200/80 p-5 md:border-b-0 md:border-r">
-              <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">{t('common.checkOutDate')}</span>
-              <span className="mt-2 flex items-center gap-3">
+            <label className="bg-white/90 p-5 md:border-r md:border-stone-200">
+              <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.checkOutDate')}</span>
+              <span className="mt-2 flex items-center gap-3 rounded-lg bg-white px-3 py-1.5 ring-1 ring-stone-200">
                 <CalendarDays className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
                 <input
-                  className="min-h-12 w-full bg-transparent text-base font-semibold text-lune-ink outline-none"
+                  className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
                   type="date"
                   name="checkOut"
                   defaultValue={defaults.checkOut}
@@ -194,12 +194,12 @@ export default function HomePage() {
                 />
               </span>
             </label>
-            <label className="border-b border-stone-200/80 p-5 md:border-b-0 md:border-r">
-              <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">{t('common.guests')}</span>
-              <span className="mt-2 flex items-center gap-3">
+            <label className="bg-white/90 p-5 md:border-r md:border-stone-200">
+              <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.guests')}</span>
+              <span className="mt-2 flex items-center gap-3 rounded-lg bg-white px-3 py-1.5 ring-1 ring-stone-200">
                 <Users className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
                 <select
-                  className="min-h-12 w-full bg-transparent text-base font-semibold text-lune-ink outline-none"
+                  className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
                   name="guests"
                   defaultValue="2"
                 >
@@ -287,9 +287,9 @@ export default function HomePage() {
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {[
-                [rooms.length, t('nav.rooms')],
+                [rooms.length, t('home.roomTypeCountLabel')],
                 ['24/7', t('trust.support')],
-                [t('common.from'), t('amenities.Near beach')],
+                [t('home.nearBeachStatValue'), t('amenities.Near beach')],
               ].map(([value, label]) => (
                 <div key={label} className="rounded-lg border border-stone-200 p-5">
                   <strong className="block font-display text-4xl text-lune-ink">{value}</strong>
