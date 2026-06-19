@@ -28,7 +28,7 @@ export const getDefaultDates = () => {
 
 const parseInputDate = (value) => {
   if (!value) return null;
-  const [year, month, day] = value.split('-').map(Number);
+  const [year, month, day] = String(value).slice(0, 10).split('-').map(Number);
   if (!year || !month || !day) return null;
   return new Date(year, month - 1, day, 12);
 };

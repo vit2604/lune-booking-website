@@ -160,16 +160,24 @@ export default function PaymentPage() {
 
     setConfirming(true);
     setError('');
-    const updated = buildBookingDraft({
-      room,
-      checkIn: booking.checkIn,
-      checkOut: booking.checkOut,
-      guests: booking.guests,
-      guestInfo: booking.guestInfo,
+    const updated = {
+      ...booking,
+      roomId: booking.roomId || room.id,
+      roomName: booking.roomName || room.name,
+      roomImage: booking.roomImage || room.image,
+      maxGuests: booking.maxGuests || room.maxGuests,
+      roomType: booking.roomType || room.type,
+      size: booking.size || room.size,
+      bed: booking.bed || room.bed || room.bedType || room.beds,
+      pricePerNight: Number(booking.pricePerNight || room.price || room.basePrice || 0),
+      subtotal: Number(booking.subtotal ?? booking.roomSubtotal ?? 0),
+      roomSubtotal: Number(booking.roomSubtotal ?? booking.subtotal ?? 0),
+      total: Number(booking.total ?? booking.totalPrice ?? 0),
+      totalPrice: Number(booking.totalPrice ?? booking.total ?? 0),
+      guests: Number(booking.guests || 1),
       paymentMethod: normalizedPaymentMethod,
-      bookingCode: booking.bookingCode,
-      bookingStatus: 'received',
-    });
+      bookingStatus: booking.bookingStatus || 'received',
+    };
 
     try {
       const apiPayment = await createPaymentWithFallback(updated.bookingCode, normalizedPaymentMethod);

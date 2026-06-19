@@ -47,8 +47,10 @@ export default function SuccessPage() {
     internationalTransfer: t('payment.internationalTransfer'),
   }[booking?.paymentMethod] || booking?.paymentMethod;
 
+  const guestName = booking?.guestInfo?.fullName || booking?.guest?.fullName;
+
   const detailRows = [
-    [t('common.guestName'), booking?.guestInfo?.fullName],
+    [t('common.guestName'), guestName],
     [t('common.room'), booking?.roomName],
     [t('common.checkIn'), formatDisplayDate(booking?.checkIn, currentLanguage)],
     [t('common.checkOut'), formatDisplayDate(booking?.checkOut, currentLanguage)],
