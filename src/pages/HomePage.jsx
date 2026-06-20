@@ -39,6 +39,7 @@ export default function HomePage() {
   const defaults = getDefaultDates();
   const [rooms, setRooms] = useState(getVisibleRooms());
   const [branding, setBranding] = useState(getBrandingSettings());
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const { t } = useTranslation();
   const featured = rooms.slice(0, 3);
   const guestInfoItems = t('home.guestInfoItems');
@@ -97,7 +98,7 @@ export default function HomePage() {
   ];
   const bookingProof = [
     { value: '400m', label: t('home.proofBeach') },
-    { value: '20', label: t('home.proofApartments') },
+    { value: '16', label: t('home.proofApartments') },
     { value: '24h', label: t('home.proofFrontDesk') },
     { value: '14:00', label: t('home.proofCheckIn') },
   ];
@@ -106,6 +107,13 @@ export default function HomePage() {
     { src: '/images/lune/type-3-standard/type-3-standard-2.webp', alt: 'Bright Lune apartment bedroom' },
     { src: '/images/lune/type-4-studio/type-4-studio-1.webp', alt: 'Lune studio apartment room' },
     { src: '/images/lune/type-1-r201/type-1-r201-2.webp', alt: 'Lune apartment living details' },
+  ];
+  const heroSlides = [
+    { src: branding.heroImage, alt: 'Lune Boutique Hotel facade on Thach Lam street' },
+    { src: '/images/lune/type-3-standard/type-3-standard-2.webp', alt: 'Bright Lune apartment bedroom' },
+    { src: '/images/lune/type-4-studio/type-4-studio-1.webp', alt: 'Lune studio apartment room' },
+    { src: '/images/lune/type-2-r601/type-2-r601-2.webp', alt: 'Warm apartment room at Lune' },
+    { src: '/images/lune/type-1-r201/type-1-r201-2.webp', alt: 'Lune apartment interior detail' },
   ];
 
   useEffect(() => {
@@ -120,6 +128,13 @@ export default function HomePage() {
       window.removeEventListener('lune:settings-updated', refresh);
     };
   }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveHeroIndex((current) => (current + 1) % heroSlides.length);
+    }, 5200);
+    return () => window.clearInterval(timer);
+  }, [heroSlides.length]);
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -146,14 +161,20 @@ export default function HomePage() {
   return (
     <>
       <RevealOnScroll as="section" direction="none" duration={500} className="lune-hero-section relative isolate overflow-hidden bg-lune-ink text-white">
-        <img
-          src={branding.heroImage}
-          alt="Boutique hotel pool and exterior"
-          className="absolute inset-0 z-0 h-full w-full object-cover"
-        />
+        {heroSlides.map((slide, index) => (
+          <img
+            key={slide.src}
+            src={slide.src}
+            alt={index === activeHeroIndex ? slide.alt : ''}
+            aria-hidden={index === activeHeroIndex ? undefined : 'true'}
+            className={`absolute inset-0 z-0 h-full w-full object-cover transition-opacity duration-1000 ${
+              index === activeHeroIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        ))}
         <div className="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_62%_32%,rgba(255,255,255,0.18),transparent_30%),linear-gradient(90deg,rgba(21,16,11,0.82),rgba(60,43,26,0.44)_42%,rgba(23,18,13,0.12)_78%)]" />
         <img
-          src={branding.heroImage}
+          src={heroSlides[activeHeroIndex]?.src || branding.heroImage}
           alt=""
           aria-hidden="true"
           className="lune-hero-depth-layer pointer-events-none absolute inset-0 z-[12] hidden h-full w-full object-cover lg:block"
@@ -175,11 +196,27 @@ export default function HomePage() {
             >
               {heroButtonText}
             </Link>
+            <div className="mt-7 flex items-center gap-3" aria-label="Hero image selector">
+              {heroSlides.map((slide, index) => (
+                <button
+                  key={slide.src}
+                  type="button"
+                  className={`h-3.5 rounded-full border border-white/70 transition-all duration-300 ${
+                    index === activeHeroIndex ? 'w-10 bg-white' : 'w-3.5 bg-white/35 hover:bg-white/75'
+                  }`}
+                  aria-label={`Show image ${index + 1}`}
+                  aria-current={index === activeHeroIndex}
+                  onClick={() => setActiveHeroIndex(index)}
+                  onMouseEnter={() => setActiveHeroIndex(index)}
+                  onFocus={() => setActiveHeroIndex(index)}
+                />
+              ))}
+            </div>
           </div>
 
-          <form className="hero-search-panel relative z-30 mb-10 rounded-3xl border border-white bg-white p-3 text-lune-ink shadow-[0_32px_90px_rgba(23,20,18,0.34)]" onSubmit={handleSearch}>
+          <form className="hero-search-panel relative z-30 mb-10 rounded-3xl border border-white bg-white p-3 text-lune-ink shadow-[0_32px_90px_rgba(23,20,18,0.34)] ring-1 ring-stone-200/80" onSubmit={handleSearch}>
             <div className="grid gap-3 md:grid-cols-[1fr_1fr_0.9fr_220px]">
-            <label className="rounded-2xl border border-stone-200 bg-[#fffaf2] p-4 sm:p-5">
+            <label className="rounded-2xl border border-stone-200 bg-white p-4 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
               <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.checkInDate')}</span>
               <span className="mt-3 flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-stone-200">
                 <CalendarDays className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
@@ -192,7 +229,7 @@ export default function HomePage() {
                 />
               </span>
             </label>
-            <label className="rounded-2xl border border-stone-200 bg-[#fffaf2] p-4 sm:p-5">
+            <label className="rounded-2xl border border-stone-200 bg-white p-4 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
               <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.checkOutDate')}</span>
               <span className="mt-3 flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-stone-200">
                 <CalendarDays className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
@@ -205,7 +242,7 @@ export default function HomePage() {
                 />
               </span>
             </label>
-            <label className="rounded-2xl border border-stone-200 bg-[#fffaf2] p-4 sm:p-5">
+            <label className="rounded-2xl border border-stone-200 bg-white p-4 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
               <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.guests')}</span>
               <span className="mt-3 flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-stone-200">
                 <Users className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
@@ -223,7 +260,7 @@ export default function HomePage() {
               </span>
             </label>
             <button
-              className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#463527] px-6 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-lune-goldDark md:min-h-full"
+              className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#463527] px-6 text-sm font-bold uppercase tracking-wide text-white opacity-100 shadow-[0_12px_34px_rgba(23,20,18,0.18)] transition hover:bg-lune-goldDark md:min-h-full"
               type="submit"
             >
               {heroButtonText}
@@ -301,9 +338,9 @@ export default function HomePage() {
 
       <RevealOnScroll as="section" variant="curve-right" className="section-space bg-white">
         <div className="page-shell grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div className="relative overflow-hidden rounded-2xl">
+          <div className="relative overflow-hidden rounded-2xl bg-white shadow-[0_22px_60px_rgba(23,20,18,0.08)]">
             <img src={branding.introImage} alt="Lune Boutique Apartment exterior near My Khe Beach" className="h-full min-h-[520px] w-full object-cover" />
-            <div className="absolute inset-x-5 bottom-5 rounded-2xl bg-white/92 p-5 shadow-soft backdrop-blur">
+            <div className="relative m-4 rounded-2xl bg-white p-4 shadow-soft sm:absolute sm:inset-x-5 sm:bottom-5 sm:m-0 sm:bg-white/92 sm:p-5 sm:backdrop-blur">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-lune-goldDark">{t('home.locationSnapshot')}</p>
               <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
                 {(Array.isArray(t('home.nearbyItems')) ? t('home.nearbyItems') : []).map((item) => (
@@ -331,7 +368,7 @@ export default function HomePage() {
             </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {[
-                ['20', t('home.apartmentCountLabel')],
+                ['16', t('home.apartmentCountLabel')],
                 ['24/7', t('trust.support')],
                 ['400m', t('amenities.Near beach')],
               ].map(([value, label]) => (

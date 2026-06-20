@@ -108,6 +108,8 @@
   .hero-search-panel {
     isolation: isolate;
     background: #fff !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
   }
 
   .lune-hero-depth-layer {

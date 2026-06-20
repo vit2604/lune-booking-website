@@ -44,13 +44,13 @@ export default function Navbar() {
           : 'sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur'
       }
     >
-      <nav className="page-shell flex h-24 items-center justify-between gap-6 md:h-28">
+      <nav className="page-shell flex h-28 items-center justify-between gap-5 md:h-36">
         <Link to="/" className="flex min-w-0 items-center gap-3" onClick={() => setOpen(false)}>
           {branding.logoUrl ? (
             <img
               src={branding.logoUrl}
               alt={branding.shortName}
-              className="h-20 w-28 shrink-0 object-contain sm:h-24 sm:w-32 lg:h-28 lg:w-36"
+              className="h-28 w-36 shrink-0 object-contain sm:h-40 sm:w-56 lg:h-52 lg:w-72"
             />
           ) : (
             <span
@@ -62,7 +62,7 @@ export default function Navbar() {
             </span>
           )}
           <span
-            className={`max-w-[190px] text-xs font-bold uppercase leading-5 tracking-[0.16em] sm:max-w-[270px] sm:text-sm ${
+            className={`max-w-[105px] text-xs font-bold uppercase leading-5 tracking-[0.12em] sm:max-w-[290px] sm:text-base sm:tracking-[0.14em] ${
               isHome ? 'text-white' : 'text-lune-ink'
             }`}
           >
