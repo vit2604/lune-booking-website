@@ -402,9 +402,9 @@ export default function HomePage() {
           <div className="mt-10 grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
             <RevealOnScroll variant="curve-left" className="relative overflow-hidden rounded-3xl shadow-[0_26px_70px_rgba(23,20,18,0.16)]">
               <img src={galleryImages[0].src} alt={galleryImages[0].alt} className="h-[420px] w-full object-cover sm:h-[560px]" loading="lazy" />
-              <div className="absolute inset-x-5 bottom-5 rounded-2xl bg-white/92 p-5 shadow-soft backdrop-blur">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-lune-goldDark">92-94 Thạch Lam</p>
-                <p className="mt-2 text-sm leading-6 text-stone-700">{t('home.galleryLocationNote')}</p>
+              <div className="absolute inset-x-5 bottom-5 rounded-2xl border border-white bg-white p-5 shadow-[0_18px_50px_rgba(23,20,18,0.2)]">
+                <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-lune-goldDark">92-94 Thạch Lam</p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-lune-ink">{t('home.galleryLocationNote')}</p>
               </div>
             </RevealOnScroll>
             <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
