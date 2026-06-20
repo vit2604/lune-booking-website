@@ -7,7 +7,7 @@ const POLICIES_KEY = 'lune_policy_settings';
 const WEBSITE_KEY = 'lune_website_settings';
 const LANGUAGE_SETTINGS_KEY = 'lune_language_settings';
 const BRANDING_ASSETS_VERSION_KEY = 'lune_branding_assets_version';
-const BRANDING_ASSETS_VERSION = '2026-06-19-solid-search-logo-proof-polish';
+const BRANDING_ASSETS_VERSION = '2026-06-20-nfr-brand-contact-encoding';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -153,9 +153,8 @@ export function getBrandingSettings() {
 
   const nextSettings = {
     ...settings,
-    address: settings.address?.includes('Tháº') ? defaultBrandingSettings.address : settings.address,
     address:
-      !settings.address || /ThÃ|SÆ|Ä|Viá|Tháº|SÆ¡n/.test(settings.address)
+      !settings.address || /ThÃ|SÆ|Ä|Viá|Tháº|SÆ¡n|Náºµng|Ð|Ã/.test(settings.address)
         ? defaultBrandingSettings.address
         : settings.address,
     logoUrl: settings.logoUrl || defaultBrandingSettings.logoUrl,

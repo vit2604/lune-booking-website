@@ -20,6 +20,7 @@ const BookingPage = lazy(() => import('./pages/BookingPage.jsx'));
 const ContactPage = lazy(() => import('./pages/ContactPage.jsx'));
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
 const PaymentPage = lazy(() => import('./pages/PaymentPage.jsx'));
+const PoliciesPage = lazy(() => import('./pages/PoliciesPage.jsx'));
 const RoomDetailPage = lazy(() => import('./pages/RoomDetailPage.jsx'));
 const RoomsPage = lazy(() => import('./pages/RoomsPage.jsx'));
 const SuccessPage = lazy(() => import('./pages/SuccessPage.jsx'));
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="/success" element={<SuccessPage />} />
             <Route path="/booking-success" element={<SuccessPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/policies" element={<PoliciesPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

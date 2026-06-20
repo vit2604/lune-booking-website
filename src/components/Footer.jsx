@@ -68,6 +68,14 @@ export default function Footer() {
               <Facebook className="h-5 w-5" aria-hidden="true" />
             </a>
           </div>
+          <div className="mt-5 space-y-2 text-sm text-white/70">
+            <Link className="block py-3 transition hover:text-lune-gold" to="/policies">
+              {t('footer.policyLink')}
+            </Link>
+            <Link className="block py-3 transition hover:text-lune-gold" to="/contact">
+              {t('footer.supportLink')}
+            </Link>
+          </div>
         </div>
       </div>
       <div className="border-t border-white/10 py-4">

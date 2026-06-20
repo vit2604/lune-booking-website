@@ -539,6 +539,25 @@ const productionFixPacks = {
       originalMessage: 'Original message',
       waitMoment: 'Thank you. Please wait a moment, our Lune team will reply shortly.',
     },
+    footer: {
+      policyLink: 'Booking, payment & privacy policy',
+      supportLink: 'Contact Lune support',
+    },
+    policiesPage: {
+      eyebrow: 'Guest policies',
+      title: 'Booking, payment, cancellation and privacy policy',
+      intro: 'Essential information for direct bookings at {hotelName}, {address}.',
+      cancellationTitle: 'Cancellation Policy',
+      cancellationBody: 'Please contact the Lune team as soon as possible for cancellation requests.',
+      paymentTitle: 'Payment Policy',
+      paymentBody:
+        'Payment confirmation may be required for selected payment methods. Only use the official payment information shown on this website.',
+      privacyTitle: 'Privacy Policy',
+      privacyBody:
+        'Lune only collects the booking details needed to confirm your stay, such as name, phone, email, stay dates, guest count, and special request. Do not send passport scans, card numbers, OTP codes, or banking passwords through this website.',
+      supportTitle: 'Direct Support',
+      supportBody: 'For booking support, contact {hotelName} at {phone} or {email}.',
+    },
     errors: {
       apiUnavailable: 'We could not connect to the booking system. Please try again or contact Lune support.',
     },
@@ -615,6 +634,25 @@ const productionFixPacks = {
       originalMessage: 'Tin nhắn gốc',
       waitMoment: 'Cảm ơn quý khách. Vui lòng chờ trong giây lát, đội ngũ Lune sẽ phản hồi sớm.',
     },
+    footer: {
+      policyLink: 'Chính sách đặt phòng, thanh toán và bảo mật',
+      supportLink: 'Liên hệ hỗ trợ Lune',
+    },
+    policiesPage: {
+      eyebrow: 'Chính sách dành cho khách',
+      title: 'Chính sách đặt phòng, thanh toán, hủy phòng và bảo mật',
+      intro: 'Thông tin cần thiết cho đặt phòng trực tiếp tại {hotelName}, {address}.',
+      cancellationTitle: 'Chính sách hủy phòng',
+      cancellationBody: 'Vui lòng liên hệ đội ngũ Lune sớm nhất có thể nếu cần hủy hoặc thay đổi đặt phòng.',
+      paymentTitle: 'Chính sách thanh toán',
+      paymentBody:
+        'Một số phương thức có thể cần xác nhận thanh toán. Chỉ sử dụng thông tin thanh toán chính thức hiển thị trên website này.',
+      privacyTitle: 'Chính sách bảo mật',
+      privacyBody:
+        'Lune chỉ thu thập thông tin cần thiết để xác nhận kỳ lưu trú như tên, số điện thoại, email, ngày ở, số khách và yêu cầu đặc biệt. Không gửi ảnh hộ chiếu, số thẻ, mã OTP hoặc mật khẩu ngân hàng qua website này.',
+      supportTitle: 'Hỗ trợ trực tiếp',
+      supportBody: 'Để được hỗ trợ đặt phòng, liên hệ {hotelName} qua {phone} hoặc {email}.',
+    },
     errors: {
       apiUnavailable: 'Không thể kết nối hệ thống đặt phòng. Vui lòng thử lại hoặc liên hệ Lune.',
     },
@@ -687,6 +725,24 @@ const productionFixPacks = {
       aiTranslated: '自动翻译',
       originalMessage: '原始消息',
       waitMoment: '谢谢您。请稍候，Lune 团队会尽快回复。',
+    },
+    footer: {
+      policyLink: '预订、付款与隐私政策',
+      supportLink: '联系 Lune 客服',
+    },
+    policiesPage: {
+      eyebrow: '住客政策',
+      title: '预订、付款、取消与隐私政策',
+      intro: '{hotelName} 直接预订的重要信息，地址：{address}。',
+      cancellationTitle: '取消政策',
+      cancellationBody: '如需取消或更改预订，请尽快联系 Lune 团队。',
+      paymentTitle: '付款政策',
+      paymentBody: '部分付款方式可能需要确认。请仅使用本网站显示的官方付款信息。',
+      privacyTitle: '隐私政策',
+      privacyBody:
+        'Lune 仅收集确认入住所需的信息，例如姓名、电话、邮箱、入住日期、住客人数和特殊要求。请勿通过本网站发送护照扫描件、银行卡号、OTP 验证码或银行密码。',
+      supportTitle: '直接客服',
+      supportBody: '如需预订帮助，请通过 {phone} 或 {email} 联系 {hotelName}。',
     },
     errors: {
       apiUnavailable: '无法连接预订系统。请重试或联系 Lune 客服。',
@@ -761,6 +817,24 @@ const productionFixPacks = {
       originalMessage: '원문 메시지',
       waitMoment: '감사합니다. 잠시만 기다려 주세요. Lune 팀이 곧 답변드리겠습니다.',
     },
+    footer: {
+      policyLink: '예약, 결제 및 개인정보 정책',
+      supportLink: 'Lune 지원팀 문의',
+    },
+    policiesPage: {
+      eyebrow: '투숙객 정책',
+      title: '예약, 결제, 취소 및 개인정보 정책',
+      intro: '{hotelName}, {address} 직접 예약을 위한 필수 정보입니다.',
+      cancellationTitle: '취소 정책',
+      cancellationBody: '예약 취소 또는 변경이 필요한 경우 가능한 한 빨리 Lune 팀에 문의해 주세요.',
+      paymentTitle: '결제 정책',
+      paymentBody: '일부 결제 방법은 확인이 필요할 수 있습니다. 이 웹사이트에 표시된 공식 결제 정보만 사용해 주세요.',
+      privacyTitle: '개인정보 정책',
+      privacyBody:
+        'Lune은 예약 확인에 필요한 이름, 전화번호, 이메일, 숙박 날짜, 인원, 요청사항만 수집합니다. 여권 스캔본, 카드 번호, OTP 코드 또는 은행 비밀번호를 이 웹사이트로 보내지 마세요.',
+      supportTitle: '직접 지원',
+      supportBody: '예약 지원은 {phone} 또는 {email}로 {hotelName}에 문의해 주세요.',
+    },
     errors: {
       apiUnavailable: '예약 시스템에 연결할 수 없습니다. 다시 시도하시거나 Lune에 문의해 주세요.',
     },
@@ -834,6 +908,24 @@ const productionFixPacks = {
       aiTranslated: 'Автоматический перевод',
       originalMessage: 'Исходное сообщение',
       waitMoment: 'Спасибо. Пожалуйста, подождите немного, команда Lune скоро ответит.',
+    },
+    footer: {
+      policyLink: 'Политика бронирования, оплаты и конфиденциальности',
+      supportLink: 'Связаться с поддержкой Lune',
+    },
+    policiesPage: {
+      eyebrow: 'Правила для гостей',
+      title: 'Правила бронирования, оплаты, отмены и конфиденциальности',
+      intro: 'Важная информация для прямого бронирования в {hotelName}, {address}.',
+      cancellationTitle: 'Политика отмены',
+      cancellationBody: 'Если нужно отменить или изменить бронирование, пожалуйста, свяжитесь с командой Lune как можно раньше.',
+      paymentTitle: 'Политика оплаты',
+      paymentBody: 'Для некоторых способов оплаты может потребоваться подтверждение. Используйте только официальные платежные данные, указанные на этом сайте.',
+      privacyTitle: 'Политика конфиденциальности',
+      privacyBody:
+        'Lune собирает только данные, необходимые для подтверждения проживания: имя, телефон, email, даты проживания, количество гостей и особые пожелания. Не отправляйте через сайт сканы паспорта, номера карт, OTP-коды или банковские пароли.',
+      supportTitle: 'Прямая поддержка',
+      supportBody: 'Для помощи с бронированием свяжитесь с {hotelName}: {phone} или {email}.',
     },
     errors: {
       apiUnavailable: 'Не удалось подключиться к системе бронирования. Попробуйте еще раз или свяжитесь с Lune.',

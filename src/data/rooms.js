@@ -447,6 +447,43 @@ const baseRooms = [
       },
     },
   },
+  {
+    id: 'premier-king-apartment',
+    slug: 'premier-king-apartment',
+    name: 'Premier King Apartment',
+    type: 'Premier apartment',
+    maxGuests: 2,
+    bed: '1 king bed',
+    size: '38m²',
+    price: 1450000,
+    bathroom: 'Private bathroom with walk-in shower',
+    shortDescription:
+      'A warm premier apartment for two guests, with a king bed, practical storage, work corner, and boutique details.',
+    description:
+      'The Premier King Apartment gives couples and business travelers a polished Lune stay with a comfortable king bed, private bathroom, warm lighting, work corner, smart storage, elevator access, and an easy location near My Khe Beach.',
+    amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Work desk', 'Smart TV', 'Elevator', 'Near beach'],
+    highlights: ['King bed', 'Work corner', 'Quiet boutique style'],
+    image: luneImages.type3Compact[1],
+    gallery: [luneImages.type3Compact[1], ...luneImages.type3Compact.filter((image) => image !== luneImages.type3Compact[1])],
+    pricingRules: makePricingRules(1450000),
+    availabilityRules: defaultAvailabilityRules,
+    blockedDates: [],
+    translations: {
+      en: {
+        name: 'Premier King Apartment',
+        shortDescription:
+          'A warm premier apartment for two guests, with a king bed, practical storage, work corner, and boutique details.',
+        description:
+          'The Premier King Apartment gives couples and business travelers a polished Lune stay with a comfortable king bed, private bathroom, warm lighting, work corner, smart storage, elevator access, and an easy location near My Khe Beach.',
+        fullDescription:
+          'The Premier King Apartment gives couples and business travelers a polished Lune stay with a comfortable king bed, private bathroom, warm lighting, work corner, smart storage, elevator access, and an easy location near My Khe Beach.',
+        amenities: ['Free Wi-Fi', 'Air conditioning', 'Private bathroom', 'Work desk', 'Smart TV', 'Elevator', 'Near beach'],
+        suitableFor: ['Couples', 'Business travelers', 'Short stays', 'Beach trips'],
+        policies: defaultPolicies,
+        priceNote: 'Premier King Apartment rate: 1,450,000 VND per night. Final payment is charged in VND.',
+      },
+    },
+  },
 ];
 
 const fallbackLanguages = ['zh-TW', 'ja', 'th', 'ru', 'fr', 'de', 'es', 'it', 'id', 'ms', 'ar', 'hi'];
@@ -459,4 +496,4 @@ export const rooms = baseRooms.map((room) => {
   return { ...room, translations };
 });
 
-export const roomTypes = ['Studio', 'Balcony apartment', 'Family apartment', 'Deluxe double', 'Type 3 kitchen'];
+export const roomTypes = ['Studio', 'Balcony apartment', 'Family apartment', 'Deluxe double', 'Type 3 kitchen', 'Premier apartment'];

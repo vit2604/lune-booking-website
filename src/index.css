@@ -112,6 +112,15 @@
     backdrop-filter: none !important;
   }
 
+  .room-carousel {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .room-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
   .lune-hero-depth-layer {
     clip-path: polygon(58% 0, 100% 0, 100% 100%, 69% 100%, 64% 76%, 72% 48%, 63% 23%);
     filter: saturate(1.05) contrast(1.05);

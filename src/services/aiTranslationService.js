@@ -11,7 +11,7 @@ const sameText = (text, targetLanguage, sourceLanguage = 'auto') => ({
 
 const knownPhrases = {
   vi: {
-    'i want to book a room': 'Tôi muốn đặt phòng.',
+    'i want to book a room': 'Khách muốn đặt phòng.',
     'do you have availability?': 'Khách hỏi khách sạn còn phòng không.',
     'can i check in early?': 'Khách hỏi có thể nhận phòng sớm không.',
     'how can i pay?': 'Khách hỏi có thể thanh toán bằng cách nào.',
@@ -21,16 +21,37 @@ const knownPhrases = {
     '조기 체크인이 가능한가요?': 'Khách hỏi có thể nhận phòng sớm không.',
     '결제는 어떻게 하나요?': 'Khách hỏi có thể thanh toán bằng cách nào.',
     '예약 도움이 필요합니다': 'Khách cần hỗ trợ về đặt phòng.',
+    '我想订房': 'Khách muốn đặt phòng.',
+    '有空房吗?': 'Khách hỏi còn phòng không.',
+    '可以提前入住吗?': 'Khách hỏi có thể nhận phòng sớm không.',
+    '怎么付款?': 'Khách hỏi có thể thanh toán bằng cách nào.',
+    'мне нужна помощь с бронированием': 'Khách cần hỗ trợ về đặt phòng.',
   },
   ko: {
     'xin quý khách hãy chờ trong giây lát. đội ngũ lune sẽ phản hồi ngay.':
       '잠시만 기다려 주세요. Lune 팀이 곧 답변드리겠습니다.',
     'chúng tôi đã nhận được tin nhắn của quý khách. vui lòng chờ trong giây lát.':
       '메시지를 받았습니다. 잠시만 기다려 주세요.',
+    'khách muốn đặt phòng.': '객실 예약을 원하십니다.',
+    'khách hỏi khách sạn còn phòng không.': '객실 가능 여부를 문의하셨습니다.',
+  },
+  zh: {
+    'xin quý khách hãy chờ trong giây lát. đội ngũ lune sẽ phản hồi ngay.':
+      '请稍候，Lune 团队会尽快回复您。',
+    'chúng tôi đã nhận được tin nhắn của quý khách. vui lòng chờ trong giây lát.':
+      '我们已收到您的消息，请稍候。',
+  },
+  ru: {
+    'xin quý khách hãy chờ trong giây lát. đội ngũ lune sẽ phản hồi ngay.':
+      'Пожалуйста, подождите немного. Команда Lune скоро ответит.',
+    'chúng tôi đã nhận được tin nhắn của quý khách. vui lòng chờ trong giây lát.':
+      'Мы получили ваше сообщение. Пожалуйста, подождите немного.',
   },
   en: {
     'xin quý khách hãy chờ trong giây lát. đội ngũ lune sẽ phản hồi ngay.':
       'Please wait a moment. The Lune team will reply shortly.',
+    'chúng tôi đã nhận được tin nhắn của quý khách. vui lòng chờ trong giây lát.':
+      'We have received your message. Please wait a moment.',
   },
 };
 

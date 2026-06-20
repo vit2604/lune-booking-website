@@ -4,6 +4,8 @@ import {
   BedDouble,
   Building2,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Headphones,
   MapPin,
@@ -14,7 +16,7 @@ import {
   Waves,
   Wifi,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import { defaultBrandingSettings, getBrandingSettings } from '../admin/services/adminSettingsService.js';
@@ -40,8 +42,9 @@ export default function HomePage() {
   const [rooms, setRooms] = useState(getVisibleRooms());
   const [branding, setBranding] = useState(getBrandingSettings());
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
+  const roomCarouselRef = useRef(null);
   const { t } = useTranslation();
-  const featured = rooms.slice(0, 3);
+  const featured = rooms.slice(0, 6);
   const guestInfoItems = t('home.guestInfoItems');
   const faqItems = t('home.faqItems');
   const translatedBranding = (key, translationKey) =>
@@ -158,6 +161,20 @@ export default function HomePage() {
     navigate('/booking');
   };
 
+  const scrollFeaturedRooms = (direction) => {
+    const carousel = roomCarouselRef.current;
+    if (!carousel) return;
+
+    const firstCard = carousel.querySelector('[data-room-slide]');
+    const gap = 24;
+    const scrollAmount = firstCard ? firstCard.getBoundingClientRect().width + gap : carousel.clientWidth * 0.9;
+
+    carousel.scrollBy({
+      left: direction * scrollAmount,
+      behavior: 'smooth',
+    });
+  };
+
   return (
     <>
       <RevealOnScroll as="section" direction="none" duration={500} className="lune-hero-section relative isolate overflow-hidden bg-lune-ink text-white">
@@ -167,6 +184,9 @@ export default function HomePage() {
             src={slide.src}
             alt={index === activeHeroIndex ? slide.alt : ''}
             aria-hidden={index === activeHeroIndex ? undefined : 'true'}
+            loading={index === 0 ? 'eager' : 'lazy'}
+            decoding="async"
+            fetchPriority={index === 0 ? 'high' : 'auto'}
             className={`absolute inset-0 z-0 h-full w-full object-cover transition-opacity duration-1000 ${
               index === activeHeroIndex ? 'opacity-100' : 'opacity-0'
             }`}
@@ -201,15 +221,19 @@ export default function HomePage() {
                 <button
                   key={slide.src}
                   type="button"
-                  className={`h-3.5 rounded-full border border-white/70 transition-all duration-300 ${
-                    index === activeHeroIndex ? 'w-10 bg-white' : 'w-3.5 bg-white/35 hover:bg-white/75'
-                  }`}
+                  className="group grid h-11 min-w-11 place-items-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
                   aria-label={`Show image ${index + 1}`}
                   aria-current={index === activeHeroIndex}
                   onClick={() => setActiveHeroIndex(index)}
                   onMouseEnter={() => setActiveHeroIndex(index)}
                   onFocus={() => setActiveHeroIndex(index)}
-                />
+                >
+                  <span
+                    className={`h-3.5 rounded-full border border-white/70 transition-all duration-300 ${
+                      index === activeHeroIndex ? 'w-10 bg-white' : 'w-3.5 bg-white/35 group-hover:bg-white/75'
+                    }`}
+                  />
+                </button>
               ))}
             </div>
           </div>
@@ -430,12 +454,67 @@ export default function HomePage() {
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
+          <div className="relative mt-10">
+            {featured.length > 3 && (
+              <>
+                <button
+                  type="button"
+                  className="absolute left-0 top-[42%] z-20 hidden h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full border border-stone-200 bg-white text-lune-ink shadow-[0_18px_45px_rgba(23,20,18,0.16)] transition hover:border-lune-gold hover:bg-lune-gold hover:text-white lg:flex"
+                  aria-label="Previous rooms"
+                  onClick={() => scrollFeaturedRooms(-1)}
+                >
+                  <ChevronLeft className="h-6 w-6" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  className="absolute right-0 top-[42%] z-20 hidden h-12 w-12 translate-x-1/2 items-center justify-center rounded-full border border-stone-200 bg-white text-lune-ink shadow-[0_18px_45px_rgba(23,20,18,0.16)] transition hover:border-lune-gold hover:bg-lune-gold hover:text-white lg:flex"
+                  aria-label="Next rooms"
+                  onClick={() => scrollFeaturedRooms(1)}
+                >
+                  <ChevronRight className="h-6 w-6" aria-hidden="true" />
+                </button>
+              </>
+            )}
+
+            <div
+              ref={roomCarouselRef}
+              className="room-carousel flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-6"
+              aria-label={t('home.chooseStay')}
+            >
             {featured.map((room, index) => (
-              <RevealOnScroll key={room.id} variant={index % 2 === 0 ? 'curve-left' : 'curve-right'} delay={index * 90}>
-                <RoomCard room={room} onBook={handleBook} />
+              <RevealOnScroll
+                key={room.id}
+                variant={index % 2 === 0 ? 'curve-left' : 'curve-right'}
+                delay={(index % 3) * 90}
+                className="min-w-[86%] snap-start sm:min-w-[48%] lg:min-w-[31.9%]"
+              >
+                <div data-room-slide className="h-full">
+                  <RoomCard room={room} onBook={handleBook} />
+                </div>
               </RevealOnScroll>
             ))}
+            </div>
+
+            {featured.length > 1 && (
+              <div className="mt-2 flex justify-center gap-3 lg:hidden">
+                <button
+                  type="button"
+                  className="grid h-11 w-11 place-items-center rounded-full border border-stone-200 bg-white text-lune-ink shadow-soft"
+                  aria-label="Previous rooms"
+                  onClick={() => scrollFeaturedRooms(-1)}
+                >
+                  <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  className="grid h-11 w-11 place-items-center rounded-full border border-stone-200 bg-white text-lune-ink shadow-soft"
+                  aria-label="Next rooms"
+                  onClick={() => scrollFeaturedRooms(1)}
+                >
+                  <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </RevealOnScroll>
