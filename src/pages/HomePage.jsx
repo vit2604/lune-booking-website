@@ -142,6 +142,20 @@ export default function HomePage() {
     return () => window.clearInterval(timer);
   }, [heroSlides.length]);
 
+  const jumpRoomCarouselTo = (carousel, left) => {
+    const previousScrollBehavior = carousel.style.scrollBehavior;
+    carousel.style.scrollBehavior = 'auto';
+    carousel.scrollLeft = left;
+
+    window.requestAnimationFrame(() => {
+      if (previousScrollBehavior) {
+        carousel.style.scrollBehavior = previousScrollBehavior;
+      } else {
+        carousel.style.removeProperty('scroll-behavior');
+      }
+    });
+  };
+
   useEffect(() => {
     const carousel = roomCarouselRef.current;
     if (!carousel || featured.length <= 1) return undefined;
@@ -153,7 +167,7 @@ export default function HomePage() {
 
       const carouselLeft = carousel.getBoundingClientRect().left;
       const middleLeft = firstMiddleCard.getBoundingClientRect().left - carouselLeft + carousel.scrollLeft;
-      carousel.scrollTo({ left: middleLeft, behavior: 'auto' });
+      jumpRoomCarouselTo(carousel, middleLeft);
     };
 
     window.requestAnimationFrame(setMiddlePosition);
@@ -224,11 +238,8 @@ export default function HomePage() {
     roomCarouselResetTimerRef.current = window.setTimeout(() => {
       const normalizedIndex = ((nextIndex % visibleRoomCount) + visibleRoomCount) % visibleRoomCount;
       const middleIndex = normalizedIndex + visibleRoomCount;
-      carousel.scrollTo({
-        left: positions[middleIndex],
-        behavior: 'auto',
-      });
-    }, 520);
+      jumpRoomCarouselTo(carousel, positions[middleIndex]);
+    }, 680);
   };
 
   return (
