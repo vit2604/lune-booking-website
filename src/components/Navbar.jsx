@@ -50,7 +50,7 @@ export default function Navbar() {
             <img
               src={branding.logoUrl}
               alt={branding.shortName}
-              className="h-28 w-36 shrink-0 object-contain sm:h-40 sm:w-56 lg:h-52 lg:w-72"
+              className="h-28 w-36 shrink-0 object-contain brightness-150 contrast-125 drop-shadow-[0_4px_14px_rgba(0,0,0,0.42)] sm:h-40 sm:w-56 lg:h-52 lg:w-72"
             />
           ) : (
             <span
