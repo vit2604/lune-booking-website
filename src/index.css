@@ -112,6 +112,18 @@
     backdrop-filter: none !important;
   }
 
+  .lune-hero-image {
+    object-position: center center;
+  }
+
+  .lune-hero-image-exterior {
+    object-position: center top;
+  }
+
+  .lune-hero-image-room {
+    object-position: center center;
+  }
+
   .room-carousel {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -126,6 +138,23 @@
     filter: saturate(1.05) contrast(1.05);
     mask-image: linear-gradient(90deg, transparent 0%, transparent 53%, rgba(0, 0, 0, 0.2) 61%, #000 78%);
     opacity: 0.86;
+  }
+
+  @media (max-width: 767px) {
+    .lune-hero-image,
+    .lune-hero-overlay {
+      bottom: auto !important;
+      height: min(100svh, 760px) !important;
+      min-height: 680px;
+    }
+
+    .lune-hero-image-exterior {
+      object-position: center top;
+    }
+
+    .lune-hero-image-room {
+      object-position: center center;
+    }
   }
 
   .reveal-on-scroll {

@@ -165,12 +165,22 @@ export default function HomePage() {
     const carousel = roomCarouselRef.current;
     if (!carousel) return;
 
-    const firstCard = carousel.querySelector('[data-room-slide]');
-    const gap = 24;
-    const scrollAmount = firstCard ? firstCard.getBoundingClientRect().width + gap : carousel.clientWidth * 0.9;
+    const cards = Array.from(carousel.querySelectorAll('[data-room-slide]'));
+    if (!cards.length) return;
 
-    carousel.scrollBy({
-      left: direction * scrollAmount,
+    const carouselLeft = carousel.getBoundingClientRect().left;
+    const positions = cards.map((card) => card.getBoundingClientRect().left - carouselLeft + carousel.scrollLeft);
+    const currentIndex = positions.reduce((closestIndex, position, index) => {
+      const closestDistance = Math.abs(positions[closestIndex] - carousel.scrollLeft);
+      const distance = Math.abs(position - carousel.scrollLeft);
+      return distance < closestDistance ? index : closestIndex;
+    }, 0);
+    const nextIndex = direction > 0
+      ? (currentIndex + 1) % cards.length
+      : (currentIndex - 1 + cards.length) % cards.length;
+
+    carousel.scrollTo({
+      left: positions[nextIndex],
       behavior: 'smooth',
     });
   };
@@ -187,12 +197,12 @@ export default function HomePage() {
             loading={index === 0 ? 'eager' : 'lazy'}
             decoding="async"
             fetchPriority={index === 0 ? 'high' : 'auto'}
-            className={`absolute inset-0 z-0 h-full w-full object-cover transition-opacity duration-1000 ${
+            className={`lune-hero-image ${index === 0 ? 'lune-hero-image-exterior' : 'lune-hero-image-room'} absolute inset-0 z-0 h-full w-full object-cover transition-opacity duration-1000 ${
               index === activeHeroIndex ? 'opacity-100' : 'opacity-0'
             }`}
           />
         ))}
-        <div className="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_62%_32%,rgba(255,255,255,0.18),transparent_30%),linear-gradient(90deg,rgba(21,16,11,0.82),rgba(60,43,26,0.44)_42%,rgba(23,18,13,0.12)_78%)]" />
+        <div className="lune-hero-overlay absolute inset-0 z-[1] bg-[radial-gradient(circle_at_62%_32%,rgba(255,255,255,0.18),transparent_30%),linear-gradient(90deg,rgba(21,16,11,0.82),rgba(60,43,26,0.44)_42%,rgba(23,18,13,0.12)_78%)]" />
         <img
           src={heroSlides[activeHeroIndex]?.src || branding.heroImage}
           alt=""
@@ -201,8 +211,8 @@ export default function HomePage() {
         />
         <div className="absolute inset-x-0 bottom-0 z-[2] h-40 bg-gradient-to-t from-black/45 to-transparent" />
 
-        <div className="page-shell relative z-20 flex min-h-[760px] flex-col justify-end pb-0 pt-32 sm:min-h-[820px] lg:min-h-screen">
-          <div className="max-w-3xl pb-10 sm:pb-14">
+        <div className="page-shell relative z-20 flex min-h-[680px] flex-col justify-end pb-0 pt-28 sm:min-h-[820px] sm:pt-32 lg:min-h-screen">
+          <div className="max-w-3xl pb-8 sm:pb-14">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-lune-gold sm:text-base">
               {heroSlogan || branding.hotelName}
             </p>
@@ -239,7 +249,7 @@ export default function HomePage() {
           </div>
 
           <form className="hero-search-panel relative z-40 mb-10 rounded-3xl border border-white bg-white p-3 text-lune-ink shadow-[0_32px_90px_rgba(23,20,18,0.34)] ring-1 ring-stone-200/80" onSubmit={handleSearch}>
-            <div className="grid gap-3 md:grid-cols-[1fr_1fr_0.9fr_220px]">
+            <div className="grid gap-3 lg:grid-cols-[1fr_1fr_0.9fr_220px]">
             <label className="rounded-2xl border border-stone-200 bg-white p-4 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
               <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.checkInDate')}</span>
               <span className="mt-3 flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-stone-200">
@@ -284,7 +294,7 @@ export default function HomePage() {
               </span>
             </label>
             <button
-              className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#463527] px-6 text-sm font-bold uppercase tracking-wide text-white opacity-100 shadow-[0_12px_34px_rgba(23,20,18,0.18)] transition hover:bg-lune-goldDark md:min-h-full"
+              className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#463527] px-6 text-sm font-bold uppercase tracking-wide text-white opacity-100 shadow-[0_12px_34px_rgba(23,20,18,0.18)] transition hover:bg-lune-goldDark lg:min-h-full"
               type="submit"
             >
               {heroButtonText}

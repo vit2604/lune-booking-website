@@ -44,13 +44,13 @@ export default function Navbar() {
           : 'sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur'
       }
     >
-      <nav className="page-shell flex h-28 items-center justify-between gap-5 md:h-36">
-        <Link to="/" className="flex min-w-0 items-center gap-3" onClick={() => setOpen(false)}>
+      <nav className="page-shell flex h-24 items-center justify-between gap-3 sm:h-28 lg:h-36 lg:gap-5">
+        <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:flex-none" onClick={() => setOpen(false)}>
           {branding.logoUrl ? (
             <img
               src={branding.logoUrl}
               alt={branding.shortName}
-              className="h-28 w-36 shrink-0 object-contain brightness-150 contrast-125 drop-shadow-[0_4px_14px_rgba(0,0,0,0.42)] sm:h-40 sm:w-56 lg:h-52 lg:w-72"
+              className="h-20 w-24 shrink-0 object-contain brightness-150 contrast-125 drop-shadow-[0_4px_14px_rgba(0,0,0,0.42)] sm:h-28 sm:w-36 md:h-32 md:w-44 lg:h-52 lg:w-72"
             />
           ) : (
             <span
@@ -62,7 +62,7 @@ export default function Navbar() {
             </span>
           )}
           <span
-            className={`max-w-[105px] text-xs font-bold uppercase leading-5 tracking-[0.12em] sm:max-w-[290px] sm:text-base sm:tracking-[0.14em] ${
+            className={`hidden max-w-[82px] truncate text-xs font-bold uppercase leading-5 tracking-[0.12em] min-[360px]:block min-[390px]:max-w-[120px] sm:max-w-[290px] sm:text-base sm:tracking-[0.14em] ${
               isHome ? 'text-white' : 'text-lune-ink'
             }`}
           >
@@ -70,7 +70,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-8 lg:flex">
           {navItems.map((item) => (
             <NavLink key={item.to} to={item.to} className={linkClass}>
               {t(item.labelKey)}
@@ -92,12 +92,12 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-2 md:hidden">
-          <Link to="/rooms" className="btn-gold px-3 text-xs" onClick={() => setOpen(false)}>
+        <div className="flex shrink-0 items-center gap-2 lg:hidden">
+          <Link to="/rooms" className="btn-gold min-h-11 shrink-0 px-3 text-xs" onClick={() => setOpen(false)}>
             {t('nav.bookNow')}
           </Link>
           <button
-            className={`grid min-h-11 w-11 place-items-center rounded-md border ${
+            className={`grid h-11 w-11 shrink-0 place-items-center rounded-md border ${
               isHome ? 'border-white/35 bg-white/10 text-white' : 'border-stone-200 text-lune-ink'
             }`}
             type="button"
@@ -110,7 +110,7 @@ export default function Navbar() {
       </nav>
 
       {open ? (
-        <div className="border-t border-stone-200 bg-white md:hidden">
+        <div className="border-t border-stone-200 bg-white lg:hidden">
           <div className="page-shell flex flex-col gap-4 py-5">
             {navItems.map((item) => (
               <NavLink
