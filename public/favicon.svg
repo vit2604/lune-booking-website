@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#5B4932"/>
+  <text
+    x="256"
+    y="275"
+    fill="#FFFFFF"
+    font-family="Inter, Segoe UI, Arial, sans-serif"
+    font-size="124"
+    font-weight="800"
+    letter-spacing="14"
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >LUNE</text>
+</svg>
