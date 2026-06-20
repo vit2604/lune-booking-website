@@ -43,8 +43,11 @@ export default function HomePage() {
   const [branding, setBranding] = useState(getBrandingSettings());
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const roomCarouselRef = useRef(null);
+  const roomCarouselResetTimerRef = useRef(null);
   const { t } = useTranslation();
   const featured = rooms.slice(0, 6);
+  const featuredSignature = featured.map((room) => room.id).join('|');
+  const featuredLoopRooms = featured.length > 1 ? [...featured, ...featured, ...featured] : featured;
   const guestInfoItems = t('home.guestInfoItems');
   const faqItems = t('home.faqItems');
   const translatedBranding = (key, translationKey) =>
@@ -139,6 +142,28 @@ export default function HomePage() {
     return () => window.clearInterval(timer);
   }, [heroSlides.length]);
 
+  useEffect(() => {
+    const carousel = roomCarouselRef.current;
+    if (!carousel || featured.length <= 1) return undefined;
+
+    const setMiddlePosition = () => {
+      const cards = Array.from(carousel.querySelectorAll('[data-room-slide]'));
+      const firstMiddleCard = cards[featured.length];
+      if (!firstMiddleCard) return;
+
+      const carouselLeft = carousel.getBoundingClientRect().left;
+      const middleLeft = firstMiddleCard.getBoundingClientRect().left - carouselLeft + carousel.scrollLeft;
+      carousel.scrollTo({ left: middleLeft, behavior: 'auto' });
+    };
+
+    window.requestAnimationFrame(setMiddlePosition);
+    return () => {
+      if (roomCarouselResetTimerRef.current) {
+        window.clearTimeout(roomCarouselResetTimerRef.current);
+      }
+    };
+  }, [featured.length, featuredSignature]);
+
   const handleSearch = (event) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -168,6 +193,7 @@ export default function HomePage() {
     const cards = Array.from(carousel.querySelectorAll('[data-room-slide]'));
     if (!cards.length) return;
 
+    const visibleRoomCount = featured.length;
     const carouselLeft = carousel.getBoundingClientRect().left;
     const positions = cards.map((card) => card.getBoundingClientRect().left - carouselLeft + carousel.scrollLeft);
     const currentIndex = positions.reduce((closestIndex, position, index) => {
@@ -175,14 +201,34 @@ export default function HomePage() {
       const distance = Math.abs(position - carousel.scrollLeft);
       return distance < closestDistance ? index : closestIndex;
     }, 0);
-    const nextIndex = direction > 0
-      ? (currentIndex + 1) % cards.length
-      : (currentIndex - 1 + cards.length) % cards.length;
+    let nextIndex = currentIndex + direction;
+
+    if (visibleRoomCount > 1) {
+      if (nextIndex < 0) nextIndex = visibleRoomCount * 2 - 1;
+      if (nextIndex >= cards.length) nextIndex = visibleRoomCount;
+    } else {
+      nextIndex = Math.max(0, Math.min(cards.length - 1, nextIndex));
+    }
+
+    if (roomCarouselResetTimerRef.current) {
+      window.clearTimeout(roomCarouselResetTimerRef.current);
+    }
 
     carousel.scrollTo({
       left: positions[nextIndex],
       behavior: 'smooth',
     });
+
+    if (visibleRoomCount <= 1) return;
+
+    roomCarouselResetTimerRef.current = window.setTimeout(() => {
+      const normalizedIndex = ((nextIndex % visibleRoomCount) + visibleRoomCount) % visibleRoomCount;
+      const middleIndex = normalizedIndex + visibleRoomCount;
+      carousel.scrollTo({
+        left: positions[middleIndex],
+        behavior: 'auto',
+      });
+    }, 520);
   };
 
   return (
@@ -491,9 +537,9 @@ export default function HomePage() {
               className="room-carousel flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-6"
               aria-label={t('home.chooseStay')}
             >
-            {featured.map((room, index) => (
+            {featuredLoopRooms.map((room, index) => (
               <RevealOnScroll
-                key={room.id}
+                key={`${room.id}-${index}`}
                 variant={index % 2 === 0 ? 'curve-left' : 'curve-right'}
                 delay={(index % 3) * 90}
                 className="min-w-[86%] snap-start sm:min-w-[48%] lg:min-w-[31.9%]"
