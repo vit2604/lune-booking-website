@@ -22,9 +22,6 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
           className="h-72 w-full object-cover transition duration-700 group-hover:scale-105"
         />
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/58 to-transparent" />
-        <span className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-lune-ink shadow-soft backdrop-blur">
-          {t('rooms.availableStays')}
-        </span>
         <div className="absolute bottom-4 left-4 rounded-full bg-lune-gold px-4 py-2 text-sm font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]">
           {formatVnd(room.price)} {t('common.perNight')}
         </div>

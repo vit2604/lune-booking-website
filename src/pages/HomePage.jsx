@@ -181,7 +181,7 @@ export default function HomePage() {
         />
         <div className="absolute inset-x-0 bottom-0 z-[2] h-40 bg-gradient-to-t from-black/45 to-transparent" />
 
-        <div className="page-shell relative z-10 flex min-h-[760px] flex-col justify-end pb-0 pt-32 sm:min-h-[820px] lg:min-h-screen">
+        <div className="page-shell relative z-20 flex min-h-[760px] flex-col justify-end pb-0 pt-32 sm:min-h-[820px] lg:min-h-screen">
           <div className="max-w-3xl pb-10 sm:pb-14">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-lune-gold sm:text-base">
               {heroSlogan || branding.hotelName}
@@ -214,7 +214,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <form className="hero-search-panel relative z-30 mb-10 rounded-3xl border border-white bg-white p-3 text-lune-ink shadow-[0_32px_90px_rgba(23,20,18,0.34)] ring-1 ring-stone-200/80" onSubmit={handleSearch}>
+          <form className="hero-search-panel relative z-40 mb-10 rounded-3xl border border-white bg-white p-3 text-lune-ink shadow-[0_32px_90px_rgba(23,20,18,0.34)] ring-1 ring-stone-200/80" onSubmit={handleSearch}>
             <div className="grid gap-3 md:grid-cols-[1fr_1fr_0.9fr_220px]">
             <label className="rounded-2xl border border-stone-200 bg-white p-4 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
               <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.checkInDate')}</span>
