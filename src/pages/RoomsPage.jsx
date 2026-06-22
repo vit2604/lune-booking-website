@@ -6,6 +6,7 @@ import { getBookings } from '../admin/services/adminBookingService.js';
 import RoomCard from '../components/RoomCard.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
+import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { fetchRoomsWithFallback } from '../services/roomApiService.js';
 import { addDays, buildBookingDraft, getDefaultDates, toDateInputValue, validateStay } from '../utils/booking.js';
 import { isRoomAvailable } from '../utils/bookingAvailabilityUtils.js';
@@ -36,37 +37,44 @@ export default function RoomsPage() {
   const [processingRoom, setProcessingRoom] = useState('');
   const roomTypes = [...new Set(rooms.map((room) => room.type).filter(Boolean))];
   const { t, currentLanguage } = useTranslation();
+  useDocumentMeta({
+    title: `${t('nav.rooms')} | ${BRAND}`,
+    description: t('rooms.title'),
+    path: '/rooms',
+  });
   const today = toDateInputValue(new Date());
 
   useEffect(() => {
-    const refresh = () => {
-      setRooms(getVisibleRooms());
-      setBookings(getBookings());
+    let ignore = false;
+    const refresh = async () => {
+      try {
+        const { rooms: nextRooms } = await fetchRoomsWithFallback({
+          lang: currentLanguage,
+          checkIn: filters.checkIn,
+          checkOut: filters.checkOut,
+          guests: filters.guests,
+        });
+        if (!ignore) setRooms(nextRooms);
+      } catch (error) {
+        if (!ignore) {
+          setRooms(getVisibleRooms());
+          setBookingError(error.message || t('errors.apiUnavailable'));
+        }
+      }
+      if (!ignore) setBookings(getBookings());
     };
+
+    refresh();
     window.addEventListener('lune:rooms-updated', refresh);
     window.addEventListener('lune:bookings-updated', refresh);
-    return () => {
-      window.removeEventListener('lune:rooms-updated', refresh);
-      window.removeEventListener('lune:bookings-updated', refresh);
-    };
-  }, []);
-
-  useEffect(() => {
-    let ignore = false;
-    fetchRoomsWithFallback({
-      lang: currentLanguage,
-      checkIn: filters.checkIn,
-      checkOut: filters.checkOut,
-      guests: filters.guests,
-    }).then(({ rooms: nextRooms }) => {
-      if (!ignore) setRooms(nextRooms);
-    }).catch((error) => {
-      if (!ignore) setBookingError(error.message || t('errors.apiUnavailable'));
-    });
+    window.addEventListener('focus', refresh);
     return () => {
       ignore = true;
+      window.removeEventListener('lune:rooms-updated', refresh);
+      window.removeEventListener('lune:bookings-updated', refresh);
+      window.removeEventListener('focus', refresh);
     };
-  }, [currentLanguage, filters.checkIn, filters.checkOut, filters.guests]);
+  }, [currentLanguage, filters.checkIn, filters.checkOut, filters.guests, t]);
 
   const filteredRooms = useMemo(() => {
     return rooms
@@ -143,7 +151,7 @@ export default function RoomsPage() {
           <RevealOnScroll as="aside" variant="curve-right" className="h-fit rounded-lg border border-stone-200 bg-white p-5 shadow-soft lg:sticky lg:top-28">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="h-5 w-5 text-lune-goldDark" aria-hidden="true" />
-              <h1 className="font-display text-3xl font-bold text-lune-ink">{t('rooms.filters')}</h1>
+              <h2 className="font-display text-3xl font-bold text-lune-ink">{t('rooms.filters')}</h2>
             </div>
             <div className="mt-6 grid gap-4">
               <label>
@@ -227,7 +235,7 @@ export default function RoomsPage() {
             <RevealOnScroll variant="float" className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div>
                 <p className="eyebrow">{t('rooms.availableStays')}</p>
-                <h2 className="section-title mt-3">{t('rooms.title')}</h2>
+                <h1 className="section-title mt-3">{t('rooms.title')}</h1>
               </div>
               <p className="text-sm font-medium text-stone-600">
                 {t('rooms.roomsFound', { count: filteredRooms.length })}

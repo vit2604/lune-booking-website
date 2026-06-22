@@ -18,6 +18,7 @@ import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useCurrency } from '../i18n/useCurrency.js';
 import { getLocalizedRoom } from '../i18n/roomTranslations.js';
 import { useTranslation } from '../i18n/useTranslation.js';
+import useDocumentMeta, { BRAND, SITE_ORIGIN } from '../hooks/useDocumentMeta.js';
 import {
   buildBookingDraft,
   calculateGrandTotal,
@@ -47,26 +48,16 @@ export default function RoomDetailPage() {
   });
   const [errors, setErrors] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoadingRoom, setIsLoadingRoom] = useState(true);
   const { t, currentLanguage } = useTranslation();
   const { currentCurrency } = useCurrency();
 
   useEffect(() => {
-    const refresh = () => {
-      setRooms(getVisibleRooms());
-      setBookings(getBookings());
-    };
-    window.addEventListener('lune:rooms-updated', refresh);
-    window.addEventListener('lune:bookings-updated', refresh);
-    return () => {
-      window.removeEventListener('lune:rooms-updated', refresh);
-      window.removeEventListener('lune:bookings-updated', refresh);
-    };
-  }, []);
-
-  useEffect(() => {
     let ignore = false;
-    fetchRoomWithFallback(slug, { lang: currentLanguage })
-      .then(({ room: apiRoom }) => {
+    const refresh = async () => {
+      setIsLoadingRoom(true);
+      try {
+        const { room: apiRoom } = await fetchRoomWithFallback(slug, { lang: currentLanguage });
         if (ignore || !apiRoom) return;
         setRooms((current) => {
           const exists = current.some((item) => item.id === apiRoom.id || item.slug === apiRoom.slug);
@@ -74,10 +65,25 @@ export default function RoomDetailPage() {
             ? current.map((item) => (item.id === apiRoom.id || item.slug === apiRoom.slug ? apiRoom : item))
             : [apiRoom, ...current];
         });
-      })
-      .catch(() => {});
+      } catch {
+        if (!ignore) setRooms(getVisibleRooms());
+      } finally {
+        if (!ignore) {
+          setBookings(getBookings());
+          setIsLoadingRoom(false);
+        }
+      }
+    };
+
+    refresh();
+    window.addEventListener('lune:rooms-updated', refresh);
+    window.addEventListener('lune:bookings-updated', refresh);
+    window.addEventListener('focus', refresh);
     return () => {
       ignore = true;
+      window.removeEventListener('lune:rooms-updated', refresh);
+      window.removeEventListener('lune:bookings-updated', refresh);
+      window.removeEventListener('focus', refresh);
     };
   }, [slug, currentLanguage]);
 
@@ -89,6 +95,31 @@ export default function RoomDetailPage() {
       total: calculateGrandTotal(room.price, booking.checkIn, booking.checkOut),
     };
   }, [booking.checkIn, booking.checkOut, room]);
+
+  const metaRoom = room ? getLocalizedRoom(room, currentLanguage) : null;
+  useDocumentMeta({
+    title: metaRoom ? `${metaRoom.name} | ${BRAND}` : `${t('nav.rooms')} | ${BRAND}`,
+    description: metaRoom?.description,
+    path: `/rooms/${slug}`,
+    image: metaRoom?.image
+      ? metaRoom.image.startsWith('http')
+        ? metaRoom.image
+        : `${SITE_ORIGIN}${metaRoom.image.startsWith('/') ? '' : '/'}${metaRoom.image}`
+      : undefined,
+    noindex: !metaRoom,
+  });
+
+  if (!room && isLoadingRoom) {
+    return (
+      <section className="section-space bg-lune-cream">
+        <div className="page-shell">
+          <div className="rounded-lg border border-stone-200 bg-white p-8 text-center text-sm font-medium text-stone-600 shadow-soft">
+            Loading room...
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!room) return <Navigate to="/rooms" replace />;
   const localizedRoom = getLocalizedRoom(room, currentLanguage);

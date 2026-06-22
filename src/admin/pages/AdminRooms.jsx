@@ -79,6 +79,7 @@ export default function AdminRooms() {
       toggleRoomStatus(id);
       refresh('Room visibility updated.');
     }
+    window.dispatchEvent(new Event('lune:rooms-updated'));
   };
 
   const handleDelete = async () => {
@@ -87,6 +88,7 @@ export default function AdminRooms() {
     setDeleteTarget(null);
     if (source === 'api') await loadRooms('Room hidden or deleted.');
     else refresh('Room deleted.');
+    window.dispatchEvent(new Event('lune:rooms-updated'));
   };
 
   return (

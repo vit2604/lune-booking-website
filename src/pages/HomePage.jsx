@@ -24,6 +24,8 @@ import RoomCard from '../components/RoomCard.jsx';
 import BookingPolicy from '../components/BookingPolicy.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
+import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
+import { fetchRoomsWithFallback } from '../services/roomApiService.js';
 import { buildBookingDraft, getDefaultDates } from '../utils/booking.js';
 import { saveBookingDraft } from '../utils/storage.js';
 
@@ -43,7 +45,12 @@ export default function HomePage() {
   const [branding, setBranding] = useState(getBrandingSettings());
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslation();
+  useDocumentMeta({
+    title: BRAND,
+    description: `${t('home.heroTitle')} — ${t('home.heroSubtitle')}`,
+    path: '/',
+  });
   const featured = rooms.slice(0, 6);
   const featuredSignature = featured.map((room) => room.id).join('|');
   const visibleFeaturedRooms = featured.length
@@ -124,17 +131,27 @@ export default function HomePage() {
   ];
 
   useEffect(() => {
-    const refresh = () => {
-      setRooms(getVisibleRooms());
-      setBranding(getBrandingSettings());
+    let ignore = false;
+    const refresh = async () => {
+      try {
+        const { rooms: nextRooms } = await fetchRoomsWithFallback({ lang: currentLanguage });
+        if (!ignore) setRooms(nextRooms);
+      } catch {
+        if (!ignore) setRooms(getVisibleRooms());
+      }
+      if (!ignore) setBranding(getBrandingSettings());
     };
+    refresh();
     window.addEventListener('lune:rooms-updated', refresh);
     window.addEventListener('lune:settings-updated', refresh);
+    window.addEventListener('focus', refresh);
     return () => {
+      ignore = true;
       window.removeEventListener('lune:rooms-updated', refresh);
       window.removeEventListener('lune:settings-updated', refresh);
+      window.removeEventListener('focus', refresh);
     };
-  }, []);
+  }, [currentLanguage]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {

@@ -221,6 +221,7 @@ export default function AdminRoomForm() {
       } else if (isEdit) updateRoom(id, payload);
       else createRoom(payload);
 
+      window.dispatchEvent(new Event('lune:rooms-updated'));
       setToast(source === 'api'
         ? 'Room saved to database. Guest website will use the updated room data.'
         : 'Room saved to local demo data.');
