@@ -34,6 +34,14 @@ ADMIN_PASSWORD=your_strong_admin_password
 ADMIN_EMAIL=admin@luneboutiquedanang.id.vn
 CURRENCY_PROVIDER=frankfurter
 FRANKFURTER_BASE_URL=https://api.frankfurter.dev/v1
+PAYOS_ENABLED=false
+PAYOS_CLIENT_ID=
+PAYOS_API_KEY=
+PAYOS_CHECKSUM_KEY=
+PAYOS_RETURN_URL=https://luneboutiquedanang.id.vn/success
+PAYOS_CANCEL_URL=https://luneboutiquedanang.id.vn/payment
+PAYOS_WEBHOOK_URL=https://api.luneboutiquedanang.id.vn/api/webhooks/payment/payos
+PAYOS_TIMEOUT_MS=15000
 ```
 
 Do not commit real secrets to Git. `JWT_SECRET`, database credentials, and real payment/provider secrets must live in the hosting provider environment variables.
@@ -131,5 +139,6 @@ Expected response:
 - Do not run `prisma migrate reset` on production.
 - `npm run prisma:seed` is idempotent and only creates missing default data.
 - Change the admin password after first setup.
-- Payment providers are placeholders. Do not process card data directly in frontend.
+- PayOS QR payments are created by the backend only. Put `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, and `PAYOS_CHECKSUM_KEY` in backend environment variables, then set the PayOS webhook URL to `/api/webhooks/payment/payos`.
+- Card and wallet providers other than PayOS are placeholders. Do not process card data directly in frontend.
 - Keep `CORS_ORIGIN` restricted to the real frontend domain.

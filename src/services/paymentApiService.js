@@ -17,7 +17,7 @@ export async function getPaymentMethodsWithFallback() {
     if (!canUseMockFallback()) throw _error;
     const settings = getPaymentSettings();
     const methods = Object.entries(settings.paymentMethods || {})
-      .map(([key, config]) => ({ key, ...config }))
+      .map(([key, config]) => ({ id: key, key, ...config }))
       .filter((method) => method.enabled !== false && method.visibleForGuests !== false)
       .sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99));
     return { source: 'local', methods };

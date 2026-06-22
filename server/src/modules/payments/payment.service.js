@@ -1,4 +1,7 @@
+import { PayOS } from '@payos/node';
+import QRCode from 'qrcode';
 import { prisma } from '../../config/prisma.js';
+import { env } from '../../config/env.js';
 import { isAllowedPaymentMethod } from '../../constants/paymentMethods.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 
@@ -33,12 +36,13 @@ const defaultPaymentMethods = {
     qrImageUrl: '',
   },
   vietQr: {
-    enabled: false,
+    enabled: true,
     visibleForGuests: true,
-    displayName: 'VietQR',
-    description: 'VietQR payment placeholder.',
+    displayName: 'PayOS QR',
+    description: 'Scan QR code or open PayOS checkout to pay securely.',
     sortOrder: 4,
     statusAfterConfirm: 'PENDING',
+    provider: 'payOS',
   },
   creditCard: {
     enabled: false,
@@ -103,20 +107,24 @@ const defaultPaymentMethods = {
   },
 };
 
+let payosClient;
+
 export function getDefaultPaymentMethods() {
   return defaultPaymentMethods;
 }
 
 function normalizeSetting(setting) {
   const config = stripSensitiveFields(setting.configJson || {}) || {};
+  const shouldExposePayos = setting.key === 'vietQr' && payosIsConfigured();
   return {
     key: setting.key,
-    displayName: setting.displayName,
-    description: setting.description,
-    enabled: setting.enabled,
+    ...config,
+    displayName: shouldExposePayos ? 'PayOS QR' : setting.displayName,
+    description: shouldExposePayos ? 'Scan QR code or open PayOS checkout to pay securely.' : setting.description,
+    enabled: shouldExposePayos ? true : setting.enabled,
     visibleForGuests: setting.visibleForGuests,
     sortOrder: setting.sortOrder,
-    ...config,
+    payosConfigured: setting.key === 'vietQr' ? payosIsConfigured() : undefined,
   };
 }
 
@@ -168,6 +176,101 @@ function normalizePaymentStatus(status) {
   if (value === 'PAY_AT_PROPERTY' || value === 'PAYATPROPERTY') return 'PAY_AT_PROPERTY';
   if (['PENDING', 'PAID', 'FAILED', 'REFUNDED'].includes(value)) return value;
   return 'PENDING';
+}
+
+function payosIsConfigured() {
+  return Boolean(env.PAYOS_ENABLED && env.PAYOS_CLIENT_ID && env.PAYOS_API_KEY && env.PAYOS_CHECKSUM_KEY);
+}
+
+function getPayosClient() {
+  if (!payosIsConfigured()) return null;
+  if (!payosClient) {
+    payosClient = new PayOS({
+      clientId: env.PAYOS_CLIENT_ID,
+      apiKey: env.PAYOS_API_KEY,
+      checksumKey: env.PAYOS_CHECKSUM_KEY,
+      timeout: env.PAYOS_TIMEOUT_MS,
+      logLevel: env.NODE_ENV === 'production' ? 'off' : 'warn',
+    });
+  }
+  return payosClient;
+}
+
+function buildPayosOrderCode(bookingCode) {
+  const digits = String(bookingCode || '').replace(/\D/g, '');
+  const value = Number(digits.slice(-12));
+  if (Number.isSafeInteger(value) && value > 0) return value;
+  return Date.now();
+}
+
+function buildPayosDescription(booking) {
+  return `LUNE ${String(booking.bookingCode || '').replace(/\D/g, '').slice(-10)}`.slice(0, 25);
+}
+
+function getFrontendUrl(path = '/') {
+  const firstOrigin = String(env.CORS_ORIGIN || '')
+    .split(',')
+    .map((item) => item.trim())
+    .find(Boolean);
+  return `${firstOrigin || 'http://localhost:5173'}${path}`;
+}
+
+async function createPayosPaymentLink(booking) {
+  const payos = getPayosClient();
+  if (!payos) {
+    return {
+      provider: 'payOS',
+      configured: false,
+      message: 'PayOS is not configured. Please set PAYOS_CLIENT_ID, PAYOS_API_KEY, and PAYOS_CHECKSUM_KEY in backend environment variables.',
+    };
+  }
+
+  const orderCode = buildPayosOrderCode(booking.bookingCode);
+  const returnUrl = env.PAYOS_RETURN_URL || getFrontendUrl(`/success?bookingCode=${encodeURIComponent(booking.bookingCode)}`);
+  const cancelUrl = env.PAYOS_CANCEL_URL || getFrontendUrl('/payment');
+
+  let paymentLink;
+  try {
+    paymentLink = await payos.paymentRequests.create({
+      orderCode,
+      amount: booking.totalPrice,
+      description: buildPayosDescription(booking),
+      returnUrl,
+      cancelUrl,
+      buyerName: booking.guest?.fullName || undefined,
+      buyerEmail: booking.guest?.email || undefined,
+      buyerPhone: booking.guest?.phoneNumber ? `${booking.guest.phoneCode || ''}${booking.guest.phoneNumber}` : undefined,
+      items: [
+        {
+          name: String(booking.room?.name || booking.bookingCode).slice(0, 80),
+          quantity: 1,
+          price: booking.totalPrice,
+        },
+      ],
+    });
+  } catch (error) {
+    throw createHttpError(502, 'Could not create PayOS payment QR. Please try bank transfer or contact Lune support.', {
+      provider: 'payOS',
+      code: error.code,
+      desc: error.desc,
+    });
+  }
+
+  return {
+    provider: 'payOS',
+    configured: true,
+    orderCode,
+    paymentLinkId: paymentLink.paymentLinkId,
+    checkoutUrl: paymentLink.checkoutUrl,
+    qrCode: paymentLink.qrCode,
+    qrImage: paymentLink.qrCode
+      ? await QRCode.toDataURL(paymentLink.qrCode, { width: 320, margin: 1, errorCorrectionLevel: 'M' })
+      : '',
+    accountNumber: paymentLink.accountNumber,
+    accountName: paymentLink.accountName,
+    bin: paymentLink.bin,
+    status: paymentLink.status,
+  };
 }
 
 function sanitizePaymentMethodConfig(key, rawConfig = {}) {
@@ -266,7 +369,7 @@ export function generateTransferContent(booking, template) {
 export async function createPaymentRequest({ bookingCode, method }) {
   const booking = await prisma.booking.findUnique({
     where: { bookingCode },
-    include: { guest: true, payments: true },
+    include: { guest: true, payments: true, room: true },
   });
   if (!booking) throw createHttpError(404, 'Booking not found');
   if (booking.bookingStatus === 'CANCELLED') throw createHttpError(409, 'Cancelled bookings cannot be paid');
@@ -281,7 +384,44 @@ export async function createPaymentRequest({ bookingCode, method }) {
 
   const statusAfterConfirm = normalizePaymentStatus(selected.statusAfterConfirm);
   const transferContent =
-    method === 'bankTransfer' ? generateTransferContent(booking, selected.transferContentTemplate) : null;
+    method === 'bankTransfer' || method === 'vietQr' ? generateTransferContent(booking, selected.transferContentTemplate) : null;
+
+  const reusablePayment = await prisma.payment.findFirst({
+    where: {
+      bookingId: booking.id,
+      method,
+      status: { not: 'PAID' },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (method === 'vietQr' && reusablePayment?.rawPayloadJson?.configured) {
+    const providerPayload = reusablePayment.rawPayloadJson;
+    return {
+      bookingCode,
+      method,
+      paymentStatus: reusablePayment.status,
+      payment: {
+        id: reusablePayment.id,
+        method: reusablePayment.method,
+        amount: reusablePayment.amount,
+        currency: reusablePayment.currency,
+        status: reusablePayment.status,
+        transferContent: reusablePayment.transferContent,
+        provider: reusablePayment.provider,
+        transactionRef: reusablePayment.transactionRef,
+        checkoutUrl: providerPayload.checkoutUrl,
+        qrCode: providerPayload.qrCode,
+        payos: providerPayload,
+        createdAt: reusablePayment.createdAt,
+        updatedAt: reusablePayment.updatedAt,
+      },
+      bankInfo: null,
+      message: 'Existing PayOS QR payment link returned.',
+    };
+  }
+
+  const providerPayload = method === 'vietQr' ? await createPayosPaymentLink(booking) : null;
 
   const payment = await prisma.$transaction(async (tx) => {
     await tx.booking.update({
@@ -298,7 +438,8 @@ export async function createPaymentRequest({ bookingCode, method }) {
       currency: booking.currency,
       status: statusAfterConfirm,
       transferContent,
-      rawPayloadJson: { note: 'Mock payment request. Production must call backend provider integration.' },
+      transactionRef: providerPayload?.paymentLinkId || null,
+      rawPayloadJson: providerPayload || { note: 'Mock payment request. Production must call backend provider integration.' },
     };
 
     const existingPayment = await tx.payment.findFirst({
@@ -334,6 +475,11 @@ export async function createPaymentRequest({ bookingCode, method }) {
       currency: payment.currency,
       status: payment.status,
       transferContent: payment.transferContent,
+      provider: payment.provider,
+      transactionRef: payment.transactionRef,
+      checkoutUrl: providerPayload?.checkoutUrl,
+      qrCode: providerPayload?.qrCode,
+      payos: providerPayload,
       createdAt: payment.createdAt,
       updatedAt: payment.updatedAt,
     },
@@ -345,11 +491,15 @@ export async function createPaymentRequest({ bookingCode, method }) {
             accountHolder: selected.accountHolder || 'LUNE BOUTIQUE HOTEL',
             transferContent,
             qrImageUrl: selected.qrImageUrl || '',
-          }
+        }
         : null,
     message:
       method === 'payAtProperty' || method === 'cashAtProperty'
         ? 'You can pay directly at the property.'
+        : method === 'vietQr' && providerPayload?.configured
+          ? 'PayOS QR payment link created.'
+          : method === 'vietQr'
+            ? providerPayload?.message || 'PayOS is not configured.'
         : 'Payment request created as a placeholder.',
   };
 }
@@ -362,4 +512,56 @@ export async function verifyPaymentMock(bookingCode) {
     paymentStatus: booking.paymentStatus,
     message: 'Payment verification is pending. Production should rely on bank/provider webhooks.',
   };
+}
+
+function mapPayosStatus(status) {
+  const value = String(status || '').toUpperCase();
+  if (value === 'PAID') return 'PAID';
+  if (value === 'CANCELLED' || value === 'FAILED' || value === 'EXPIRED') return 'FAILED';
+  return 'PENDING';
+}
+
+export async function handlePayosWebhook(payload) {
+  const payos = getPayosClient();
+  if (!payos) throw createHttpError(503, 'PayOS is not configured');
+
+  const verified = await payos.webhooks.verify(payload);
+  const paymentLinkId = verified.paymentLinkId || verified.data?.paymentLinkId;
+  const orderCode = verified.orderCode || verified.data?.orderCode;
+  const status = mapPayosStatus(verified.status || (verified.data?.code === '00' ? 'PAID' : 'PENDING'));
+
+  const payment = await prisma.payment.findFirst({
+    where: {
+      OR: [
+        paymentLinkId ? { transactionRef: paymentLinkId } : undefined,
+        orderCode ? { rawPayloadJson: { path: ['orderCode'], equals: Number(orderCode) } } : undefined,
+      ].filter(Boolean),
+    },
+    include: { booking: true },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (!payment) {
+    return { received: true, matched: false, orderCode, paymentLinkId };
+  }
+
+  const nextStatus = payment.status === 'PAID' && status !== 'PAID' ? 'PAID' : status;
+  const paidAt = nextStatus === 'PAID' ? payment.paidAt || new Date() : payment.paidAt;
+
+  await prisma.$transaction([
+    prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: nextStatus,
+        paidAt,
+        rawPayloadJson: { ...(payment.rawPayloadJson || {}), lastWebhook: verified },
+      },
+    }),
+    prisma.booking.update({
+      where: { id: payment.bookingId },
+      data: { paymentStatus: nextStatus },
+    }),
+  ]);
+
+  return { received: true, matched: true, bookingCode: payment.booking.bookingCode, paymentStatus: nextStatus };
 }

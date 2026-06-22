@@ -46,6 +46,14 @@ const schema = z.object({
   BLUEJAY_ROOM_MAPPING_JSON: optionalString,
   BLUEJAY_TIMEOUT_MS: z.coerce.number().default(6000),
   BLUEJAY_FAIL_CLOSED: optionalBoolean(true),
+  PAYOS_ENABLED: optionalBoolean(false),
+  PAYOS_CLIENT_ID: optionalString,
+  PAYOS_API_KEY: optionalString,
+  PAYOS_CHECKSUM_KEY: optionalString,
+  PAYOS_RETURN_URL: optionalUrl,
+  PAYOS_CANCEL_URL: optionalUrl,
+  PAYOS_WEBHOOK_URL: optionalUrl,
+  PAYOS_TIMEOUT_MS: z.coerce.number().default(15000),
 });
 
 const parsed = schema.safeParse(process.env);

@@ -55,3 +55,19 @@ services:
         value: '6000'
       - key: BLUEJAY_FAIL_CLOSED
         value: 'true'
+      - key: PAYOS_ENABLED
+        value: 'false'
+      - key: PAYOS_CLIENT_ID
+        sync: false
+      - key: PAYOS_API_KEY
+        sync: false
+      - key: PAYOS_CHECKSUM_KEY
+        sync: false
+      - key: PAYOS_RETURN_URL
+        value: https://luneboutiquedanang.id.vn/success
+      - key: PAYOS_CANCEL_URL
+        value: https://luneboutiquedanang.id.vn/payment
+      - key: PAYOS_WEBHOOK_URL
+        sync: false
+      - key: PAYOS_TIMEOUT_MS
+        value: '15000'

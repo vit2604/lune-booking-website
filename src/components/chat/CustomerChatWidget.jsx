@@ -138,7 +138,7 @@ export default function CustomerChatWidget() {
   };
 
   return (
-    <div className={`fixed right-4 z-50 sm:right-6 ${hasMobileBookingBar ? 'bottom-24 md:bottom-5' : 'bottom-5'}`}>
+    <div className={`fixed right-4 z-50 sm:right-6 ${hasMobileBookingBar ? 'bottom-24 lg:bottom-5' : 'bottom-5'}`}>
       {open ? (
         <section className="mb-3 flex h-[min(620px,calc(100vh-120px))] w-[calc(100vw-32px)] max-w-sm flex-col overflow-hidden rounded-lg border border-stone-200 bg-white shadow-2xl">
           <header className="flex items-center justify-between bg-lune-ink px-4 py-3 text-white">

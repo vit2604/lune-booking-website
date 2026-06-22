@@ -25,7 +25,7 @@ const RevealOnScroll = forwardRef(function RevealOnScroll({
   direction = 'up',
   duration = 650,
   once = true,
-  threshold = 0.12,
+  threshold = 0,
   variant = 'slide',
   ...props
 }, forwardedRef) {

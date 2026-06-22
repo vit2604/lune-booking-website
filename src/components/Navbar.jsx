@@ -44,13 +44,13 @@ export default function Navbar() {
           : 'sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur'
       }
     >
-      <nav className="page-shell flex h-24 items-center justify-between gap-3 sm:h-28 lg:h-36 lg:gap-5">
-        <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:flex-none" onClick={() => setOpen(false)}>
+      <nav className="page-shell flex h-24 items-center justify-between gap-2 sm:h-28 sm:gap-3 lg:h-36 lg:gap-5">
+        <Link to="/" className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-3 lg:flex-none" onClick={() => setOpen(false)}>
           {branding.logoUrl ? (
             <img
               src={branding.logoUrl}
               alt={branding.shortName}
-              className="h-20 w-24 shrink-0 object-contain brightness-150 contrast-125 drop-shadow-[0_4px_14px_rgba(0,0,0,0.42)] sm:h-28 sm:w-36 md:h-32 md:w-44 lg:h-52 lg:w-72"
+              className="h-14 w-16 shrink-0 object-contain brightness-150 contrast-125 drop-shadow-[0_4px_14px_rgba(0,0,0,0.42)] min-[390px]:h-16 min-[390px]:w-20 sm:h-28 sm:w-36 md:h-32 md:w-44 lg:h-52 lg:w-72"
             />
           ) : (
             <span
@@ -62,11 +62,18 @@ export default function Navbar() {
             </span>
           )}
           <span
-            className={`hidden max-w-[82px] truncate text-xs font-bold uppercase leading-5 tracking-[0.12em] min-[360px]:block min-[390px]:max-w-[120px] sm:max-w-[290px] sm:text-base sm:tracking-[0.14em] ${
+            className={`block min-w-0 max-w-[96px] whitespace-normal text-[9px] font-bold uppercase leading-[1.15] tracking-[0.055em] min-[360px]:text-[10px] min-[390px]:max-w-[128px] min-[390px]:text-[11px] min-[390px]:tracking-[0.08em] sm:max-w-[290px] sm:text-base sm:leading-5 sm:tracking-[0.14em] ${
               isHome ? 'text-white' : 'text-lune-ink'
             }`}
           >
-            {branding.shortName}
+            {String(branding.shortName || 'Lune Boutique Apartment')
+              .replace(/Lune Boutique\s+Apartment/i, 'Lune Boutique\nApartment')
+              .split('\n')
+              .map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
           </span>
         </Link>
 
@@ -93,8 +100,14 @@ export default function Navbar() {
         </div>
 
         <div className="flex shrink-0 items-center gap-2 lg:hidden">
-          <Link to="/rooms" className="btn-gold min-h-11 shrink-0 px-3 text-xs" onClick={() => setOpen(false)}>
-            {t('nav.bookNow')}
+          <Link
+            to="/rooms"
+            className="btn-gold min-h-11 shrink-0 px-3 text-[11px] min-[390px]:px-4 min-[390px]:text-xs"
+            aria-label={t('nav.bookNow')}
+            onClick={() => setOpen(false)}
+          >
+            <span className="hidden min-[390px]:inline">{t('nav.bookNow')}</span>
+            <span className="min-[390px]:hidden">Book</span>
           </Link>
           <button
             className={`grid h-11 w-11 shrink-0 place-items-center rounded-md border ${

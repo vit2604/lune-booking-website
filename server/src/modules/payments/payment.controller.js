@@ -3,6 +3,7 @@ import {
   createPaymentRequest,
   getEnabledPaymentMethods,
   getPaymentSettings,
+  handlePayosWebhook,
   savePaymentSettings,
   verifyPaymentMock,
 } from './payment.service.js';
@@ -27,7 +28,12 @@ export async function verifyPayment(req, res) {
   sendSuccess(res, await verifyPaymentMock(req.body.bookingCode));
 }
 
-export function paymentWebhook(req, res) {
+export async function paymentWebhook(req, res) {
+  if (String(req.params.provider || '').toLowerCase() === 'payos') {
+    sendSuccess(res, await handlePayosWebhook(req.body), 'PayOS webhook received');
+    return;
+  }
+
   sendSuccess(res, {
     provider: req.params.provider,
     received: true,

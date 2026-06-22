@@ -61,6 +61,8 @@ export default function PaymentPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState('');
   const [confirming, setConfirming] = useState(false);
+  const [paymentRequest, setPaymentRequest] = useState(null);
+  const [creatingPaymentRequest, setCreatingPaymentRequest] = useState(false);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -106,6 +108,35 @@ export default function PaymentPage() {
   const bankQrSrc = safePaymentImageSrc(bankMethod.qrImageUrl || settings.qrImageUrl);
   const vietQrSrc = safePaymentImageSrc(vietQrMethod.qrImageUrl || settings.qrImageUrl);
 
+  const createProviderPaymentRequest = async (method = normalizedPaymentMethod) => {
+    if (!booking?.bookingCode) return null;
+    const normalizedMethod = normalizePaymentMethodId(method);
+    setCreatingPaymentRequest(true);
+    setError('');
+    try {
+      const apiPayment = await createPaymentWithFallback(booking.bookingCode, normalizedMethod);
+      const request =
+        apiPayment.source === 'api' ? apiPayment.payment : await createPaymentRequest(booking, normalizedMethod);
+      setPaymentRequest({ method: normalizedMethod, ...request });
+      return request;
+    } catch (paymentError) {
+      setError(paymentError.message || 'Could not create payment request. Please contact Lune support.');
+      return null;
+    } finally {
+      setCreatingPaymentRequest(false);
+    }
+  };
+
+  // Keep this effect above the early return below so the hook order stays stable
+  // across renders (booking starts null, then becomes populated). Moving it after
+  // the early return violates the Rules of Hooks and crashes the page.
+  useEffect(() => {
+    if (!booking?.bookingCode || normalizedPaymentMethod !== 'vietQr') return;
+    if (paymentRequest?.method === 'vietQr' && paymentRequest?.bookingCode === booking.bookingCode) return;
+    createProviderPaymentRequest('vietQr');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking?.bookingCode, normalizedPaymentMethod, paymentRequest?.bookingCode, paymentRequest?.method]);
+
   if (!booking || !room) {
     return (
       <section className="section-space bg-lune-cream">
@@ -132,6 +163,7 @@ export default function PaymentPage() {
   const handleMethodChange = (method) => {
     setPaymentMethod(method);
     setError('');
+    setPaymentRequest(null);
     const normalizedMethod = normalizePaymentMethodId(method);
     const nextMethod = enabledMethods.find((item) => item.id === normalizedMethod);
     const updated = {
@@ -180,13 +212,18 @@ export default function PaymentPage() {
     };
 
     try {
-      const apiPayment = await createPaymentWithFallback(updated.bookingCode, normalizedPaymentMethod);
-      const paymentRequest =
-        apiPayment.source === 'api' ? apiPayment.payment : await createPaymentRequest(updated, normalizedPaymentMethod);
+      const nextPaymentRequest =
+        paymentRequest?.method === normalizedPaymentMethod
+          ? paymentRequest
+          : await createProviderPaymentRequest(normalizedPaymentMethod);
+      if (!nextPaymentRequest) {
+        setConfirming(false);
+        return;
+      }
       const confirmed = {
         ...updated,
         paymentMethod: normalizedPaymentMethod,
-        paymentStatus: paymentRequest.paymentStatus || selectedMethod.statusAfterConfirm || 'pending',
+        paymentStatus: nextPaymentRequest.paymentStatus || selectedMethod.statusAfterConfirm || 'pending',
         createdAt: booking.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -264,11 +301,22 @@ export default function PaymentPage() {
     }
 
     if (normalizedPaymentMethod === 'vietQr') {
+      const providerPayment = paymentRequest?.payment || paymentRequest;
+      const payosQr = safePaymentImageSrc(providerPayment?.qrImage || providerPayment?.payos?.qrImage || providerPayment?.qrCode || providerPayment?.payos?.qrCode);
+      const payosCheckoutUrl = providerPayment?.checkoutUrl || providerPayment?.payos?.checkoutUrl;
+      const payosConfigured = providerPayment?.payos?.configured !== false;
+
       return (
         <div className="mt-6 rounded-lg border border-stone-200 bg-white p-5">
           <h2 className="text-lg font-semibold text-lune-ink">{t('payment.vietQr')}</h2>
           <div className="mt-4 grid place-items-center rounded-lg bg-lune-cream p-5">
-            {vietQrSrc ? (
+            {payosQr ? (
+              <img
+                src={payosQr}
+                alt={t('payment.qrPlaceholder')}
+                className="h-64 w-64 max-w-full rounded-md bg-white object-contain p-2 shadow-soft"
+              />
+            ) : vietQrSrc ? (
               <img
                 src={vietQrSrc}
                 alt={t('payment.qrPlaceholder')}
@@ -280,7 +328,29 @@ export default function PaymentPage() {
               </div>
             )}
           </div>
-          <p className="mt-3 text-center text-sm text-stone-600">{t('payment.qrSoon')}</p>
+          {creatingPaymentRequest ? (
+            <p className="mt-3 text-center text-sm font-medium text-lune-goldDark">{t('common.processing')}</p>
+          ) : payosQr ? (
+            <div className="mt-4 grid gap-3 text-center">
+              <p className="text-sm font-medium text-stone-700">
+                {t('payment.payosScanNote')}
+              </p>
+              {payosCheckoutUrl ? (
+                <a className="btn-secondary mx-auto min-h-11" href={payosCheckoutUrl} target="_blank" rel="noreferrer">
+                  {t('payment.openPayosCheckout')}
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-3 text-center">
+              <p className="text-sm text-stone-600">
+                {payosConfigured ? t('payment.qrSoon') : t('payment.payosNotConfigured')}
+              </p>
+              <button className="btn-secondary mx-auto min-h-11" type="button" onClick={() => createProviderPaymentRequest('vietQr')}>
+                {t('payment.createPayosQr')}
+              </button>
+            </div>
+          )}
         </div>
       );
     }

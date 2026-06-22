@@ -25,13 +25,16 @@ export default function GuestLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
       <Navbar />
       {settings.websiteStatus === 'maintenance' ? (
         <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-800">
           {settings.maintenanceMessage}
         </div>
       ) : null}
-      <main className="flex-1">
+      <main id="main-content" className="flex-1" tabIndex={-1}>
         <Outlet />
       </main>
       <Suspense fallback={null}>

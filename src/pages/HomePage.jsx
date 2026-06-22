@@ -16,7 +16,7 @@ import {
   Waves,
   Wifi,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import { defaultBrandingSettings, getBrandingSettings } from '../admin/services/adminSettingsService.js';
@@ -42,12 +42,13 @@ export default function HomePage() {
   const [rooms, setRooms] = useState(getVisibleRooms());
   const [branding, setBranding] = useState(getBrandingSettings());
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
-  const roomCarouselRef = useRef(null);
-  const roomCarouselResetTimerRef = useRef(null);
+  const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
   const { t } = useTranslation();
   const featured = rooms.slice(0, 6);
   const featuredSignature = featured.map((room) => room.id).join('|');
-  const featuredLoopRooms = featured.length > 1 ? [...featured, ...featured, ...featured] : featured;
+  const visibleFeaturedRooms = featured.length
+    ? Array.from({ length: Math.min(featured.length, 3) }, (_, offset) => featured[(featuredStartIndex + offset) % featured.length])
+    : [];
   const guestInfoItems = t('home.guestInfoItems');
   const faqItems = t('home.faqItems');
   const translatedBranding = (key, translationKey) =>
@@ -142,41 +143,9 @@ export default function HomePage() {
     return () => window.clearInterval(timer);
   }, [heroSlides.length]);
 
-  const jumpRoomCarouselTo = (carousel, left) => {
-    const previousScrollBehavior = carousel.style.scrollBehavior;
-    carousel.style.scrollBehavior = 'auto';
-    carousel.scrollLeft = left;
-
-    window.requestAnimationFrame(() => {
-      if (previousScrollBehavior) {
-        carousel.style.scrollBehavior = previousScrollBehavior;
-      } else {
-        carousel.style.removeProperty('scroll-behavior');
-      }
-    });
-  };
-
   useEffect(() => {
-    const carousel = roomCarouselRef.current;
-    if (!carousel || featured.length <= 1) return undefined;
-
-    const setMiddlePosition = () => {
-      const cards = Array.from(carousel.querySelectorAll('[data-room-slide]'));
-      const firstMiddleCard = cards[featured.length];
-      if (!firstMiddleCard) return;
-
-      const carouselLeft = carousel.getBoundingClientRect().left;
-      const middleLeft = firstMiddleCard.getBoundingClientRect().left - carouselLeft + carousel.scrollLeft;
-      jumpRoomCarouselTo(carousel, middleLeft);
-    };
-
-    window.requestAnimationFrame(setMiddlePosition);
-    return () => {
-      if (roomCarouselResetTimerRef.current) {
-        window.clearTimeout(roomCarouselResetTimerRef.current);
-      }
-    };
-  }, [featured.length, featuredSignature]);
+    setFeaturedStartIndex(0);
+  }, [featuredSignature]);
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -201,45 +170,8 @@ export default function HomePage() {
   };
 
   const scrollFeaturedRooms = (direction) => {
-    const carousel = roomCarouselRef.current;
-    if (!carousel) return;
-
-    const cards = Array.from(carousel.querySelectorAll('[data-room-slide]'));
-    if (!cards.length) return;
-
-    const visibleRoomCount = featured.length;
-    const carouselLeft = carousel.getBoundingClientRect().left;
-    const positions = cards.map((card) => card.getBoundingClientRect().left - carouselLeft + carousel.scrollLeft);
-    const currentIndex = positions.reduce((closestIndex, position, index) => {
-      const closestDistance = Math.abs(positions[closestIndex] - carousel.scrollLeft);
-      const distance = Math.abs(position - carousel.scrollLeft);
-      return distance < closestDistance ? index : closestIndex;
-    }, 0);
-    let nextIndex = currentIndex + direction;
-
-    if (visibleRoomCount > 1) {
-      if (nextIndex < 0) nextIndex = visibleRoomCount * 2 - 1;
-      if (nextIndex >= cards.length) nextIndex = visibleRoomCount;
-    } else {
-      nextIndex = Math.max(0, Math.min(cards.length - 1, nextIndex));
-    }
-
-    if (roomCarouselResetTimerRef.current) {
-      window.clearTimeout(roomCarouselResetTimerRef.current);
-    }
-
-    carousel.scrollTo({
-      left: positions[nextIndex],
-      behavior: 'smooth',
-    });
-
-    if (visibleRoomCount <= 1) return;
-
-    roomCarouselResetTimerRef.current = window.setTimeout(() => {
-      const normalizedIndex = ((nextIndex % visibleRoomCount) + visibleRoomCount) % visibleRoomCount;
-      const middleIndex = normalizedIndex + visibleRoomCount;
-      jumpRoomCarouselTo(carousel, positions[middleIndex]);
-    }, 680);
+    if (featured.length <= 1) return;
+    setFeaturedStartIndex((current) => (current + direction + featured.length) % featured.length);
   };
 
   return (
@@ -544,22 +476,22 @@ export default function HomePage() {
             )}
 
             <div
-              ref={roomCarouselRef}
-              className="room-carousel flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-6"
+              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
               aria-label={t('home.chooseStay')}
+              aria-live="polite"
             >
-            {featuredLoopRooms.map((room, index) => (
-              <RevealOnScroll
-                key={`${room.id}-${index}`}
-                variant={index % 2 === 0 ? 'curve-left' : 'curve-right'}
-                delay={(index % 3) * 90}
-                className="min-w-[86%] snap-start sm:min-w-[48%] lg:min-w-[31.9%]"
-              >
-                <div data-room-slide className="h-full">
-                  <RoomCard room={room} onBook={handleBook} />
-                </div>
-              </RevealOnScroll>
-            ))}
+              {visibleFeaturedRooms.map((room, index) => (
+                <RevealOnScroll
+                  key={`${room.id}-${featuredStartIndex}`}
+                  variant={index % 2 === 0 ? 'curve-left' : 'curve-right'}
+                  delay={index * 90}
+                  className={index === 2 ? 'sm:hidden lg:block' : ''}
+                >
+                  <div className="h-full">
+                    <RoomCard room={room} onBook={handleBook} />
+                  </div>
+                </RevealOnScroll>
+              ))}
             </div>
 
             {featured.length > 1 && (
