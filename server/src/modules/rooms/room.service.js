@@ -10,6 +10,7 @@ const roomInclude = {
   amenities: { include: { amenity: true } },
   translations: true,
   blockedDates: true,
+  ratePeriods: { orderBy: [{ startDate: 'asc' }, { updatedAt: 'desc' }] },
 };
 
 function toSlug(value) {
@@ -118,6 +119,7 @@ function localizeRoom(room, lang = 'en') {
       cleaningBufferHours: room.cleaningBufferHours,
     },
     blockedDates: room.blockedDates || [],
+    ratePeriods: room.ratePeriods || [],
   };
 }
 

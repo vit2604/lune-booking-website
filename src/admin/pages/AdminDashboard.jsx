@@ -69,7 +69,7 @@ export default function AdminDashboard() {
 
   const quickActions = [
     { label: 'Add new room', to: '/admin/rooms/new', icon: Plus },
-    { label: 'Edit room prices', to: '/admin/rooms', icon: ReceiptText },
+    { label: 'Rate calendar', to: '/admin/rates', icon: ReceiptText },
     { label: 'Update logo', to: '/admin/branding', icon: Hotel },
     { label: 'Payment settings', to: '/admin/payment-settings', icon: Settings },
   ];

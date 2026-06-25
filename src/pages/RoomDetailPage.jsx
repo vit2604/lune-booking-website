@@ -57,7 +57,12 @@ export default function RoomDetailPage() {
     const refresh = async () => {
       setIsLoadingRoom(true);
       try {
-        const { room: apiRoom } = await fetchRoomWithFallback(slug, { lang: currentLanguage });
+        const { room: apiRoom } = await fetchRoomWithFallback(slug, {
+          lang: currentLanguage,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          guests: booking.guests,
+        });
         if (ignore || !apiRoom) return;
         setRooms((current) => {
           const exists = current.some((item) => item.id === apiRoom.id || item.slug === apiRoom.slug);
@@ -85,12 +90,20 @@ export default function RoomDetailPage() {
       window.removeEventListener('lune:bookings-updated', refresh);
       window.removeEventListener('focus', refresh);
     };
-  }, [slug, currentLanguage]);
+  }, [slug, currentLanguage, booking.checkIn, booking.checkOut, booking.guests]);
 
   const totals = useMemo(() => {
     if (!room) return { nights: 0, roomSubtotal: 0, total: 0 };
+    const calculatedNights = calculateNights(booking.checkIn, booking.checkOut);
+    if (room.priceSummary && Number(room.priceSummary.nights) === calculatedNights) {
+      return {
+        nights: calculatedNights,
+        roomSubtotal: Number(room.priceSummary.subtotal || 0),
+        total: Number(room.priceSummary.totalPrice || room.priceSummary.subtotal || 0),
+      };
+    }
     return {
-      nights: calculateNights(booking.checkIn, booking.checkOut),
+      nights: calculatedNights,
       roomSubtotal: calculateRoomSubtotal(room.price, booking.checkIn, booking.checkOut),
       total: calculateGrandTotal(room.price, booking.checkIn, booking.checkOut),
     };

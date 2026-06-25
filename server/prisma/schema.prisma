@@ -103,6 +103,7 @@ model Room {
   images                   RoomImage[]
   amenities                RoomAmenity[]
   blockedDates             RoomBlockedDate[]
+  ratePeriods              RoomRatePeriod[]
   bookings                 Booking[]
 }
 
@@ -160,6 +161,20 @@ model RoomBlockedDate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model RoomRatePeriod {
+  id        String   @id @default(cuid())
+  roomId    String
+  startDate DateTime
+  endDate   DateTime
+  price     Int
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, startDate, endDate])
 }
 
 model Guest {

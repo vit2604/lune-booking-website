@@ -116,10 +116,11 @@ export const buildBookingDraft = ({
   bookingCode,
   bookingStatus,
 }) => {
-  const nights = calculateNights(checkIn, checkOut);
-  const pricePerNight = Number(room.price || room.basePrice || 0);
-  const roomSubtotal = nights * pricePerNight;
-  const serviceFee = calculateServiceFee();
+  const nights = Number(room.priceSummary?.nights || calculateNights(checkIn, checkOut));
+  const pricePerNight = Number(room.priceSummary?.pricePerNight || room.price || room.basePrice || 0);
+  const roomSubtotal = Number(room.priceSummary?.subtotal ?? nights * pricePerNight);
+  const serviceFee = Number(room.priceSummary?.serviceFee ?? calculateServiceFee());
+  const totalPrice = Number(room.priceSummary?.totalPrice ?? roomSubtotal + serviceFee);
   const selectedPaymentMethod = paymentMethod || 'payAtProperty';
   const language =
     typeof localStorage !== 'undefined'
@@ -143,8 +144,8 @@ export const buildBookingDraft = ({
     nights,
     roomSubtotal,
     serviceFee,
-    total: roomSubtotal + serviceFee,
-    totalPrice: roomSubtotal + serviceFee,
+    total: totalPrice,
+    totalPrice,
     guestInfo: guestInfo || null,
     paymentMethod: selectedPaymentMethod,
     bookingStatus: bookingStatus || 'received',

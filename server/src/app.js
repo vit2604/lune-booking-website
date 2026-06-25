@@ -14,6 +14,7 @@ import { adminChatRouter, publicChatRouter } from './modules/chat/chat.routes.js
 import { currencyRouter } from './modules/currency/currency.routes.js';
 import { adminMediaRouter } from './modules/media/media.routes.js';
 import { adminPaymentRouter, paymentWebhookRouter, publicPaymentRouter } from './modules/payments/payment.routes.js';
+import { adminRateRouter } from './modules/rates/rate.routes.js';
 import { adminRoomRouter, publicRoomRouter } from './modules/rooms/room.routes.js';
 import { adminSettingRouter, publicSettingRouter } from './modules/settings/setting.routes.js';
 import { sendSuccess } from './utils/responseUtils.js';
@@ -77,6 +78,7 @@ export function createApp() {
   app.use('/api/ai', aiRouter);
   app.use('/api/chat', publicChatRouter);
   app.use('/api/admin/rooms', adminRoomRouter);
+  app.use('/api/admin', adminRateRouter);
   app.use('/api/admin/bookings', adminBookingRouter);
   app.use('/api/admin', adminPaymentRouter);
   app.use('/api/admin/settings', adminSettingRouter);

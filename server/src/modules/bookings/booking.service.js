@@ -55,11 +55,10 @@ export async function createBooking(input) {
     if (existing) return publicBookingSummary(existing);
   }
 
-  const room = await prisma.room.findUnique({ where: { id: input.roomId } });
+  const room = await prisma.room.findUnique({ where: { id: input.roomId }, include: { ratePeriods: true } });
   const availability = await assertRoomCanBeBooked(room, input.checkIn, input.checkOut, input.guests);
   if (!availability.ok) throw createHttpError(availability.statusCode, availability.message);
 
-  const price = calculateTotalPrice({ room, checkIn: input.checkIn, checkOut: input.checkOut, guests: input.guests });
   const bookingCode = await createUniqueBookingCode(prisma);
   const paymentStatus =
     input.paymentMethod === 'payAtProperty' || input.paymentMethod === 'cashAtProperty'
@@ -68,7 +67,7 @@ export async function createBooking(input) {
 
   const booking = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Room" WHERE id = ${input.roomId} FOR UPDATE`;
-    const lockedRoom = await tx.room.findUnique({ where: { id: input.roomId } });
+    const lockedRoom = await tx.room.findUnique({ where: { id: input.roomId }, include: { ratePeriods: true } });
     const lockedAvailability = await assertRoomCanBeBooked(lockedRoom, input.checkIn, input.checkOut, input.guests, {
       db: tx,
       checkExternal: false,
@@ -85,6 +84,13 @@ export async function createBooking(input) {
       : null;
     if (existingIdempotentBooking) return existingIdempotentBooking;
 
+    const price = calculateTotalPrice({
+      room: lockedRoom,
+      checkIn: input.checkIn,
+      checkOut: input.checkOut,
+      guests: input.guests,
+    });
+
     const guest = await tx.guest.create({
       data: {
         fullName: cleanText(input.guest.fullName, 120),
@@ -100,7 +106,7 @@ export async function createBooking(input) {
       data: {
         bookingCode,
         idempotencyKey: input.idempotencyKey || null,
-        roomId: room.id,
+        roomId: lockedRoom.id,
         guestId: guest.id,
         checkIn: toHotelDate(input.checkIn),
         checkOut: toHotelDate(input.checkOut),

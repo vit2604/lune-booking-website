@@ -12,6 +12,7 @@ const AdminMessages = lazy(() => import('./admin/pages/AdminMessages.jsx'));
 const AdminLanguages = lazy(() => import('./admin/pages/AdminLanguages.jsx'));
 const AdminPaymentSettings = lazy(() => import('./admin/pages/AdminPaymentSettings.jsx'));
 const AdminPolicies = lazy(() => import('./admin/pages/AdminPolicies.jsx'));
+const AdminRateCalendar = lazy(() => import('./admin/pages/AdminRateCalendar.jsx'));
 const AdminRoomForm = lazy(() => import('./admin/pages/AdminRoomForm.jsx'));
 const AdminRooms = lazy(() => import('./admin/pages/AdminRooms.jsx'));
 const AdminSettings = lazy(() => import('./admin/pages/AdminSettings.jsx'));
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="rooms" element={<AdminRooms />} />
             <Route path="rooms/new" element={<AdminRoomForm />} />
             <Route path="rooms/edit/:id" element={<AdminRoomForm />} />
+            <Route path="rates" element={<AdminRateCalendar />} />
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="messages" element={<AdminMessages />} />
             <Route path="media" element={<AdminMedia />} />

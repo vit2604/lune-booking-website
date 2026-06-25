@@ -3,10 +3,12 @@ import { canUseMockFallback } from '../config/apiConfig.js';
 import { apiRequest } from './apiClient.js';
 
 function normalizeApiRoom(room) {
+  const priceSummary = room.priceSummary || null;
   return {
     ...room,
     type: room.type || 'Apartment',
-    price: Number(room.price || room.basePrice || 0),
+    price: Number(priceSummary?.pricePerNight || room.price || room.basePrice || 0),
+    priceSummary,
     bed: room.bed || room.bedType || '',
     beds: room.beds || room.bedType || '',
     bathroom: room.bathroom || 'Private bathroom',
@@ -38,7 +40,11 @@ export async function fetchRoomWithFallback(slug, query = {}) {
       if (value !== undefined && value !== null && value !== '') params.set(key, value);
     });
     const data = await apiRequest(`/rooms/${slug}${params.toString() ? `?${params}` : ''}`);
-    return { source: 'api', room: normalizeApiRoom(data.room), availability: data.availability };
+    return {
+      source: 'api',
+      room: normalizeApiRoom({ ...data.room, priceSummary: data.availability?.price || data.room?.priceSummary || null }),
+      availability: data.availability,
+    };
   } catch (error) {
     if (!canUseMockFallback()) throw error;
     return { source: 'local', room: null, availability: null };

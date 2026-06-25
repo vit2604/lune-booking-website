@@ -48,6 +48,34 @@ export function adminUpdateRoomStatus(roomId, status) {
   });
 }
 
+export function adminListRatePeriods(query = {}) {
+  const params = new URLSearchParams(query);
+  return apiRequest(`/admin/rates${params.toString() ? `?${params}` : ''}`, { timeoutMs: 15000 });
+}
+
+export function adminCreateRatePeriod(ratePeriod) {
+  return apiRequest('/admin/rates', {
+    method: 'POST',
+    body: ratePeriod,
+    timeoutMs: 15000,
+  });
+}
+
+export function adminUpdateRatePeriod(ratePeriodId, ratePeriod) {
+  return apiRequest(`/admin/rates/${ratePeriodId}`, {
+    method: 'PUT',
+    body: ratePeriod,
+    timeoutMs: 15000,
+  });
+}
+
+export function adminDeleteRatePeriod(ratePeriodId) {
+  return apiRequest(`/admin/rates/${ratePeriodId}`, {
+    method: 'DELETE',
+    timeoutMs: 15000,
+  });
+}
+
 export function adminListBookings(query = {}) {
   const params = new URLSearchParams(query);
   return apiRequest(`/admin/bookings${params.toString() ? `?${params}` : ''}`);

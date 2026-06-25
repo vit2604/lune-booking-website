@@ -8,6 +8,7 @@ export default function AdminHeader({ onMenu }) {
   const titleMap = {
     '/admin/dashboard': 'Dashboard',
     '/admin/rooms': 'Rooms',
+    '/admin/rates': 'Rate Calendar',
     '/admin/bookings': 'Bookings',
     '/admin/media': 'Media',
     '/admin/branding': 'Branding',
