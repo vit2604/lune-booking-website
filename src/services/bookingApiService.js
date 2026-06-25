@@ -7,10 +7,16 @@ function splitPhoneCode(value = '+84 Vietnam') {
   return first === 'Other' ? '' : first;
 }
 
+function createIdempotencyKey() {
+  if (globalThis.crypto?.randomUUID) return `web-${globalThis.crypto.randomUUID()}`;
+  return `web-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
 export function normalizeBookingForApi(booking) {
   const guestInfo = booking.guestInfo || booking.guest || {};
   return {
     roomId: booking.roomId,
+    idempotencyKey: booking.idempotencyKey,
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     guests: Number(booking.guests || 1),
@@ -29,13 +35,19 @@ export function normalizeBookingForApi(booking) {
 }
 
 export async function createBookingWithFallback(booking) {
+  const bookingWithKey = {
+    ...booking,
+    idempotencyKey: booking.idempotencyKey || createIdempotencyKey(),
+  };
+  const payload = normalizeBookingForApi(bookingWithKey);
   try {
     const data = await apiRequest('/bookings', {
       method: 'POST',
-      body: normalizeBookingForApi(booking),
+      headers: { 'Idempotency-Key': bookingWithKey.idempotencyKey },
+      body: payload,
     });
     const normalized = {
-      ...booking,
+      ...bookingWithKey,
       ...data,
       guestInfo: booking.guestInfo,
       apiBacked: true,
@@ -44,7 +56,7 @@ export async function createBookingWithFallback(booking) {
     return { source: 'api', booking: normalized };
   } catch (_error) {
     if (!canUseMockFallback() || _error?.status) throw _error;
-    const saved = saveBooking(booking);
+    const saved = saveBooking(bookingWithKey);
     return { source: 'local', booking: saved };
   }
 }

@@ -3,6 +3,7 @@ import { assertRoomCanBeBooked, isRoomAvailable } from '../../utils/availability
 import { toHotelDate } from '../../utils/dateUtils.js';
 import { calculateTotalPrice } from '../../utils/priceUtils.js';
 import { createHttpError } from '../../utils/responseUtils.js';
+import { sanitizePublicAssetUrl } from '../../utils/sanitizeUtils.js';
 
 const roomInclude = {
   images: { orderBy: [{ isMain: 'desc' }, { sortOrder: 'asc' }] },
@@ -38,7 +39,7 @@ function splitAdminRoomInput(input) {
 }
 
 async function syncRoomImages(tx, roomId, { image, gallery, name }) {
-  const urls = [...new Set([image, ...gallery].filter(Boolean))];
+  const urls = [...new Set([image, ...gallery].map((url) => sanitizePublicAssetUrl(url)).filter(Boolean))];
   await tx.roomImage.deleteMany({ where: { roomId } });
   if (!urls.length) return;
 
@@ -123,7 +124,7 @@ function localizeRoom(room, lang = 'en') {
 export async function listPublicRooms(query = {}) {
   const rooms = await prisma.room.findMany({
     where: {
-      status: query.status ? query.status : 'ACTIVE',
+      status: 'ACTIVE',
       maxGuests: query.guests ? { gte: Number(query.guests) } : undefined,
     },
     include: roomInclude,
@@ -242,6 +243,17 @@ export async function updateAdminRoom(id, input) {
       create: {
         roomId: id,
         languageCode: 'en',
+        name: roomData.name,
+        shortDescription: roomData.shortDescription,
+        fullDescription: roomData.fullDescription,
+        priceNote,
+      },
+    });
+    // The current admin room form edits the default room content only.
+    // Keep public language views in sync so changes are visible immediately on the guest site.
+    await tx.roomTranslation.updateMany({
+      where: { roomId: id, languageCode: { not: 'en' } },
+      data: {
         name: roomData.name,
         shortDescription: roomData.shortDescription,
         fullDescription: roomData.fullDescription,

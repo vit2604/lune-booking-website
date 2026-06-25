@@ -3,11 +3,17 @@ import { getBrandingSettings, getPolicies } from '../admin/services/adminSetting
 import BookingPolicy from '../components/BookingPolicy.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
+import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 
 export default function PoliciesPage() {
   const branding = getBrandingSettings();
   const policies = getPolicies();
   const { t } = useTranslation();
+  useDocumentMeta({
+    title: `${t('policiesPage.title')} | ${BRAND}`,
+    description: t('policiesPage.intro', { hotelName: branding.hotelName, address: branding.address }),
+    path: '/policies',
+  });
 
   const policyCards = [
     {

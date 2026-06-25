@@ -7,6 +7,7 @@ import PaymentMethod from '../components/PaymentMethod.jsx';
 import TrustBadges from '../components/TrustBadges.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
+import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { persistBooking } from '../services/bookingService.js';
 import { createPaymentWithFallback, getPaymentMethodsWithFallback } from '../services/paymentApiService.js';
 import {
@@ -64,6 +65,7 @@ export default function PaymentPage() {
   const [paymentRequest, setPaymentRequest] = useState(null);
   const [creatingPaymentRequest, setCreatingPaymentRequest] = useState(false);
   const { t } = useTranslation();
+  useDocumentMeta({ title: `${t('payment.reviewConfirm')} | ${BRAND}`, path: '/payment', noindex: true });
 
   useEffect(() => {
     const draft = loadBookingDraft();

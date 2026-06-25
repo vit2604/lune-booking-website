@@ -7,7 +7,6 @@ export const publicRoomsQuerySchema = z.object({
     checkOut: z.string().optional(),
     guests: z.coerce.number().int().positive().optional(),
     currency: z.string().optional(),
-    status: z.string().optional(),
   }),
   params: z.object({}).passthrough(),
   body: z.object({}).passthrough(),

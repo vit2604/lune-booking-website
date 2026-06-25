@@ -5,8 +5,8 @@ import { calculateNights, hasDateOverlap, toHotelDate, validateDateRange } from 
 
 export { calculateNights, hasDateOverlap, validateDateRange };
 
-export async function checkExistingBookings(roomId, checkIn, checkOut) {
-  const bookings = await prisma.booking.findMany({
+export async function checkExistingBookings(roomId, checkIn, checkOut, db = prisma) {
+  const bookings = await db.booking.findMany({
     where: {
       roomId,
       bookingStatus: { in: bookingStatusesHoldingRoom },
@@ -16,18 +16,22 @@ export async function checkExistingBookings(roomId, checkIn, checkOut) {
   return bookings.find((booking) => hasDateOverlap({ checkIn, checkOut }, booking)) || null;
 }
 
-export async function checkBlockedDates(roomId, checkIn, checkOut) {
-  const blockedDates = await prisma.roomBlockedDate.findMany({
+export async function checkBlockedDates(roomId, checkIn, checkOut, db = prisma) {
+  const blockedDates = await db.roomBlockedDate.findMany({
     where: { roomId },
   });
   return blockedDates.find((period) => hasDateOverlap({ checkIn, checkOut }, period)) || null;
 }
 
-export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1) {
-  const bookingConflict = await checkExistingBookings(roomId, checkIn, checkOut);
+export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1, options = {}) {
+  const db = options.db || prisma;
+  const bookingConflict = await checkExistingBookings(roomId, checkIn, checkOut, db);
   if (bookingConflict) return { available: false, reason: 'Room already has a booking for selected dates' };
-  const blockedPeriod = await checkBlockedDates(roomId, checkIn, checkOut);
+  const blockedPeriod = await checkBlockedDates(roomId, checkIn, checkOut, db);
   if (blockedPeriod) return { available: false, reason: blockedPeriod.reason || 'Room is blocked for selected dates' };
+  if (options.checkExternal === false) {
+    return { available: true, reason: '', externalSource: 'local' };
+  }
   const bluejayAvailability = await checkBluejayRoomAvailability({ roomId, checkIn, checkOut, guests });
   if (bluejayAvailability.checked && !bluejayAvailability.available) {
     return {
@@ -72,7 +76,7 @@ export async function getAvailableRooms({ checkIn, checkOut, guests }) {
   return externalChecks.filter(({ check }) => !check.checked || check.available).map(({ room }) => room);
 }
 
-export async function assertRoomCanBeBooked(room, checkIn, checkOut, guests) {
+export async function assertRoomCanBeBooked(room, checkIn, checkOut, guests, options = {}) {
   if (!room || room.status !== 'ACTIVE') {
     return { ok: false, statusCode: 404, message: 'Room is not available for booking' };
   }
@@ -87,7 +91,7 @@ export async function assertRoomCanBeBooked(room, checkIn, checkOut, guests) {
   if (range.nights > room.maxNights) {
     return { ok: false, statusCode: 400, message: `Maximum stay is ${room.maxNights} night(s)` };
   }
-  const availability = await isRoomAvailable(room.id, toHotelDate(checkIn), toHotelDate(checkOut), guests);
+  const availability = await isRoomAvailable(room.id, toHotelDate(checkIn), toHotelDate(checkOut), guests, options);
   if (!availability.available) {
     return { ok: false, statusCode: 409, message: availability.reason || 'This room is not available' };
   }

@@ -9,6 +9,7 @@ import DateSelector from '../components/DateSelector.jsx';
 import TrustBadges from '../components/TrustBadges.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
+import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { createBookingWithFallback } from '../services/bookingApiService.js';
 import { buildBookingDraft, validateStay } from '../utils/booking.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
@@ -95,6 +96,7 @@ export default function BookingPage() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useTranslation();
+  useDocumentMeta({ title: `${t('booking.completeBooking')} | ${BRAND}`, path: '/booking', noindex: true });
 
   useEffect(() => {
     const draft = loadBookingDraft();

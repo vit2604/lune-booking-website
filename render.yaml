@@ -64,9 +64,9 @@ services:
       - key: PAYOS_CHECKSUM_KEY
         sync: false
       - key: PAYOS_RETURN_URL
-        value: https://luneboutiquedanang.id.vn/success
+        value: https://www.luneboutiquedanang.com/success
       - key: PAYOS_CANCEL_URL
-        value: https://luneboutiquedanang.id.vn/payment
+        value: https://www.luneboutiquedanang.com/payment
       - key: PAYOS_WEBHOOK_URL
         sync: false
       - key: PAYOS_TIMEOUT_MS

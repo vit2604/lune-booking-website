@@ -26,6 +26,9 @@ jobs:
       - name: Run unit tests
         run: npm run test
 
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
       - name: Build frontend
         run: npm run build
 
@@ -48,6 +51,10 @@ jobs:
       - name: Install backend dependencies
         working-directory: server
         run: npm ci
+
+      - name: Backend dependency audit
+        working-directory: server
+        run: npm audit --audit-level=high
 
       - name: Validate Prisma schema
         working-directory: server

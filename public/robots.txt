@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.luneboutiquedanang.id.vn/sitemap.xml
+Sitemap: https://www.luneboutiquedanang.com/sitemap.xml

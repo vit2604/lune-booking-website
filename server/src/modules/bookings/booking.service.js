@@ -1,9 +1,11 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/prisma.js';
 import { assertRoomCanBeBooked } from '../../utils/availabilityUtils.js';
 import { createUniqueBookingCode } from '../../utils/bookingCodeUtils.js';
 import { toHotelDate } from '../../utils/dateUtils.js';
 import { calculateTotalPrice } from '../../utils/priceUtils.js';
 import { createHttpError } from '../../utils/responseUtils.js';
+import { cleanText } from '../../utils/sanitizeUtils.js';
 
 const bookingInclude = {
   room: { include: { images: true } },
@@ -32,6 +34,7 @@ function publicBookingSummary(booking) {
     bookingStatus: booking.bookingStatus,
     paymentStatus: booking.paymentStatus,
     paymentMethod: booking.paymentMethod,
+    idempotencyKey: booking.idempotencyKey || undefined,
     guest: {
       fullName: booking.guest?.fullName,
       email: booking.guest?.email,
@@ -44,6 +47,14 @@ function publicBookingSummary(booking) {
 }
 
 export async function createBooking(input) {
+  if (input.idempotencyKey) {
+    const existing = await prisma.booking.findUnique({
+      where: { idempotencyKey: input.idempotencyKey },
+      include: bookingInclude,
+    });
+    if (existing) return publicBookingSummary(existing);
+  }
+
   const room = await prisma.room.findUnique({ where: { id: input.roomId } });
   const availability = await assertRoomCanBeBooked(room, input.checkIn, input.checkOut, input.guests);
   if (!availability.ok) throw createHttpError(availability.statusCode, availability.message);
@@ -56,20 +67,39 @@ export async function createBooking(input) {
       : 'PENDING';
 
   const booking = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Room" WHERE id = ${input.roomId} FOR UPDATE`;
+    const lockedRoom = await tx.room.findUnique({ where: { id: input.roomId } });
+    const lockedAvailability = await assertRoomCanBeBooked(lockedRoom, input.checkIn, input.checkOut, input.guests, {
+      db: tx,
+      checkExternal: false,
+    });
+    if (!lockedAvailability.ok) {
+      throw createHttpError(lockedAvailability.statusCode, lockedAvailability.message);
+    }
+
+    const existingIdempotentBooking = input.idempotencyKey
+      ? await tx.booking.findUnique({
+          where: { idempotencyKey: input.idempotencyKey },
+          include: bookingInclude,
+        })
+      : null;
+    if (existingIdempotentBooking) return existingIdempotentBooking;
+
     const guest = await tx.guest.create({
       data: {
-        fullName: input.guest.fullName,
-        email: input.guest.email || null,
-        phoneCode: input.guest.phoneCode,
-        phoneNumber: input.guest.phoneNumber,
-        country: input.guest.country,
-        nationality: input.guest.nationality || null,
+        fullName: cleanText(input.guest.fullName, 120),
+        email: cleanText(input.guest.email, 160) || null,
+        phoneCode: cleanText(input.guest.phoneCode, 12),
+        phoneNumber: cleanText(input.guest.phoneNumber, 40),
+        country: cleanText(input.guest.country, 80),
+        nationality: cleanText(input.guest.nationality, 80) || null,
       },
     });
 
     const created = await tx.booking.create({
       data: {
         bookingCode,
+        idempotencyKey: input.idempotencyKey || null,
         roomId: room.id,
         guestId: guest.id,
         checkIn: toHotelDate(input.checkIn),
@@ -83,8 +113,8 @@ export async function createBooking(input) {
         taxAmount: price.taxAmount,
         totalPrice: price.totalPrice,
         currency: 'VND',
-        specialRequest: input.specialRequest || null,
-        arrivalTime: input.arrivalTime || null,
+        specialRequest: cleanText(input.specialRequest, 1000) || null,
+        arrivalTime: cleanText(input.arrivalTime, 40) || null,
         bookingStatus: 'RECEIVED',
         paymentStatus,
         paymentMethod: input.paymentMethod || null,
@@ -105,7 +135,7 @@ export async function createBooking(input) {
     }
 
     return tx.booking.findUnique({ where: { id: created.id }, include: bookingInclude });
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
   return publicBookingSummary(booking);
 }

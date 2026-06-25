@@ -13,17 +13,18 @@ export function adminMe() {
 }
 
 export function adminListRooms() {
-  return apiRequest('/admin/rooms');
+  return apiRequest('/admin/rooms', { timeoutMs: 15000 });
 }
 
 export function adminGetRoom(roomId) {
-  return apiRequest(`/admin/rooms/${roomId}`);
+  return apiRequest(`/admin/rooms/${roomId}`, { timeoutMs: 15000 });
 }
 
 export function adminCreateRoom(room) {
   return apiRequest('/admin/rooms', {
     method: 'POST',
     body: room,
+    timeoutMs: 15000,
   });
 }
 
@@ -31,17 +32,19 @@ export function adminUpdateRoom(roomId, room) {
   return apiRequest(`/admin/rooms/${roomId}`, {
     method: 'PUT',
     body: room,
+    timeoutMs: 15000,
   });
 }
 
 export function adminDeleteRoom(roomId) {
-  return apiRequest(`/admin/rooms/${roomId}`, { method: 'DELETE' });
+  return apiRequest(`/admin/rooms/${roomId}`, { method: 'DELETE', timeoutMs: 15000 });
 }
 
 export function adminUpdateRoomStatus(roomId, status) {
   return apiRequest(`/admin/rooms/${roomId}/status`, {
     method: 'PATCH',
     body: { status },
+    timeoutMs: 15000,
   });
 }
 

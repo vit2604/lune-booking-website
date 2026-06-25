@@ -12,7 +12,11 @@ import {
 
 export async function publicCreateBooking(req, res, next) {
   try {
-    return sendSuccess(res, await createBooking(req.validated.body), 'Booking received', 201);
+    const headerIdempotencyKey = String(req.headers['idempotency-key'] || '').trim();
+    const idempotencyKey = /^[A-Za-z0-9._:-]{8,100}$/.test(headerIdempotencyKey)
+      ? headerIdempotencyKey
+      : req.validated.body.idempotencyKey;
+    return sendSuccess(res, await createBooking({ ...req.validated.body, idempotencyKey }), 'Booking received', 201);
   } catch (error) {
     return next(error);
   }

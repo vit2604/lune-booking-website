@@ -18,7 +18,7 @@ export default function LanguageSwitcher({ mobile = false, tone = 'default' }) {
           mobile ? 'w-full' : 'max-w-[180px]'
         } ${
           isLight
-            ? 'border-white/25 bg-white/10 text-white [color-scheme:dark]'
+            ? 'border border-white/25 bg-white/10 text-white'
             : 'border border-stone-200 bg-white text-lune-ink'
         }`}
         value={currentLanguage}
@@ -26,7 +26,7 @@ export default function LanguageSwitcher({ mobile = false, tone = 'default' }) {
         aria-label={t('nav.language')}
       >
         {options.map((language) => (
-          <option key={language.code} value={language.code}>
+          <option key={language.code} value={language.code} style={{ color: '#171412', backgroundColor: '#ffffff' }}>
             {language.label}
           </option>
         ))}

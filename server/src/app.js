@@ -6,6 +6,7 @@ import { corsMiddleware } from './config/cors.js';
 import { env } from './config/env.js';
 import { authRateLimit } from './middlewares/rateLimitMiddleware.js';
 import { errorMiddleware, notFoundMiddleware } from './middlewares/errorMiddleware.js';
+import { requestContextMiddleware } from './middlewares/requestContextMiddleware.js';
 import { aiRouter } from './modules/ai/ai.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { adminBookingRouter, publicBookingRouter } from './modules/bookings/booking.routes.js';
@@ -23,9 +24,20 @@ export function createApp() {
   app.use(helmet());
   app.use(corsMiddleware());
   app.use(express.json({ limit: '2mb' }));
-  app.use(morgan('dev'));
+  app.use(requestContextMiddleware);
+  morgan.token('id', (req) => req.id);
+  morgan.token('path', (req) => req.path);
+  app.use(morgan(':id :method :path :status :response-time ms'));
 
   app.get('/api/health', async (_req, res) => {
+    sendSuccess(res, {
+      status: 'ok',
+      currentTime: new Date().toISOString(),
+      environment: env.NODE_ENV,
+    });
+  });
+
+  app.get('/api/ready', async (_req, res) => {
     let databaseConnected = true;
     try {
       await Promise.race([
@@ -38,12 +50,22 @@ export function createApp() {
       databaseConnected = false;
     }
 
-    sendSuccess(res, {
-      status: 'ok',
+    const payload = {
+      status: databaseConnected ? 'ready' : 'not_ready',
       databaseConnected,
       currentTime: new Date().toISOString(),
       environment: env.NODE_ENV,
-    });
+    };
+
+    if (!databaseConnected) {
+      return res.status(503).json({
+        success: false,
+        message: 'Not ready',
+        data: payload,
+      });
+    }
+
+    return sendSuccess(res, payload);
   });
 
   app.use('/api/auth', authRateLimit, authRouter);

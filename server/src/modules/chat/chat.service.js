@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { prisma } from '../../config/prisma.js';
 import { createHttpError } from '../../utils/responseUtils.js';
+import { cleanText } from '../../utils/sanitizeUtils.js';
 
 function createSessionCode() {
   return `CHAT-${Date.now().toString(36).toUpperCase()}-${crypto.randomInt(1000, 9999)}`;
@@ -16,11 +17,11 @@ export async function createChatSession(input = {}) {
   return prisma.chatSession.create({
     data: {
       sessionCode: createSessionCode(),
-      guestName: input.guestName || null,
-      guestPhone: input.guestPhone || null,
-      guestEmail: input.guestEmail || null,
-      language: input.language || 'en',
-      bookingCode: input.bookingCode || null,
+      guestName: cleanText(input.guestName, 120) || null,
+      guestPhone: cleanText(input.guestPhone, 60) || null,
+      guestEmail: cleanText(input.guestEmail, 160) || null,
+      language: cleanText(input.language, 12) || 'en',
+      bookingCode: cleanText(input.bookingCode, 40) || null,
       status: 'OPEN',
       unreadByAdmin: 0,
       unreadByGuest: 0,
@@ -81,8 +82,8 @@ export async function sendGuestMessage(sessionCode, message, meta = {}) {
       data: {
         sessionId: session.id,
         senderType: 'GUEST',
-        senderName: meta.guestName || session.guestName || 'Guest',
-        message,
+        senderName: cleanText(meta.guestName, 120) || session.guestName || 'Guest',
+        message: cleanText(message, 2000),
         readByGuest: true,
         readByAdmin: false,
       },
@@ -93,7 +94,7 @@ export async function sendGuestMessage(sessionCode, message, meta = {}) {
         status: session.status === 'CLOSED' ? 'OPEN' : 'PENDING',
         unreadByAdmin: { increment: 1 },
         updatedAt: new Date(),
-        guestName: meta.guestName || session.guestName,
+        guestName: cleanText(meta.guestName, 120) || session.guestName,
       },
     }),
   ]);
@@ -107,8 +108,8 @@ export async function sendAdminMessage(sessionCode, message, adminName = 'Lune S
       data: {
         sessionId: session.id,
         senderType: 'ADMIN',
-        senderName: adminName,
-        message,
+        senderName: cleanText(adminName, 120) || 'Lune Support',
+        message: cleanText(message, 2000),
         readByGuest: false,
         readByAdmin: true,
       },

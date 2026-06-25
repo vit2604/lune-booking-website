@@ -117,7 +117,7 @@ node --check server/src/config/env.js
 Backend import smoke:
 
 ```bash
-DATABASE_URL=postgresql://user:pass@localhost:5432/db JWT_SECRET=1234567890123456 node -e "import('./src/app.js')"
+DATABASE_URL= JWT_SECRET= node -e "import('./src/app.js')"
 ```
 
 ## 15. Ket qua build va test

@@ -181,6 +181,7 @@ model Guest {
 model Booking {
   id             String        @id @default(cuid())
   bookingCode    String        @unique
+  idempotencyKey String?       @unique
   roomId         String
   guestId        String
   checkIn        DateTime

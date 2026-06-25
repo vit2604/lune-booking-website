@@ -18,7 +18,7 @@ export default function CurrencySwitcher({ mobile = false, tone = 'default' }) {
           mobile ? 'w-full' : 'max-w-[112px]'
         } ${
           isLight
-            ? 'border border-white/25 bg-white/10 text-white [color-scheme:dark]'
+            ? 'border border-white/25 bg-white/10 text-white'
             : 'border border-stone-200 bg-white text-lune-ink'
         }`}
         value={currentCurrency}
@@ -26,7 +26,7 @@ export default function CurrencySwitcher({ mobile = false, tone = 'default' }) {
         aria-label={t('nav.currency')}
       >
         {supportedCurrencies.map((currency) => (
-          <option key={currency} value={currency}>
+          <option key={currency} value={currency} style={{ color: '#171412', backgroundColor: '#ffffff' }}>
             {currency}
           </option>
         ))}

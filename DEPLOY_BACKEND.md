@@ -21,8 +21,8 @@ https://api.luneboutiquedanang.id.vn
 Set these on the backend host:
 
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DB_NAME?sslmode=require
-JWT_SECRET=replace_with_a_long_random_secret
+DATABASE_URL=
+JWT_SECRET=
 JWT_EXPIRES_IN=7d
 NODE_ENV=production
 PORT=4000

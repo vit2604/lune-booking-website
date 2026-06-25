@@ -16,7 +16,7 @@ Use PostgreSQL for production. Good managed options:
 Example:
 
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DB_NAME?sslmode=require
+DATABASE_URL=
 ```
 
 For Neon or other serverless Postgres providers, prefer a pooled connection string for app runtime if recommended by the provider.

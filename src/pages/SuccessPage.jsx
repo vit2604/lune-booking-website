@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import BookingSummary from '../components/BookingSummary.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
+import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { formatDisplayDate } from '../utils/dateFormatUtils.js';
 import { loadConfirmedBooking } from '../utils/storage.js';
 
@@ -12,6 +13,7 @@ export default function SuccessPage() {
   const [showSummary, setShowSummary] = useState(true);
   const [copied, setCopied] = useState(false);
   const { t, currentLanguage } = useTranslation();
+  useDocumentMeta({ title: `${t('success.bookingReceived')} | ${BRAND}`, path: '/success', noindex: true });
 
   useEffect(() => {
     const confirmed = loadConfirmedBooking();

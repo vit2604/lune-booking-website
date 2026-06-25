@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { getBrandingSettings } from '../admin/services/adminSettingsService.js';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
+import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 
 const luneAddress = '92-94 Thạch Lam, Sơn Trà, Đà Nẵng, Việt Nam';
 const legacyDefaultAddresses = new Set([
@@ -22,6 +23,11 @@ export default function ContactPage() {
   const [mapFailed, setMapFailed] = useState(false);
   const [branding, setBranding] = useState(getBrandingSettings());
   const { t } = useTranslation();
+  useDocumentMeta({
+    title: `${t('nav.contact')} | ${BRAND}`,
+    description: t('contact.body'),
+    path: '/contact',
+  });
   const address = getDisplayAddress(branding.address);
   const encodedAddress = encodeURIComponent(address);
   const openMapsUrl =
