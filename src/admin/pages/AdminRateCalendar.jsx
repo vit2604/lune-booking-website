@@ -75,11 +75,11 @@ export default function AdminRateCalendar() {
   const loadData = async (message = '') => {
     setLoading(true);
     setError('');
+    setToast('');
     try {
-      const [roomData, rateData] = await Promise.all([adminListRooms(), adminListRatePeriods()]);
+      const roomData = await adminListRooms();
       const normalizedRooms = (Array.isArray(roomData) ? roomData : []).map(normalizeRoom);
       setRooms(normalizedRooms);
-      setPeriods(Array.isArray(rateData) ? rateData : []);
 
       const nextSelectedRoomId = selectedRoomId || normalizedRooms[0]?.id || '';
       setSelectedRoomId(nextSelectedRoomId);
@@ -89,9 +89,22 @@ export default function AdminRateCalendar() {
         price: current.price || (normalizedRooms[0]?.basePrice || normalizedRooms[0]?.price || ''),
       }));
 
+      try {
+        const rateData = await adminListRatePeriods();
+        setPeriods(Array.isArray(rateData) ? rateData : []);
+      } catch (rateError) {
+        setPeriods([]);
+        setError(
+          rateError.message ||
+            'Rooms loaded, but the rate calendar API is not ready yet. Please deploy the latest backend commit.',
+        );
+      }
+
       if (message) setToast(message);
     } catch (loadError) {
-      setError(loadError.message || 'Could not load room rates from backend.');
+      setRooms([]);
+      setPeriods([]);
+      setError(loadError.message || 'Could not load rooms from backend.');
     } finally {
       setLoading(false);
     }
@@ -239,6 +252,7 @@ export default function AdminRateCalendar() {
               <select
                 className="input-field"
                 value={form.roomId}
+                disabled={!rooms.length || loading}
                 onChange={(event) => {
                   const roomId = event.target.value;
                   const nextRoom = rooms.find((room) => room.id === roomId);
@@ -250,6 +264,7 @@ export default function AdminRateCalendar() {
                   }));
                 }}
               >
+                {!rooms.length ? <option value="">No rooms loaded</option> : null}
                 {rooms.map((room) => (
                   <option key={room.id} value={room.id}>
                     {room.name}
@@ -302,7 +317,7 @@ export default function AdminRateCalendar() {
               />
             </label>
 
-            <button className="btn-gold w-full" type="submit" disabled={saving || loading}>
+            <button className="btn-gold w-full" type="submit" disabled={saving || loading || !rooms.length}>
               {saving ? (
                 'Saving...'
               ) : (
@@ -329,7 +344,13 @@ export default function AdminRateCalendar() {
               <h3 className="mt-1 font-display text-3xl font-bold text-lune-ink">{selectedRoom?.name || 'Select room'}</h3>
               <p className="mt-1 text-sm text-stone-500">Base price: {formatCurrency(selectedRoom?.basePrice || selectedRoom?.price || 0)}</p>
             </div>
-            <select className="input-field max-w-xs" value={selectedRoomId} onChange={(event) => setSelectedRoomId(event.target.value)}>
+            <select
+              className="input-field max-w-xs"
+              value={selectedRoomId}
+              disabled={!rooms.length || loading}
+              onChange={(event) => setSelectedRoomId(event.target.value)}
+            >
+              {!rooms.length ? <option value="">No rooms loaded</option> : null}
               {rooms.map((room) => (
                 <option key={room.id} value={room.id}>
                   {room.name}
