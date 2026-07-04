@@ -28,6 +28,12 @@
     display: block;
   }
 
+  /* keep native dropdown options readable even when the select uses light text */
+  option {
+    color: #171412;
+    background-color: #fff;
+  }
+
   :focus-visible {
     outline: 3px solid #b08a4b;
     outline-offset: 3px;

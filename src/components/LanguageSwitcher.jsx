@@ -26,7 +26,7 @@ export default function LanguageSwitcher({ mobile = false, tone = 'default' }) {
         aria-label={t('nav.language')}
       >
         {options.map((language) => (
-          <option key={language.code} value={language.code} style={{ color: '#171412', backgroundColor: '#ffffff' }}>
+          <option key={language.code} value={language.code}>
             {language.label}
           </option>
         ))}

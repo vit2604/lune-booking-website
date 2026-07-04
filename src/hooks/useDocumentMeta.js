@@ -46,16 +46,10 @@ function setRobots(noindex) {
     }
     el.setAttribute('content', 'noindex, nofollow');
   } else if (el) {
-    // Restore indexability when navigating from a noindex page to a public one.
     el.setAttribute('content', 'index, follow');
   }
 }
 
-/**
- * Keeps the document head in sync with the current route for an SPA: title,
- * description, canonical URL, Open Graph and Twitter tags, and robots.
- * No external dependency — upserts tags directly so navigation updates them.
- */
 export default function useDocumentMeta({ title, description, path = '/', image, noindex = false }) {
   useEffect(() => {
     const fullTitle = title || BRAND;

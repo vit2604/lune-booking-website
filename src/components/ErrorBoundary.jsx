@@ -35,11 +35,7 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    // Surface in console for diagnostics; never shown to guests.
-    if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.error('ErrorBoundary caught an error:', error, info);
-    }
+    console.error(error, info);
   }
 
   render() {

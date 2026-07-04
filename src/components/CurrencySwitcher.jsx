@@ -26,7 +26,7 @@ export default function CurrencySwitcher({ mobile = false, tone = 'default' }) {
         aria-label={t('nav.currency')}
       >
         {supportedCurrencies.map((currency) => (
-          <option key={currency} value={currency} style={{ color: '#171412', backgroundColor: '#ffffff' }}>
+          <option key={currency} value={currency}>
             {currency}
           </option>
         ))}

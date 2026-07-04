@@ -23,14 +23,14 @@ describe('room catalog data', () => {
   });
 
   it('splits Type 3 photos into two separate sellable room types', () => {
-    const compact = rooms.find((room) => room.id === 'long-stay-apartment');
-    const kitchen = rooms.find((room) => room.id === 'type-3-kitchen-apartment');
+    const twoBedroom = rooms.find((room) => room.id === 'two-bedroom-apartment');
+    const studioTwoBed = rooms.find((room) => room.id === 'studio-two-bed-balcony');
 
-    expect(compact?.type).toBe('Deluxe double');
-    expect(kitchen?.type).toBe('Type 3 kitchen');
-    expect(compact?.gallery).not.toEqual(kitchen?.gallery);
-    expect(compact?.image).toBe('/images/lune/type-3-standard/type-3-standard-5.webp');
-    expect(kitchen?.image).toBe('/images/lune/type-3-standard/type-3-standard-10.webp');
+    expect(twoBedroom?.type).toBe('Two-bedroom apartment');
+    expect(studioTwoBed?.type).toBe('Studio');
+    expect(twoBedroom?.gallery).not.toEqual(studioTwoBed?.gallery);
+    expect(twoBedroom?.image).toBe('/images/lune/type-3-standard/type-3-standard-5.webp');
+    expect(studioTwoBed?.image).toBe('/images/lune/type-3-standard/type-3-standard-10.webp');
   });
 
   it('keeps the filter list aligned with room data', () => {

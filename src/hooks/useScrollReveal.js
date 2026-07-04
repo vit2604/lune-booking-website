@@ -17,11 +17,7 @@ export default function useScrollReveal({ once = true, rootMargin = '0px 0px -12
       return undefined;
     }
 
-    // Always include 0 in the threshold list so the reveal still fires for
-    // elements taller than the viewport. A single non-zero threshold (e.g. 0.12)
-    // can never be reached when the element is taller than ~viewport/threshold,
-    // which would leave the whole section permanently invisible. rootMargin
-    // controls the "reveal slightly after it enters" feel instead.
+    // include 0 so sections taller than the viewport (ratio never reaches threshold) still reveal
     const thresholds = Array.from(new Set([0, threshold])).sort((a, b) => a - b);
 
     const observer = new IntersectionObserver(

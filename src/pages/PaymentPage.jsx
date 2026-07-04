@@ -129,9 +129,7 @@ export default function PaymentPage() {
     }
   };
 
-  // Keep this effect above the early return below so the hook order stays stable
-  // across renders (booking starts null, then becomes populated). Moving it after
-  // the early return violates the Rules of Hooks and crashes the page.
+  // keep above the early return so hook order stays stable
   useEffect(() => {
     if (!booking?.bookingCode || normalizedPaymentMethod !== 'vietQr') return;
     if (paymentRequest?.method === 'vietQr' && paymentRequest?.bookingCode === booking.bookingCode) return;
