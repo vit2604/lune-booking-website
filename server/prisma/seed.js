@@ -390,6 +390,18 @@ async function ensureRoomAmenities(roomId, room) {
   });
 }
 
+// Slugs from earlier catalogs that are no longer sold. Hidden on seed so the
+// public API stops returning them, while their rows (and any booking history
+// that references them) stay in the database.
+const retiredRoomSlugs = [
+  'deluxe-studio',
+  'superior-apartment',
+  'family-apartment',
+  'long-stay-apartment',
+  'type-3-kitchen-apartment',
+  'premier-king-apartment',
+];
+
 async function seedRooms() {
   for (const room of rooms) {
     const saved = await prisma.room.upsert({
@@ -416,6 +428,11 @@ async function seedRooms() {
     await ensureRoomTranslations(saved.id, room);
     await ensureRoomAmenities(saved.id, room);
   }
+
+  await prisma.room.updateMany({
+    where: { slug: { in: retiredRoomSlugs } },
+    data: { status: 'HIDDEN' },
+  });
 }
 
 async function seedPayments() {
