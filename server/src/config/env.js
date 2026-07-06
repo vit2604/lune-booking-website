@@ -9,7 +9,7 @@ const optionalUrl = z.preprocess(emptyToUndefined, z.string().url().optional());
 const optionalEmail = z.preprocess(emptyToUndefined, z.string().email().optional());
 const availabilityMethod = z.preprocess(
   (value) => (value === '' || value == null ? undefined : String(value).toUpperCase()),
-  z.enum(['GET', 'POST']).default('POST'),
+  z.enum(['GET', 'POST']).default('GET'),
 );
 const optionalBoolean = (defaultValue = false) =>
   z.preprocess(
@@ -37,13 +37,17 @@ const schema = z.object({
   FRANKFURTER_BASE_URL: z.string().url().default('https://api.frankfurter.dev/v1'),
   BLUEJAY_ENABLED: optionalBoolean(false),
   BLUEJAY_API_BASE_URL: optionalUrl,
-  BLUEJAY_AVAILABILITY_PATH: z.string().default('/availability'),
+  BLUEJAY_AVAILABILITY_PATH: z.string().default('/search-roomtypes'),
   BLUEJAY_AVAILABILITY_METHOD: availabilityMethod,
   BLUEJAY_API_TOKEN: optionalString,
-  BLUEJAY_AUTH_HEADER_NAME: z.preprocess(emptyToUndefined, z.string().default('Authorization')),
-  BLUEJAY_AUTH_HEADER_PREFIX: z.preprocess(emptyToUndefined, z.string().default('Bearer')),
+  BLUEJAY_AUTH_HEADER_NAME: z.preprocess(emptyToUndefined, z.string().default('ApiKey')),
+  BLUEJAY_AUTH_HEADER_PREFIX: z.preprocess(emptyToUndefined, z.string().default('none')),
   BLUEJAY_PROPERTY_ID: optionalString,
+  BLUEJAY_CHANNEL_CODE: optionalString,
   BLUEJAY_ROOM_MAPPING_JSON: optionalString,
+  BLUEJAY_RATEPLAN_MAPPING_JSON: optionalString,
+  BLUEJAY_CREATE_BOOKING_ENABLED: optionalBoolean(false),
+  BLUEJAY_USER_AGENT: z.string().default('WebLuneBluejayAdapter/1.0'),
   BLUEJAY_TIMEOUT_MS: z.coerce.number().default(6000),
   BLUEJAY_FAIL_CLOSED: optionalBoolean(true),
   PAYOS_ENABLED: optionalBoolean(false),

@@ -1,5 +1,7 @@
 import { Prisma } from '@prisma/client';
+import { env } from '../../config/env.js';
 import { prisma } from '../../config/prisma.js';
+import { createBluejayBooking, isBluejayBookingCreateEnabled } from '../bluejay/bluejay.service.js';
 import { assertRoomCanBeBooked } from '../../utils/availabilityUtils.js';
 import { createUniqueBookingCode } from '../../utils/bookingCodeUtils.js';
 import { toHotelDate } from '../../utils/dateUtils.js';
@@ -8,7 +10,7 @@ import { createHttpError } from '../../utils/responseUtils.js';
 import { cleanText } from '../../utils/sanitizeUtils.js';
 
 const bookingInclude = {
-  room: { include: { images: true } },
+  room: { include: { images: true, ratePeriods: true } },
   guest: true,
   payments: true,
 };
@@ -35,6 +37,8 @@ function publicBookingSummary(booking) {
     paymentStatus: booking.paymentStatus,
     paymentMethod: booking.paymentMethod,
     idempotencyKey: booking.idempotencyKey || undefined,
+    bluejaySyncStatus: booking.bluejaySyncStatus,
+    bluejayBookingCode: booking.bluejayBookingCode || undefined,
     guest: {
       fullName: booking.guest?.fullName,
       email: booking.guest?.email,
@@ -46,13 +50,67 @@ function publicBookingSummary(booking) {
   };
 }
 
+function normalizeSyncError(error) {
+  return String(error?.message || 'Bluejay booking sync failed').slice(0, 1000);
+}
+
+async function syncBookingToBluejay(booking) {
+  if (!isBluejayBookingCreateEnabled()) return booking;
+  if (booking.bluejaySyncStatus === 'SYNCED') return booking;
+
+  await prisma.booking.update({
+    where: { id: booking.id },
+    data: {
+      bluejaySyncStatus: 'PENDING',
+      bluejaySyncError: null,
+    },
+  });
+
+  try {
+    const result = await createBluejayBooking({ booking });
+    if (result.skipped) {
+      return prisma.booking.findUnique({ where: { id: booking.id }, include: bookingInclude });
+    }
+
+    return prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        bluejayBookingId: result.payload.id,
+        bluejayBookingCode: result.payload.code,
+        bluejaySyncStatus: 'SYNCED',
+        bluejaySyncError: null,
+        bluejaySyncedAt: new Date(),
+      },
+      include: bookingInclude,
+    });
+  } catch (error) {
+    const message = normalizeSyncError(error);
+    await prisma.booking
+      .update({
+        where: { id: booking.id },
+        data: {
+          bluejaySyncStatus: 'FAILED',
+          bluejaySyncError: message,
+        },
+      })
+      .catch(() => null);
+
+    if (env.BLUEJAY_FAIL_CLOSED) {
+      const statusCode = error?.statusCode && error.statusCode >= 400 && error.statusCode < 500 ? error.statusCode : 502;
+      throw createHttpError(statusCode, `Could not sync booking to Bluejay PMS: ${message}`);
+    }
+
+    return prisma.booking.findUnique({ where: { id: booking.id }, include: bookingInclude });
+  }
+}
+
 export async function createBooking(input) {
   if (input.idempotencyKey) {
     const existing = await prisma.booking.findUnique({
       where: { idempotencyKey: input.idempotencyKey },
       include: bookingInclude,
     });
-    if (existing) return publicBookingSummary(existing);
+    if (existing) return publicBookingSummary(await syncBookingToBluejay(existing));
   }
 
   const room = await prisma.room.findUnique({ where: { id: input.roomId }, include: { ratePeriods: true } });
@@ -143,7 +201,7 @@ export async function createBooking(input) {
     return tx.booking.findUnique({ where: { id: created.id }, include: bookingInclude });
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-  return publicBookingSummary(booking);
+  return publicBookingSummary(await syncBookingToBluejay(booking));
 }
 
 export async function getPublicBooking(bookingCode) {

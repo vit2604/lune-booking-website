@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Lune Support",
+    "slug": "lune-support",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "lunesupport",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.luneboutique.support",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#171412"
+      },
+      "permissions": [
+        "INTERNET"
+      ]
+    }
+  }
+}

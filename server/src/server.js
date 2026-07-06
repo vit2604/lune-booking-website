@@ -5,7 +5,8 @@ import { createSocketServer } from './config/socket.js';
 
 const app = createApp();
 const httpServer = http.createServer(app);
-createSocketServer(httpServer);
+const io = createSocketServer(httpServer);
+app.set('io', io);
 
 httpServer.listen(env.PORT, () => {
   console.log(`Lune backend running on http://localhost:${env.PORT}`);

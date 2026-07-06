@@ -216,6 +216,11 @@ model Booking {
   paymentStatus  PaymentStatus @default(PENDING)
   paymentMethod  String?
   internalNote   String?
+  bluejayBookingId   String?
+  bluejayBookingCode String?
+  bluejaySyncStatus  String    @default("NOT_SYNCED")
+  bluejaySyncError   String?
+  bluejaySyncedAt    DateTime?
   source         BookingSource @default(DIRECT_WEBSITE)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt

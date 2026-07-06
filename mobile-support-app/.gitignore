@@ -1,0 +1,13 @@
+node_modules/
+.expo/
+.expo-export-test/
+.expo-shared/
+dist/
+build/
+android/
+ios/
+*.log
+*.apk
+*.aab
+.env
+.env.local

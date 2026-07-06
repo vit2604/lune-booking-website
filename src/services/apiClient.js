@@ -42,6 +42,12 @@ export async function apiRequest(path, options = {}) {
       throw new ApiError(payload.message || 'API request failed', response.status, payload);
     }
     return payload.data;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error.name === 'AbortError') {
+      throw new ApiError('The booking system took too long to respond. Please try again.', 0, { code: 'timeout' });
+    }
+    throw new ApiError('Could not reach the booking system. Please try again.', 0, { code: 'network' });
   } finally {
     globalThis.clearTimeout(timeout);
   }

@@ -19,13 +19,13 @@ function normalizeApiRoom(room) {
   };
 }
 
-export async function fetchRoomsWithFallback(query = {}) {
+export async function fetchRoomsWithFallback(query = {}, options = {}) {
   try {
     const params = new URLSearchParams();
     Object.entries(query).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') params.set(key, value);
     });
-    const data = await apiRequest(`/rooms${params.toString() ? `?${params}` : ''}`);
+    const data = await apiRequest(`/rooms${params.toString() ? `?${params}` : ''}`, options);
     return { source: 'api', rooms: data.map(normalizeApiRoom) };
   } catch (error) {
     if (!canUseMockFallback()) throw error;

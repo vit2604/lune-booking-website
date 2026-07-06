@@ -9,6 +9,7 @@ import { errorMiddleware, notFoundMiddleware } from './middlewares/errorMiddlewa
 import { requestContextMiddleware } from './middlewares/requestContextMiddleware.js';
 import { aiRouter } from './modules/ai/ai.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { adminBluejayRouter } from './modules/bluejay/bluejay.routes.js';
 import { adminBookingRouter, publicBookingRouter } from './modules/bookings/booking.routes.js';
 import { adminChatRouter, publicChatRouter } from './modules/chat/chat.routes.js';
 import { currencyRouter } from './modules/currency/currency.routes.js';
@@ -78,6 +79,7 @@ export function createApp() {
   app.use('/api/ai', aiRouter);
   app.use('/api/chat', publicChatRouter);
   app.use('/api/admin/rooms', adminRoomRouter);
+  app.use('/api/admin/bluejay', adminBluejayRouter);
   app.use('/api/admin', adminRateRouter);
   app.use('/api/admin/bookings', adminBookingRouter);
   app.use('/api/admin', adminPaymentRouter);

@@ -23,6 +23,14 @@ export default function RoomsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const defaults = getDefaultDates();
+  const initialToday = toDateInputValue(new Date());
+  const urlCheckIn = searchParams.get('checkIn');
+  const urlCheckOut = searchParams.get('checkOut');
+  const initialCheckIn = urlCheckIn && urlCheckIn >= initialToday ? urlCheckIn : defaults.checkIn;
+  const initialCheckOut =
+    urlCheckOut && urlCheckOut > initialCheckIn
+      ? urlCheckOut
+      : toDateInputValue(addDays(new Date(`${initialCheckIn}T12:00:00`), 1));
   const [rooms, setRooms] = useState(getVisibleRooms());
   const [bookings, setBookings] = useState(getBookings());
   const [filters, setFilters] = useState({
@@ -30,8 +38,8 @@ export default function RoomsPage() {
     maxPrice: 'all',
     type: 'all',
     sort: 'low',
-    checkIn: searchParams.get('checkIn') || defaults.checkIn,
-    checkOut: searchParams.get('checkOut') || defaults.checkOut,
+    checkIn: initialCheckIn,
+    checkOut: initialCheckOut,
   });
   const [bookingError, setBookingError] = useState('');
   const [processingRoom, setProcessingRoom] = useState('');
@@ -48,17 +56,24 @@ export default function RoomsPage() {
     let ignore = false;
     const refresh = async () => {
       try {
-        const { rooms: nextRooms } = await fetchRoomsWithFallback({
-          lang: currentLanguage,
-          checkIn: filters.checkIn,
-          checkOut: filters.checkOut,
-          guests: filters.guests,
-        });
-        if (!ignore) setRooms(nextRooms);
-      } catch (error) {
+        const { rooms: nextRooms } = await fetchRoomsWithFallback(
+          {
+            lang: currentLanguage,
+            checkIn: filters.checkIn,
+            checkOut: filters.checkOut,
+            guests: filters.guests,
+          },
+          { timeoutMs: 12000 },
+        );
         if (!ignore) {
-          setRooms(getVisibleRooms());
-          setBookingError(error.message || t('errors.apiUnavailable'));
+          setRooms(nextRooms);
+          setBookingError('');
+        }
+      } catch {
+        // availability could not be verified — do not present rooms as bookable
+        if (!ignore) {
+          setRooms([]);
+          setBookingError(t('errors.apiUnavailable'));
         }
       }
       if (!ignore) setBookings(getBookings());
