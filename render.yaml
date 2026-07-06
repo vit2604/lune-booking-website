@@ -34,25 +34,33 @@ services:
       - key: FRANKFURTER_BASE_URL
         value: https://api.frankfurter.dev/v1
       - key: BLUEJAY_ENABLED
-        value: 'false'
+        value: 'true'
+      - key: BLUEJAY_CREATE_BOOKING_ENABLED
+        value: 'true'
       - key: BLUEJAY_API_BASE_URL
-        sync: false
+        value: https://api-pms.bluejaypms.com/api/v2
       - key: BLUEJAY_AVAILABILITY_PATH
-        value: /availability
+        value: /search-roomtypes
       - key: BLUEJAY_AVAILABILITY_METHOD
-        value: POST
+        value: GET
       - key: BLUEJAY_API_TOKEN
         sync: false
       - key: BLUEJAY_AUTH_HEADER_NAME
-        value: Authorization
+        value: ApiKey
       - key: BLUEJAY_AUTH_HEADER_PREFIX
-        value: Bearer
+        value: none
       - key: BLUEJAY_PROPERTY_ID
-        sync: false
+        value: '6439'
+      - key: BLUEJAY_CHANNEL_CODE
+        value: BEL
       - key: BLUEJAY_ROOM_MAPPING_JSON
-        sync: false
+        value: '{"one-bedroom-condo":"12666","one-bedroom-apartment-balcony":"12663","two-bedroom-apartment":"12665","studio-two-bed-balcony":"12664","two-bedroom-apartment-balcony":"12662"}'
+      - key: BLUEJAY_RATEPLAN_MAPPING_JSON
+        value: '{}'
+      - key: BLUEJAY_USER_AGENT
+        value: WebLuneBluejayAdapter/1.0
       - key: BLUEJAY_TIMEOUT_MS
-        value: '6000'
+        value: '10000'
       - key: BLUEJAY_FAIL_CLOSED
         value: 'true'
       - key: PAYOS_ENABLED
