@@ -65,9 +65,15 @@ function buildAuthHeaders() {
       ? `${env.BLUEJAY_AUTH_HEADER_PREFIX} `
       : '';
 
-  return {
+  const headers = {
     [env.BLUEJAY_AUTH_HEADER_NAME]: `${prefix}${env.BLUEJAY_API_TOKEN}`,
   };
+
+  if (env.BLUEJAY_AUTH_HEADER_NAME !== 'ApiKey') {
+    headers.ApiKey = env.BLUEJAY_API_TOKEN;
+  }
+
+  return headers;
 }
 
 function getBluejayUserAgent() {
@@ -266,7 +272,7 @@ function buildBluejayPriceSummary(ratePlan, checkIn, checkOut) {
 }
 
 export function isBluejayEnabled() {
-  return Boolean(env.BLUEJAY_ENABLED);
+  return Boolean(env.BLUEJAY_ENABLED || (env.BLUEJAY_API_BASE_URL && env.BLUEJAY_API_TOKEN && env.BLUEJAY_PROPERTY_ID));
 }
 
 export function isBluejayBookingCreateEnabled() {
@@ -277,7 +283,7 @@ export function getBluejayConfigSummary() {
   const mapping = parseRoomMapping();
   const rateMapping = parseRatePlanMapping();
   return {
-    enabled: env.BLUEJAY_ENABLED,
+    enabled: isBluejayEnabled(),
     createBookingEnabled: env.BLUEJAY_CREATE_BOOKING_ENABLED,
     baseUrlConfigured: Boolean(env.BLUEJAY_API_BASE_URL),
     tokenConfigured: Boolean(env.BLUEJAY_API_TOKEN),
