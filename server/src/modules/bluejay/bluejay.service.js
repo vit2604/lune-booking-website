@@ -237,6 +237,34 @@ function buildPriceInDay({ ratePlan, room, booking }) {
   }));
 }
 
+function buildBluejayPriceSummary(ratePlan, checkIn, checkOut) {
+  const nights = calculateNights(checkIn, checkOut);
+  const nightlyRates = Array.isArray(ratePlan?.price_in_day)
+    ? ratePlan.price_in_day.map((item) => ({
+        date: normalizeDate(item.night),
+        price: money(item.amount ?? item.price),
+        ratePeriodId: String(ratePlan.rateplan_id || ''),
+        note: ratePlan.title || ratePlan.name || 'Bluejay BE rate',
+      }))
+    : [];
+  const subtotal = money(ratePlan?.total || nightlyRates.reduce((sum, item) => sum + Number(item.price || 0), 0));
+  const pricePerNight = nights > 0 ? money(subtotal / nights) : subtotal;
+
+  return {
+    pricePerNight,
+    nights,
+    nightlyRates,
+    subtotal,
+    discountAmount: 0,
+    serviceFee: 0,
+    taxAmount: 0,
+    totalPrice: subtotal,
+    currency: 'VND',
+    source: 'bluejay',
+    ratePlanId: ratePlan?.rateplan_id || null,
+  };
+}
+
 export function isBluejayEnabled() {
   return Boolean(env.BLUEJAY_ENABLED);
 }
@@ -386,6 +414,71 @@ export async function checkBluejayRoomAvailability({ roomId, checkIn, checkOut, 
       checked: true,
       available: !env.BLUEJAY_FAIL_CLOSED,
       reason: error?.message || 'Bluejay availability request failed',
+    };
+  }
+}
+
+export async function getBluejayStayAvailability({ roomIds = [], checkIn, checkOut, guests = 1 }) {
+  const uniqueRoomIds = [...new Set(roomIds.filter(Boolean))];
+  if (!isBluejayEnabled()) {
+    return { checked: false, source: 'local', rooms: {} };
+  }
+
+  const buildFallbackRooms = (reason, available) =>
+    Object.fromEntries(
+      uniqueRoomIds.map((roomId) => [
+        roomId,
+        {
+          checked: true,
+          source: 'bluejay',
+          available,
+          reason,
+          priceSummary: null,
+        },
+      ]),
+    );
+
+  try {
+    const payload = await searchBluejayRoomTypes({ checkIn, checkOut, guests });
+    const roomTypes = getRoomTypeList(payload);
+    const rooms = {};
+
+    uniqueRoomIds.forEach((roomId) => {
+      const externalRoomId = getExternalRoomId(roomId);
+      if (!externalRoomId) {
+        rooms[roomId] = {
+          checked: true,
+          source: 'bluejay',
+          available: false,
+          reason: 'Bluejay room mapping is missing',
+          priceSummary: null,
+        };
+        return;
+      }
+
+      const matchedRoomType = selectMatchedRoomType(roomTypes, externalRoomId);
+      const ratePlan = selectRatePlan(matchedRoomType, roomId, externalRoomId);
+      const available = Number(matchedRoomType?.available || 0) > 0 && Boolean(ratePlan);
+
+      rooms[roomId] = {
+        checked: true,
+        source: 'bluejay',
+        externalRoomId,
+        available,
+        inventory: Number(matchedRoomType?.available || 0),
+        ratePlanId: ratePlan?.rateplan_id || null,
+        ratePlanName: ratePlan?.title || ratePlan?.name || '',
+        reason: available ? '' : 'Bluejay returned no available inventory or no rate plan for this stay',
+        priceSummary: ratePlan ? buildBluejayPriceSummary(ratePlan, checkIn, checkOut) : null,
+      };
+    });
+
+    return { checked: true, source: 'bluejay', rooms };
+  } catch (error) {
+    return {
+      checked: true,
+      source: 'bluejay',
+      rooms: buildFallbackRooms(error?.message || 'Bluejay availability request failed', !env.BLUEJAY_FAIL_CLOSED),
     };
   }
 }
