@@ -229,6 +229,24 @@ model Booking {
   payments       Payment[]
 }
 
+model PhoneOtpChallenge {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  tokenHash  String?
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  lastSentAt DateTime  @default(now())
+  verifiedAt DateTime?
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([phone, createdAt])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
 model Payment {
   id              String        @id @default(cuid())
   bookingId       String

@@ -24,6 +24,7 @@ export const createBookingSchema = z.object({
     specialRequest: z.string().trim().max(1000).optional(),
     arrivalTime: z.string().trim().max(40).optional(),
     paymentMethod: z.enum(paymentMethodKeys).optional(),
+    phoneVerificationToken: z.string().trim().min(20).max(200).optional(),
   }),
   query: z.object({}).passthrough(),
   params: z.object({}).passthrough(),

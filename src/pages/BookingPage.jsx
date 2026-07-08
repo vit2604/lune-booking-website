@@ -11,6 +11,11 @@ import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { createBookingWithFallback } from '../services/bookingApiService.js';
+import {
+  getPhoneVerificationConfig,
+  requestPhoneOtp,
+  verifyPhoneOtp,
+} from '../services/phoneVerificationApiService.js';
 import { buildBookingDraft, hasPricedBookingDraft, validateStay } from '../utils/booking.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
 import { loadBookingDraft, saveBookingDraft } from '../utils/storage.js';
@@ -60,6 +65,10 @@ const countries = [
   'India',
   'Other',
 ];
+
+function getPhoneKey({ phoneCode, phone }) {
+  return `${phoneCode || ''}|${phone || ''}`;
+}
 
 function roomFromBookingDraft(booking) {
   if (!booking?.roomId) return null;
@@ -112,6 +121,21 @@ export default function BookingPage() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneVerificationConfig, setPhoneVerificationConfig] = useState({
+    enabled: false,
+    required: false,
+    codeLength: 6,
+    resendSeconds: 60,
+  });
+  const [phoneVerification, setPhoneVerification] = useState({
+    challengeId: '',
+    code: '',
+    token: '',
+    phoneKey: '',
+    status: 'idle',
+    message: '',
+    error: '',
+  });
   const { t } = useTranslation();
   useDocumentMeta({ title: `${t('booking.completeBooking')} | ${BRAND}`, path: '/booking', noindex: true });
 
@@ -135,6 +159,12 @@ export default function BookingPage() {
 
     setBooking(upgradedDraft);
     if (upgradedDraft?.guestInfo) setForm(upgradedDraft.guestInfo);
+  }, []);
+
+  useEffect(() => {
+    getPhoneVerificationConfig()
+      .then((config) => setPhoneVerificationConfig((current) => ({ ...current, ...config })))
+      .catch(() => {});
   }, []);
 
   const room = useMemo(() => {
@@ -164,6 +194,19 @@ export default function BookingPage() {
   const updateForm = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
+    if (field === 'phone' || field === 'phoneCode') {
+      setPhoneVerification((current) => ({
+        ...current,
+        challengeId: '',
+        code: '',
+        token: '',
+        phoneKey: '',
+        status: 'idle',
+        message: '',
+        error: '',
+      }));
+      setErrors((current) => ({ ...current, phoneVerification: undefined }));
+    }
   };
 
   const updateStay = (changes) => {
@@ -216,8 +259,81 @@ export default function BookingPage() {
     if (form.phone.trim() && /^[\p{L}\s]+$/u.test(form.phone.trim())) {
       nextErrors.phone = t('errors.phoneInvalid');
     }
+    if (
+      phoneVerificationConfig.required &&
+      (!phoneVerification.token || phoneVerification.phoneKey !== getPhoneKey(form))
+    ) {
+      nextErrors.phoneVerification = 'Please verify your phone number before continuing.';
+    }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
+  };
+
+  const requestOtp = async () => {
+    if (!form.phoneCode || !form.phone.trim()) {
+      setErrors((current) => ({ ...current, phone: t('errors.phoneRequired') }));
+      return;
+    }
+    setPhoneVerification((current) => ({ ...current, status: 'sending', error: '', message: '' }));
+    try {
+      const result = await requestPhoneOtp({
+        phoneCode: form.phoneCode,
+        phoneNumber: form.phone,
+      });
+      setPhoneVerification((current) => ({
+        ...current,
+        challengeId: result.challengeId || '',
+        code: result.debugCode || '',
+        token: '',
+        phoneKey: getPhoneKey(form),
+        status: 'sent',
+        message: result.debugCode
+          ? `Development OTP: ${result.debugCode}`
+          : 'OTP sent. Please check your phone.',
+        error: '',
+      }));
+    } catch (error) {
+      setPhoneVerification((current) => ({
+        ...current,
+        status: 'error',
+        error: error.message || 'Could not send OTP. Please try again.',
+        message: '',
+      }));
+    }
+  };
+
+  const verifyOtp = async () => {
+    const code = phoneVerification.code.trim();
+    if (!code) {
+      setPhoneVerification((current) => ({ ...current, error: 'Please enter the OTP code.' }));
+      return;
+    }
+    setPhoneVerification((current) => ({ ...current, status: 'verifying', error: '', message: '' }));
+    try {
+      const result = await verifyPhoneOtp({
+        phoneCode: form.phoneCode,
+        phoneNumber: form.phone,
+        challengeId: phoneVerification.challengeId,
+        code,
+      });
+      setPhoneVerification((current) => ({
+        ...current,
+        token: result.verificationToken || '',
+        phoneKey: getPhoneKey(form),
+        status: 'verified',
+        message: 'Phone number verified.',
+        error: '',
+      }));
+      setErrors((current) => ({ ...current, phoneVerification: undefined }));
+    } catch (error) {
+      setPhoneVerification((current) => ({
+        ...current,
+        status: 'error',
+        token: '',
+        error: error.message || 'Could not verify OTP. Please try again.',
+        message: '',
+      }));
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -234,6 +350,7 @@ export default function BookingPage() {
       bookingCode: booking.bookingCode,
       bookingStatus: booking.bookingStatus,
     });
+    updatedBooking.phoneVerificationToken = phoneVerification.token || undefined;
     try {
       const { booking: savedBooking } = await createBookingWithFallback(updatedBooking);
       saveBookingDraft(savedBooking);
@@ -338,6 +455,59 @@ export default function BookingPage() {
                   />
                 </div>
                 {errors.phone ? <p className="mt-2 text-xs text-red-600">{errors.phone}</p> : null}
+                {phoneVerificationConfig.enabled || phoneVerificationConfig.required ? (
+                  <div className="mt-3 rounded-lg border border-stone-200 bg-lune-cream p-3">
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button
+                        className="btn-secondary min-h-11 shrink-0 px-4"
+                        type="button"
+                        disabled={!phoneVerificationConfig.enabled || phoneVerification.status === 'sending'}
+                        onClick={requestOtp}
+                      >
+                        {phoneVerification.status === 'sending' ? t('common.processing') : 'Send OTP'}
+                      </button>
+                      <input
+                        className="input-field min-h-11 flex-1"
+                        inputMode="numeric"
+                        maxLength={phoneVerificationConfig.codeLength || 6}
+                        value={phoneVerification.code}
+                        onChange={(event) =>
+                          setPhoneVerification((current) => ({
+                            ...current,
+                            code: event.target.value.replace(/\D/g, '').slice(0, phoneVerificationConfig.codeLength || 6),
+                            error: '',
+                          }))
+                        }
+                        placeholder="OTP code"
+                      />
+                      <button
+                        className="btn-gold min-h-11 shrink-0 px-4"
+                        type="button"
+                        disabled={
+                          phoneVerification.status === 'verifying' ||
+                          !phoneVerification.challengeId ||
+                          phoneVerification.status === 'verified'
+                        }
+                        onClick={verifyOtp}
+                      >
+                        {phoneVerification.status === 'verified' ? 'Verified' : 'Verify'}
+                      </button>
+                    </div>
+                    {!phoneVerificationConfig.enabled ? (
+                      <p className="mt-2 text-xs font-medium text-amber-700">
+                        Phone OTP is required but SMS is not configured yet.
+                      </p>
+                    ) : null}
+                    {phoneVerification.message ? (
+                      <p className="mt-2 text-xs font-medium text-green-700">{phoneVerification.message}</p>
+                    ) : null}
+                    {phoneVerification.error || errors.phoneVerification ? (
+                      <p className="mt-2 text-xs font-medium text-red-600">
+                        {phoneVerification.error || errors.phoneVerification}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </label>
               <label>
                 <span className="label">{t('booking.country')}</span>
@@ -368,7 +538,11 @@ export default function BookingPage() {
               <BookingPolicy compact />
             </div>
 
-            <button className="btn-gold mt-8 w-full sm:w-auto" type="submit" disabled={isSubmitting}>
+            <button
+              className="btn-gold mt-8 w-full sm:w-auto"
+              type="submit"
+              disabled={isSubmitting || (phoneVerificationConfig.required && !phoneVerification.token)}
+            >
               {isSubmitting ? t('common.processing') : t('booking.continueToPayment')}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>

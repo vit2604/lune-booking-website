@@ -8,6 +8,7 @@ import { toHotelDate } from '../../utils/dateUtils.js';
 import { calculateTotalPrice } from '../../utils/priceUtils.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 import { cleanText } from '../../utils/sanitizeUtils.js';
+import { assertPhoneVerification, consumePhoneVerification } from '../phone-verifications/phoneVerification.service.js';
 
 const bookingInclude = {
   room: { include: { images: true, ratePeriods: true } },
@@ -113,6 +114,12 @@ export async function createBooking(input) {
     if (existing) return publicBookingSummary(await syncBookingToBluejay(existing));
   }
 
+  const phoneVerification = await assertPhoneVerification({
+    phoneCode: input.guest?.phoneCode,
+    phoneNumber: input.guest?.phoneNumber,
+    phoneVerificationToken: input.phoneVerificationToken,
+  });
+
   const room = await prisma.room.findUnique({ where: { id: input.roomId }, include: { ratePeriods: true } });
   const availability = await assertRoomCanBeBooked(room, input.checkIn, input.checkOut, input.guests);
   if (!availability.ok) throw createHttpError(availability.statusCode, availability.message);
@@ -209,6 +216,8 @@ export async function createBooking(input) {
 
     return tx.booking.findUnique({ where: { id: created.id }, include: bookingInclude });
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+  await consumePhoneVerification(phoneVerification);
 
   return publicBookingSummary(await syncBookingToBluejay(booking));
 }

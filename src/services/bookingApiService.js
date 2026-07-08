@@ -31,6 +31,7 @@ export function normalizeBookingForApi(booking) {
     specialRequest: guestInfo.specialRequest || booking.specialRequest || '',
     arrivalTime: guestInfo.arrivalTime || booking.arrivalTime || '',
     paymentMethod: booking.paymentMethod || 'payAtProperty',
+    phoneVerificationToken: booking.phoneVerificationToken || undefined,
   };
 }
 
@@ -46,8 +47,9 @@ export async function createBookingWithFallback(booking) {
       headers: { 'Idempotency-Key': bookingWithKey.idempotencyKey },
       body: payload,
     });
+    const { phoneVerificationToken: _phoneVerificationToken, ...safeBooking } = bookingWithKey;
     const normalized = {
-      ...bookingWithKey,
+      ...safeBooking,
       ...data,
       guestInfo: booking.guestInfo,
       apiBacked: true,
@@ -56,7 +58,8 @@ export async function createBookingWithFallback(booking) {
     return { source: 'api', booking: normalized };
   } catch (_error) {
     if (!canUseMockFallback() || _error?.status) throw _error;
-    const saved = saveBooking(bookingWithKey);
+    const { phoneVerificationToken: _phoneVerificationToken, ...safeBooking } = bookingWithKey;
+    const saved = saveBooking(safeBooking);
     return { source: 'local', booking: saved };
   }
 }

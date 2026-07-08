@@ -58,6 +58,22 @@ const schema = z.object({
   PAYOS_CANCEL_URL: optionalUrl,
   PAYOS_WEBHOOK_URL: optionalUrl,
   PAYOS_TIMEOUT_MS: z.coerce.number().default(15000),
+  PHONE_OTP_ENABLED: optionalBoolean(false),
+  PHONE_OTP_REQUIRED: optionalBoolean(false),
+  PHONE_OTP_TTL_MINUTES: z.coerce.number().int().positive().default(5),
+  PHONE_OTP_RESEND_SECONDS: z.coerce.number().int().positive().default(60),
+  PHONE_OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  PHONE_OTP_RATE_LIMIT_WINDOW_MINUTES: z.coerce.number().int().positive().default(30),
+  PHONE_OTP_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  PHONE_OTP_DEBUG_RESPONSE: optionalBoolean(false),
+  SMS_PROVIDER: z.preprocess(emptyToUndefined, z.enum(['log', 'webhook', 'twilio']).optional()),
+  SMS_WEBHOOK_URL: optionalUrl,
+  SMS_WEBHOOK_AUTH_HEADER: optionalString,
+  SMS_WEBHOOK_AUTH_VALUE: optionalString,
+  TWILIO_ACCOUNT_SID: optionalString,
+  TWILIO_AUTH_TOKEN: optionalString,
+  TWILIO_FROM_NUMBER: optionalString,
+  TWILIO_MESSAGING_SERVICE_SID: optionalString,
 });
 
 const parsed = schema.safeParse(process.env);
