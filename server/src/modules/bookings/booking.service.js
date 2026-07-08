@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { env } from '../../config/env.js';
 import { prisma } from '../../config/prisma.js';
-import { createBluejayBooking, isBluejayBookingCreateEnabled } from '../bluejay/bluejay.service.js';
+import { createBluejayBooking, getBluejayStayAvailability, isBluejayBookingCreateEnabled } from '../bluejay/bluejay.service.js';
 import { assertRoomCanBeBooked } from '../../utils/availabilityUtils.js';
 import { createUniqueBookingCode } from '../../utils/bookingCodeUtils.js';
 import { toHotelDate } from '../../utils/dateUtils.js';
@@ -116,6 +116,13 @@ export async function createBooking(input) {
   const room = await prisma.room.findUnique({ where: { id: input.roomId }, include: { ratePeriods: true } });
   const availability = await assertRoomCanBeBooked(room, input.checkIn, input.checkOut, input.guests);
   if (!availability.ok) throw createHttpError(availability.statusCode, availability.message);
+  const externalStay = await getBluejayStayAvailability({
+    roomIds: [room.id],
+    checkIn: input.checkIn,
+    checkOut: input.checkOut,
+    guests: input.guests,
+  });
+  const externalPriceSummary = externalStay.rooms?.[room.id]?.priceSummary || null;
 
   const bookingCode = await createUniqueBookingCode(prisma);
   const paymentStatus =
@@ -142,12 +149,14 @@ export async function createBooking(input) {
       : null;
     if (existingIdempotentBooking) return existingIdempotentBooking;
 
-    const price = calculateTotalPrice({
-      room: lockedRoom,
-      checkIn: input.checkIn,
-      checkOut: input.checkOut,
-      guests: input.guests,
-    });
+    const price =
+      externalPriceSummary ||
+      calculateTotalPrice({
+        room: lockedRoom,
+        checkIn: input.checkIn,
+        checkOut: input.checkOut,
+        guests: input.guests,
+      });
 
     const guest = await tx.guest.create({
       data: {

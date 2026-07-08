@@ -119,17 +119,17 @@ export function adminSavePaymentSettings(paymentMethods) {
 
 export function adminListChatSessions(query = {}) {
   const params = new URLSearchParams(query);
-  return apiRequest(`/admin/chat/sessions${params.toString() ? `?${params}` : ''}`, { timeoutMs: 1200 });
+  return apiRequest(`/admin/chat/sessions${params.toString() ? `?${params}` : ''}`, { timeoutMs: 15000 });
 }
 
 export function adminGetChatSession(sessionCode) {
-  return apiRequest(`/admin/chat/sessions/${sessionCode}`, { timeoutMs: 1200 });
+  return apiRequest(`/admin/chat/sessions/${sessionCode}`, { timeoutMs: 15000 });
 }
 
 export function adminSendChatMessage(sessionCode, message) {
   return apiRequest(`/admin/chat/sessions/${sessionCode}/messages`, {
     method: 'POST',
     body: { message },
-    timeoutMs: 1200,
+    timeoutMs: 15000,
   });
 }

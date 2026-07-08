@@ -1,8 +1,10 @@
 import { MessageCircle, Send } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { readJsonStorage, storageKeys } from '../../constants/storageKeys.js';
+import { getAdminToken } from '../../services/apiClient.js';
 import { adminGetChatSession, adminListChatSessions, adminSendChatMessage } from '../../services/adminApiService.js';
 import { translateForAdmin, translateForGuest } from '../../services/aiTranslationService.js';
+import { connectChatSocket } from '../../services/socketChatClient.js';
 
 function getLocalSessions() {
   return readJsonStorage(storageKeys.chatSessions, []);
@@ -36,6 +38,35 @@ export default function AdminMessages() {
     window.addEventListener('lune:chat-updated', onUpdate);
     return () => window.removeEventListener('lune:chat-updated', onUpdate);
   }, [filter]);
+
+  useEffect(() => {
+    const token = getAdminToken();
+    if (!token) return undefined;
+
+    const socket = connectChatSocket();
+    socket.emit('admin:join', { token });
+
+    const handleSessionUpdate = () => refresh();
+    const handleMessage = (message) => {
+      refresh();
+      if (message.sessionCode !== selected?.sessionCode) return;
+      setMessages((current) => {
+        const key = message.id || message.createdAt;
+        if (key && current.some((item) => (item.id || item.createdAt) === key)) return current;
+        return [...current, message];
+      });
+    };
+
+    socket.on('admin:new_session', handleSessionUpdate);
+    socket.on('admin:unread_count', handleSessionUpdate);
+    socket.on('chat:message', handleMessage);
+
+    return () => {
+      socket.off('admin:new_session', handleSessionUpdate);
+      socket.off('admin:unread_count', handleSessionUpdate);
+      socket.off('chat:message', handleMessage);
+    };
+  }, [filter, selected?.sessionCode]);
 
   useEffect(() => {
     if (!selected?.sessionCode) return;

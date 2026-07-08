@@ -95,7 +95,13 @@ export default function RoomDetailPage() {
   const totals = useMemo(() => {
     if (!room) return { nights: 0, roomSubtotal: 0, total: 0 };
     const calculatedNights = calculateNights(booking.checkIn, booking.checkOut);
-    if (room.priceSummary && Number(room.priceSummary.nights) === calculatedNights) {
+    if (
+      room.priceSummary &&
+      Number(room.priceSummary.nights) === calculatedNights &&
+      (!room.priceSummary.checkIn || room.priceSummary.checkIn === booking.checkIn) &&
+      (!room.priceSummary.checkOut || room.priceSummary.checkOut === booking.checkOut) &&
+      Number(room.priceSummary.guests || booking.guests || 1) === Number(booking.guests || 1)
+    ) {
       return {
         nights: calculatedNights,
         roomSubtotal: Number(room.priceSummary.subtotal || 0),

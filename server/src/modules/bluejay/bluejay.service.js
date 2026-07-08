@@ -243,7 +243,11 @@ function buildPriceInDay({ ratePlan, room, booking }) {
   }));
 }
 
-function buildBluejayPriceSummary(ratePlan, checkIn, checkOut) {
+function sumPriceInDay(priceInDay = []) {
+  return money(priceInDay.reduce((sum, item) => sum + Number(item.amount ?? item.price ?? 0), 0));
+}
+
+function buildBluejayPriceSummary(ratePlan, checkIn, checkOut, guests = 1) {
   const nights = calculateNights(checkIn, checkOut);
   const nightlyRates = Array.isArray(ratePlan?.price_in_day)
     ? ratePlan.price_in_day.map((item) => ({
@@ -253,12 +257,17 @@ function buildBluejayPriceSummary(ratePlan, checkIn, checkOut) {
         note: ratePlan.title || ratePlan.name || 'Bluejay BE rate',
       }))
     : [];
-  const subtotal = money(ratePlan?.total || nightlyRates.reduce((sum, item) => sum + Number(item.price || 0), 0));
+  const subtotal = nightlyRates.length
+    ? money(nightlyRates.reduce((sum, item) => sum + Number(item.price || 0), 0))
+    : money(ratePlan?.total || 0);
   const pricePerNight = nights > 0 ? money(subtotal / nights) : subtotal;
 
   return {
     pricePerNight,
     nights,
+    checkIn: normalizeDate(checkIn),
+    checkOut: normalizeDate(checkOut),
+    guests: Number(guests || 1),
     nightlyRates,
     subtotal,
     discountAmount: 0,
@@ -475,7 +484,7 @@ export async function getBluejayStayAvailability({ roomIds = [], checkIn, checkO
         ratePlanId: ratePlan?.rateplan_id || null,
         ratePlanName: ratePlan?.title || ratePlan?.name || '',
         reason: available ? '' : 'Bluejay returned no available inventory or no rate plan for this stay',
-        priceSummary: ratePlan ? buildBluejayPriceSummary(ratePlan, checkIn, checkOut) : null,
+        priceSummary: ratePlan ? buildBluejayPriceSummary(ratePlan, checkIn, checkOut, guests) : null,
       };
     });
 
@@ -516,7 +525,7 @@ function buildBluejayBookingPayload({ booking, room, ratePlan, externalRoomId })
   const checkOut = normalizeDate(booking.checkOut);
   const priceInDay = buildPriceInDay({ ratePlan, room, booking });
   const nights = calculateNights(checkIn, checkOut);
-  const roomTotal = money(ratePlan.total || priceInDay.reduce((sum, item) => sum + Number(item.amount || 0), 0));
+  const roomTotal = priceInDay.length ? sumPriceInDay(priceInDay) : money(ratePlan.total || 0);
   const averageAmount = nights > 0 ? money(roomTotal / nights) : roomTotal;
   const mealPlan = {
     ...DEFAULT_MEAL_PLAN,

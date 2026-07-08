@@ -11,7 +11,7 @@ import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { createBookingWithFallback } from '../services/bookingApiService.js';
-import { buildBookingDraft, validateStay } from '../utils/booking.js';
+import { buildBookingDraft, hasPricedBookingDraft, validateStay } from '../utils/booking.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
 import { loadBookingDraft, saveBookingDraft } from '../utils/storage.js';
 
@@ -63,6 +63,22 @@ const countries = [
 
 function roomFromBookingDraft(booking) {
   if (!booking?.roomId) return null;
+  const priceSummary =
+    booking.priceSummary ||
+    (hasPricedBookingDraft(booking)
+      ? {
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          guests: Number(booking.guests || 1),
+          nights: Number(booking.nights || 0),
+          pricePerNight: Number(booking.pricePerNight || 0),
+          subtotal: Number(booking.roomSubtotal ?? booking.subtotal ?? 0),
+          serviceFee: Number(booking.serviceFee || 0),
+          totalPrice: Number(booking.totalPrice ?? booking.total ?? 0),
+          nightlyRates: booking.nightlyRates || [],
+          source: booking.source || 'booking-draft',
+        }
+      : null);
   return {
     id: booking.roomId,
     slug: booking.roomId,
@@ -77,6 +93,7 @@ function roomFromBookingDraft(booking) {
     bed: booking.bed || '',
     amenities: [],
     availabilityRules: { minNights: 1, maxNights: 30 },
+    priceSummary,
   };
 }
 
@@ -103,7 +120,7 @@ export default function BookingPage() {
     if (!draft) return;
 
     const draftRoom = getRoomById(draft.roomId);
-    const upgradedDraft = draftRoom
+    const upgradedDraft = draftRoom && !hasPricedBookingDraft(draft)
       ? buildBookingDraft({
           room: draftRoom,
           checkIn: draft.checkIn,
@@ -120,7 +137,11 @@ export default function BookingPage() {
     if (upgradedDraft?.guestInfo) setForm(upgradedDraft.guestInfo);
   }, []);
 
-  const room = useMemo(() => getRoomById(booking?.roomId) || roomFromBookingDraft(booking), [booking]);
+  const room = useMemo(() => {
+    const draftRoom = roomFromBookingDraft(booking);
+    if (draftRoom && hasPricedBookingDraft(booking)) return draftRoom;
+    return getRoomById(booking?.roomId) || draftRoom;
+  }, [booking]);
 
   if (!booking || !room) {
     return (

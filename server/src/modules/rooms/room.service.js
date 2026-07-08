@@ -124,6 +124,16 @@ function localizeRoom(room, lang = 'en') {
   };
 }
 
+function withStayContext(priceSummary, query = {}) {
+  if (!priceSummary) return null;
+  return {
+    ...priceSummary,
+    checkIn: query.checkIn,
+    checkOut: query.checkOut,
+    guests: Number(query.guests || 1),
+  };
+}
+
 export async function listPublicRooms(query = {}) {
   const rooms = await prisma.room.findMany({
     where: {
@@ -165,7 +175,7 @@ export async function listPublicRooms(query = {}) {
         unavailableReason = check.available ? bluejayRoom?.reason || '' : check.reason || '';
       }
       const localPriceSummary = hasStayDates
-        ? calculateTotalPrice({ room, checkIn: query.checkIn, checkOut: query.checkOut })
+        ? withStayContext(calculateTotalPrice({ room, checkIn: query.checkIn, checkOut: query.checkOut }), query)
         : null;
 
       return {
@@ -224,7 +234,9 @@ export async function getRoomAvailability(roomId, query) {
   const bluejayRoom = bluejayStay.rooms?.[room.id] || null;
   const bluejayAvailable = !bluejayRoom?.checked || bluejayRoom.available;
   const available = validation.ok && bluejayAvailable;
-  const price = bluejayRoom?.priceSummary || calculateTotalPrice({ room, checkIn: query.checkIn, checkOut: query.checkOut });
+  const price =
+    bluejayRoom?.priceSummary ||
+    withStayContext(calculateTotalPrice({ room, checkIn: query.checkIn, checkOut: query.checkOut }), query);
   return {
     available,
     reason: available ? '' : validation.ok ? bluejayRoom?.reason || '' : validation.message,

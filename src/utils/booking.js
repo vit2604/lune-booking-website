@@ -51,6 +51,19 @@ export const calculateServiceFee = () => SERVICE_FEE_PLACEHOLDER;
 export const calculateGrandTotal = (pricePerNight, checkIn, checkOut) =>
   calculateRoomSubtotal(pricePerNight, checkIn, checkOut) + calculateServiceFee();
 
+export const hasPricedBookingDraft = (booking) =>
+  Number(booking?.totalPrice ?? booking?.total ?? booking?.roomSubtotal ?? booking?.subtotal ?? 0) > 0;
+
+const priceSummaryMatchesStay = (priceSummary, { checkIn, checkOut, guests }) => {
+  if (!priceSummary) return false;
+  const summaryGuests = Number(priceSummary.guests || guests || 1);
+  return (
+    (!priceSummary.checkIn || priceSummary.checkIn === checkIn) &&
+    (!priceSummary.checkOut || priceSummary.checkOut === checkOut) &&
+    summaryGuests === Number(guests || 1)
+  );
+};
+
 export const validateStay = ({ checkIn, checkOut, guests, maxGuests, messages = {} }) => {
   const errors = {};
   const guestCount = Number(guests);
@@ -116,11 +129,15 @@ export const buildBookingDraft = ({
   bookingCode,
   bookingStatus,
 }) => {
-  const nights = Number(room.priceSummary?.nights || calculateNights(checkIn, checkOut));
-  const pricePerNight = Number(room.priceSummary?.pricePerNight || room.price || room.basePrice || 0);
-  const roomSubtotal = Number(room.priceSummary?.subtotal ?? nights * pricePerNight);
-  const serviceFee = Number(room.priceSummary?.serviceFee ?? calculateServiceFee());
-  const totalPrice = Number(room.priceSummary?.totalPrice ?? roomSubtotal + serviceFee);
+  const guestsCount = Number(guests) || 1;
+  const priceSummary = priceSummaryMatchesStay(room.priceSummary, { checkIn, checkOut, guests: guestsCount })
+    ? room.priceSummary
+    : null;
+  const nights = Number(priceSummary?.nights || calculateNights(checkIn, checkOut));
+  const pricePerNight = Number(priceSummary?.pricePerNight || room.price || room.basePrice || 0);
+  const roomSubtotal = Number(priceSummary?.subtotal ?? priceSummary?.totalPrice ?? nights * pricePerNight);
+  const serviceFee = Number(priceSummary?.serviceFee ?? calculateServiceFee());
+  const totalPrice = Number(priceSummary?.totalPrice ?? roomSubtotal + serviceFee);
   const selectedPaymentMethod = paymentMethod || 'payAtProperty';
   const language =
     typeof localStorage !== 'undefined'
@@ -140,12 +157,22 @@ export const buildBookingDraft = ({
     pricePerNight,
     checkIn,
     checkOut,
-    guests: Number(guests) || 1,
+    guests: guestsCount,
     nights,
     roomSubtotal,
+    subtotal: roomSubtotal,
     serviceFee,
     total: totalPrice,
     totalPrice,
+    nightlyRates: priceSummary?.nightlyRates || [],
+    priceSummary: priceSummary
+      ? {
+          ...priceSummary,
+          checkIn,
+          checkOut,
+          guests: guestsCount,
+        }
+      : null,
     guestInfo: guestInfo || null,
     paymentMethod: selectedPaymentMethod,
     bookingStatus: bookingStatus || 'received',

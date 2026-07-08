@@ -2,8 +2,15 @@ import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import { canUseMockFallback } from '../config/apiConfig.js';
 import { apiRequest } from './apiClient.js';
 
-function normalizeApiRoom(room) {
-  const priceSummary = room.priceSummary || null;
+function normalizeApiRoom(room, query = {}) {
+  const priceSummary = room.priceSummary
+    ? {
+        ...room.priceSummary,
+        checkIn: query.checkIn || room.priceSummary.checkIn,
+        checkOut: query.checkOut || room.priceSummary.checkOut,
+        guests: Number(query.guests || room.priceSummary.guests || 1),
+      }
+    : null;
   return {
     ...room,
     type: room.type || 'Apartment',
@@ -26,7 +33,7 @@ export async function fetchRoomsWithFallback(query = {}, options = {}) {
       if (value !== undefined && value !== null && value !== '') params.set(key, value);
     });
     const data = await apiRequest(`/rooms${params.toString() ? `?${params}` : ''}`, options);
-    return { source: 'api', rooms: data.map(normalizeApiRoom) };
+    return { source: 'api', rooms: data.map((room) => normalizeApiRoom(room, query)) };
   } catch (error) {
     if (!canUseMockFallback()) throw error;
     return { source: 'local', rooms: getVisibleRooms() };
@@ -42,7 +49,10 @@ export async function fetchRoomWithFallback(slug, query = {}) {
     const data = await apiRequest(`/rooms/${slug}${params.toString() ? `?${params}` : ''}`);
     return {
       source: 'api',
-      room: normalizeApiRoom({ ...data.room, priceSummary: data.availability?.price || data.room?.priceSummary || null }),
+      room: normalizeApiRoom(
+        { ...data.room, priceSummary: data.availability?.price || data.room?.priceSummary || null },
+        query,
+      ),
       availability: data.availability,
     };
   } catch (error) {
