@@ -7,35 +7,36 @@ const POLICIES_KEY = 'lune_policy_settings';
 const WEBSITE_KEY = 'lune_website_settings';
 const LANGUAGE_SETTINGS_KEY = 'lune_language_settings';
 const BRANDING_ASSETS_VERSION_KEY = 'lune_branding_assets_version';
-const BRANDING_ASSETS_VERSION = '2026-06-20-nfr-brand-contact-encoding';
+const BRANDING_ASSETS_VERSION = '2026-07-08-lune-public-contact-info';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const defaultBrandingSettings = {
   hotelName: brand.name,
   shortName: brand.shortName,
-  shortSlogan: 'Your peaceful stay near My Khe Beach',
+  shortSlogan: 'Boutique apartments near My Khe Beach',
   address: brand.address,
-  phone: '+84 236 000 0000',
-  email: 'hello@luneboutique.vn',
+  phone: brand.phone,
+  email: brand.email,
   zalo: '',
   whatsapp: '',
-  facebook: '#',
-  instagram: '#',
-  googleMapsLink: '#',
+  facebook: brand.facebook,
+  instagram: brand.instagram,
+  googleMapsLink: brand.googleMapsLink,
   logoUrl: brand.logoUrl,
   primaryColor: '#171412',
   accentColor: '#b08a4b',
   backgroundColor: '#fbfaf7',
   buttonColor: '#b08a4b',
   heroTitle: 'Feel at home, away from home',
-  heroSubtitle: 'Warm boutique apartments near My Khe Beach with thoughtful details, clean rooms, and direct Lune support.',
+  heroSubtitle:
+    'Boutique hotel and apartment stays near My Khe Beach with kitchen-equipped rooms, free Wi-Fi, daily housekeeping, and direct Lune support.',
   heroButtonText: 'Check Availability',
   heroImage: brand.heroImage,
   introImage: brand.introImage,
   bookDirectTitle: 'Why choose Lune',
   footerDescription:
-    'New, clean boutique apartment stays near My Khe Beach for couples, families, business travelers, and long-stay guests in Da Nang.',
+    'Boutique hotel and apartment stays near My Khe Beach with kitchen-equipped rooms, free Wi-Fi, daily housekeeping, and direct Lune support.',
   whyBookDirect: [
     'Official Lune direct booking',
     'Secure payment placeholder',
@@ -45,7 +46,9 @@ export const defaultBrandingSettings = {
   featuredAmenities: [
     'Free Wi-Fi',
     'Air conditioning',
-    'Private bathroom',
+    'Kitchen-equipped rooms',
+    'Daily housekeeping',
+    '24-hour front desk',
     'Elevator',
     'Near beach',
     '24/7 support',
@@ -88,7 +91,7 @@ export const defaultWebsiteSettings = {
   websiteStatus: 'online',
   defaultCurrency: 'VND',
   defaultLanguage: 'English',
-  contactEmail: 'hello@luneboutique.vn',
+  contactEmail: brand.email,
   notificationEmail: '',
   directBookingEnabled: true,
   availabilityMockEnabled: true,
@@ -157,6 +160,26 @@ export function getBrandingSettings() {
       !settings.address || /ThÃ|SÆ|Ä|Viá|Tháº|SÆ¡n|Náºµng|Ð|Ã/.test(settings.address)
         ? defaultBrandingSettings.address
         : settings.address,
+    phone:
+      !settings.phone || settings.phone === '+84 236 000 0000' || settings.phone === '+84 000 000 000'
+        ? defaultBrandingSettings.phone
+        : settings.phone,
+    email:
+      !settings.email || settings.email === 'hello@luneboutique.vn' || settings.email === 'hello@luneboutique.example'
+        ? defaultBrandingSettings.email
+        : settings.email,
+    facebook:
+      !settings.facebook || settings.facebook === '#'
+        ? defaultBrandingSettings.facebook
+        : settings.facebook,
+    instagram:
+      !settings.instagram || settings.instagram === '#'
+        ? defaultBrandingSettings.instagram
+        : settings.instagram,
+    googleMapsLink:
+      !settings.googleMapsLink || settings.googleMapsLink === '#'
+        ? defaultBrandingSettings.googleMapsLink
+        : settings.googleMapsLink,
     logoUrl: settings.logoUrl || defaultBrandingSettings.logoUrl,
     shortName:
       !settings.shortName || settings.shortName === 'Lune'

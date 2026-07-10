@@ -106,6 +106,14 @@ export function adminDeleteBooking(bookingCode) {
   return apiRequest(`/admin/bookings/${bookingCode}`, { method: 'DELETE' });
 }
 
+export function adminGetSettings() {
+  return apiRequest('/admin/settings', { timeoutMs: 15000 });
+}
+
+export function adminSaveSetting(key, value) {
+  return apiRequest(`/admin/settings/${key}`, { method: 'PUT', body: value, timeoutMs: 15000 });
+}
+
 export function adminGetPaymentSettings() {
   return apiRequest('/admin/payment-settings');
 }

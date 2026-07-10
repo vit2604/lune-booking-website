@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import PublicSettingsSync from './components/PublicSettingsSync.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
 
 const AdminLayout = lazy(() => import('./admin/components/AdminLayout.jsx'));
@@ -41,6 +42,7 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
+      <PublicSettingsSync />
       <Suspense fallback={<RouteLoader />}>
         <Routes>
           <Route path="/admin/login" element={<AdminLogin />} />

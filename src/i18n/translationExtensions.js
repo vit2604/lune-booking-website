@@ -366,7 +366,7 @@ const generatedLanguagePacks = {
     trust: { official: 'Lune公式直接予約', secure: '安全な決済プレースホルダー', noAccount: 'アカウント不要', support: 'スタッフが直接サポート' },
     policy: { title: '予約ポリシー', checkIn: 'チェックインは{time}から', checkOut: 'チェックアウトは{time}まで', passport: '現地規定によりチェックイン時にパスポート提示が必要な場合があります', payment: '選択可能な支払い方法でお支払いいただけます', languageSupport: 'スタッフは複数言語でサポートできます', location: 'Lune所在地: {address}' },
     errors: { fullNameRequired: '氏名を入力してください。', emailInvalid: '有効なメールアドレスを入力してください。', phoneRequired: '電話番号を入力してください。', phoneInvalid: '電話番号は文字だけにできません。', phoneCodeRequired: '国番号を選択してください。', checkInRequired: 'チェックイン日を選択してください。', checkOutRequired: 'チェックアウト日を選択してください。', checkoutAfterCheckin: 'チェックアウト日はチェックイン日より後にしてください。', guestsRequired: '少なくとも1名を選択してください。', guestsMax: 'この客室は最大{max}名までです。' },
-    amenities: { 'Free Wi-Fi': '無料Wi-Fi', 'Air conditioning': 'エアコン', 'Private bathroom': '専用バスルーム', Elevator: 'エレベーター', 'Near beach': 'ビーチ近く', '24/7 support': '24時間サポート', Kitchen: 'キッチン', Kitchenette: '簡易キッチン', 'Washing machine': '洗濯機', 'Smart TV': 'スマートTV', 'Mini fridge': 'ミニ冷蔵庫', 'Two beds': 'ベッド2台', 'Dining corner': 'ダイニングコーナー' },
+    amenities: { 'Free Wi-Fi': '無料Wi-Fi', 'Air conditioning': 'エアコン', 'Private bathroom': '専用バスルーム', Elevator: 'エレベーター', 'Near beach': 'ビーチ近く', '24/7 support': '24時間サポート', Kitchen: 'キッチン', Kitchenette: '簡易キッチン', 'Washing machine': '洗濯機', 'Smart TV': 'スマートTV', 'Mini fridge': 'ミニ冷蔵庫', 'Two beds': 'ベッド2台', 'Dining corner': 'ダイニングコーナー', Balcony: 'バルコニー', 'Electric kettle': '電気ケトル', Hairdryer: 'ヘアドライヤー', Wardrobe: 'ワードローブ' },
   },
 };
 

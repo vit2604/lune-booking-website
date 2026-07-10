@@ -7,6 +7,8 @@ import {
   getBrandingSettings,
   saveBrandingSettings,
 } from '../services/adminSettingsService.js';
+import { adminSaveSetting } from '../../services/adminApiService.js';
+import { brandingToBackend } from '../../services/settingsAdapter.js';
 
 export default function AdminBranding() {
   const [settings, setSettings] = useState(getBrandingSettings());
@@ -15,7 +17,7 @@ export default function AdminBranding() {
 
   const update = (field, value) => setSettings((current) => ({ ...current, [field]: value }));
 
-  const handleSave = (event) => {
+  const handleSave = async (event) => {
     event.preventDefault();
     const result = saveBrandingSettings(settings);
     if (!result.ok) {
@@ -24,7 +26,12 @@ export default function AdminBranding() {
       return;
     }
     setError('');
-    setMessage('Branding saved. Guest website will use the updated logo and content.');
+    try {
+      await adminSaveSetting('branding', brandingToBackend(settings));
+      setMessage('Branding saved to database. Every visitor will see the updated content.');
+    } catch {
+      setMessage('Branding saved locally, but the database could not be reached. It will only show in this browser.');
+    }
   };
 
   const reset = () => {

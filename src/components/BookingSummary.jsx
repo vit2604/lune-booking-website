@@ -15,9 +15,13 @@ export default function BookingSummary({ booking, room, className = '' }) {
   const roomSubtotal = Number(booking.roomSubtotal ?? booking.subtotal ?? nights * pricePerNight);
   const serviceFee = booking.serviceFee ?? 0;
   const total = Number(booking.total ?? booking.totalPrice ?? roomSubtotal + serviceFee);
+  const cardSurcharge = Number(booking.cardSurcharge || 0);
+  const depositAmount = Number(booking.depositAmount || 0);
+  const balanceAtProperty = Number(booking.balanceAtProperty ?? 0);
+  const grandTotal = Number(booking.grandTotal ?? total + cardSurcharge);
   const { t, currentLanguage } = useTranslation();
   const { currentCurrency } = useCurrency();
-  const approxTotal = getApproxPriceText(total, currentCurrency, currentLanguage);
+  const approxTotal = getApproxPriceText(grandTotal, currentCurrency, currentLanguage);
   const approxNight = getApproxPriceText(pricePerNight, currentCurrency, currentLanguage);
   const statusLabel = (type, value) => {
     if (!value) return '';
@@ -113,6 +117,12 @@ export default function BookingSummary({ booking, room, className = '' }) {
             <span className="text-stone-500">{t('common.serviceFee')}</span>
             <strong className="font-semibold text-lune-ink">{formatCurrency(serviceFee)}</strong>
           </div>
+          {cardSurcharge > 0 ? (
+            <div className="flex items-center justify-between gap-4 border-t border-stone-100 pt-3">
+              <span className="text-stone-500">{t('payment.cardSurcharge')}</span>
+              <strong className="font-semibold text-lune-ink">{formatCurrency(cardSurcharge)}</strong>
+            </div>
+          ) : null}
         </div>
 
         {booking.paymentMethod ? (
@@ -137,8 +147,20 @@ export default function BookingSummary({ booking, room, className = '' }) {
         <div className="rounded-lg bg-lune-ink p-4 text-white">
           <div className="flex items-center justify-between gap-4">
             <span className="text-sm text-white/70">{t('common.total')}</span>
-            <strong className="text-xl">{formatCurrency(total)}</strong>
+            <strong className="text-xl">{formatCurrency(grandTotal)}</strong>
           </div>
+          {depositAmount > 0 ? (
+            <div className="mt-3 grid gap-1 border-t border-white/15 pt-3 text-sm">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-white/70">{t('payment.depositAmount')}</span>
+                <strong>{formatCurrency(depositAmount)}</strong>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-white/70">{t('payment.balanceAtProperty')}</span>
+                <strong>{formatCurrency(balanceAtProperty)}</strong>
+              </div>
+            </div>
+          ) : null}
           {approxTotal ? <p className="mt-2 text-right text-xs text-white/70">{approxTotal}</p> : null}
         </div>
       </div>

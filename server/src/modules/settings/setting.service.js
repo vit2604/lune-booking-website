@@ -1,29 +1,36 @@
 import { prisma } from '../../config/prisma.js';
 
+const googleMapsUrl =
+  'https://www.google.com/maps/search/?api=1&query=92-94%20Th%E1%BA%A1ch%20Lam%2C%20S%C6%A1n%20Tr%C3%A0%2C%20%C4%90%C3%A0%20N%E1%BA%B5ng';
+const facebookUrl = 'https://www.facebook.com/p/Lune-Boutique-61582233127486/';
+const instagramUrl = 'https://www.instagram.com/lune_boutique_danang/';
+
 export const defaultSettings = {
   branding: {
     hotelName: 'Lune Boutique Hotel & Apartment Da Nang',
-    slogan: 'A boutique apartment experience near the beach',
-    address: '92-94 Thạch Lam, Sơn Trà, Đà Nẵng, Việt Nam',
-    phone: '+84 000 000 000',
-    email: 'hello@luneboutique.example',
+    slogan: 'Boutique apartments near My Khe Beach',
+    address: '92-94 Thạch Lam, Phường An Hải, Quận Sơn Trà, Đà Nẵng, Việt Nam',
+    phone: '+84 867 802 229',
+    email: 'luneboutique92tl@gmail.com',
     logoUrl: '',
-    facebookUrl: '',
-    instagramUrl: '',
+    facebookUrl,
+    instagramUrl,
     zaloNumber: '',
     whatsappNumber: '',
-    googleMapsUrl: '',
+    googleMapsUrl,
     homeHeroTitle: 'Stay Comfortably in Da Nang',
-    homeHeroSubtitle: 'A boutique apartment experience near the beach',
-    footerDescription: 'Modern boutique apartments near the beach in Da Nang.',
+    homeHeroSubtitle:
+      'Boutique hotel and apartment stays near My Khe Beach with kitchen-equipped rooms, free Wi-Fi, daily housekeeping, and direct Lune support.',
+    footerDescription:
+      'Boutique hotel and apartment stays near My Khe Beach with kitchen-equipped rooms, free Wi-Fi, daily housekeeping, and direct Lune support.',
   },
   contact: {
-    phone: '+84 000 000 000',
-    email: 'hello@luneboutique.example',
+    phone: '+84 867 802 229',
+    email: 'luneboutique92tl@gmail.com',
     zaloNumber: '',
     whatsappNumber: '',
-    facebookUrl: '',
-    googleMapsUrl: '',
+    facebookUrl,
+    googleMapsUrl,
   },
   policies: {
     checkIn: 'Check-in from 14:00',

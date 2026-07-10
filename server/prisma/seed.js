@@ -8,6 +8,13 @@ const adminUsername = process.env.ADMIN_USERNAME || (isProduction ? '' : 'admin'
 const adminPassword = process.env.ADMIN_PASSWORD || (isProduction ? '' : 'luneadmin123');
 const adminEmail = process.env.ADMIN_EMAIL || (isProduction ? '' : 'admin@luneboutique.local');
 const saltRounds = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
+const luneAddress = '92-94 Thạch Lam, Phường An Hải, Quận Sơn Trà, Đà Nẵng, Việt Nam';
+const lunePhone = '+84 867 802 229';
+const luneEmail = 'luneboutique92tl@gmail.com';
+const luneFacebookUrl = 'https://www.facebook.com/p/Lune-Boutique-61582233127486/';
+const luneInstagramUrl = 'https://www.instagram.com/lune_boutique_danang/';
+const luneGoogleMapsUrl =
+  'https://www.google.com/maps/search/?api=1&query=92-94%20Th%E1%BA%A1ch%20Lam%2C%20S%C6%A1n%20Tr%C3%A0%2C%20%C4%90%C3%A0%20N%E1%BA%B5ng';
 
 const amenities = [
   'Free Wi-Fi',
@@ -231,24 +238,29 @@ const paymentMethods = {
 const siteSettings = {
   branding: {
     hotelName: 'Lune Boutique Hotel & Apartment Da Nang',
-    slogan: 'Your peaceful stay near My Khe Beach',
-    address: '92-94 Thạch Lam, Sơn Trà, Đà Nẵng, Việt Nam',
-    phone: '+84 000 000 000',
-    email: 'hello@luneboutique.example',
+    slogan: 'Boutique apartments near My Khe Beach',
+    address: luneAddress,
+    phone: lunePhone,
+    email: luneEmail,
     logoUrl: '/images/lune/logo-lune.png',
     heroImage: '/images/lune/exterior/exterior-1.webp',
     introImage: '/images/lune/exterior/exterior-2.webp',
+    facebookUrl: luneFacebookUrl,
+    instagramUrl: luneInstagramUrl,
+    googleMapsUrl: luneGoogleMapsUrl,
     homeHeroTitle: 'Feel at home, away from home',
-    homeHeroSubtitle: 'Warm boutique apartments near My Khe Beach with thoughtful details, clean rooms, and direct Lune support.',
-    footerDescription: 'New, clean boutique apartments near My Khe Beach in Da Nang.',
+    homeHeroSubtitle:
+      'Boutique hotel and apartment stays near My Khe Beach with kitchen-equipped rooms, free Wi-Fi, daily housekeeping, and direct Lune support.',
+    footerDescription:
+      'Boutique hotel and apartment stays near My Khe Beach with kitchen-equipped rooms, free Wi-Fi, daily housekeeping, and direct Lune support.',
   },
   contact: {
-    phone: '+84 000 000 000',
-    email: 'hello@luneboutique.example',
+    phone: lunePhone,
+    email: luneEmail,
     zaloNumber: '',
     whatsappNumber: '',
-    facebookUrl: '',
-    googleMapsUrl: '',
+    facebookUrl: luneFacebookUrl,
+    googleMapsUrl: luneGoogleMapsUrl,
   },
   policies: {
     checkIn: 'Check-in from 14:00',
@@ -453,14 +465,28 @@ async function seedPayments() {
   }
 }
 
+// Bump when the seeded branding/contact/policies defaults change and the live DB
+// should be refreshed to match. Existing keys are only overwritten when the marker
+// differs, so admin edits made between version bumps are preserved.
+const SETTINGS_SEED_VERSION = '2026-07-08-lune-real-contact';
+
 async function seedSettings() {
+  const marker = await prisma.siteSetting.findUnique({ where: { key: '_settingsSeedVersion' } });
+  const refresh = marker?.valueJson !== SETTINGS_SEED_VERSION;
+
   for (const [key, value] of Object.entries(siteSettings)) {
     await prisma.siteSetting.upsert({
       where: { key },
-      update: {},
+      update: refresh ? { valueJson: value } : {},
       create: { key, valueJson: value },
     });
   }
+
+  await prisma.siteSetting.upsert({
+    where: { key: '_settingsSeedVersion' },
+    update: { valueJson: SETTINGS_SEED_VERSION },
+    create: { key: '_settingsSeedVersion', valueJson: SETTINGS_SEED_VERSION },
+  });
 }
 
 async function main() {
