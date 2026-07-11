@@ -71,8 +71,8 @@
   }
 
   .btn-gold {
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-lune-gold px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:bg-lune-goldDark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
-    background: var(--lune-button-color, #b08a4b);
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-lune-goldDark px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:bg-lune-goldDeep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
+    background: var(--lune-button-color, #8b6834);
   }
 
   .btn-secondary {
@@ -159,8 +159,8 @@
     .lune-hero-image,
     .lune-hero-overlay {
       bottom: auto !important;
-      height: min(100svh, 760px) !important;
-      min-height: 680px;
+      height: min(92svh, 640px) !important;
+      min-height: 560px;
     }
 
     .lune-hero-image-exterior {

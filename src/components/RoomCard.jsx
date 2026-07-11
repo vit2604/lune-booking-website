@@ -24,7 +24,7 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
           decoding="async"
         />
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/58 to-transparent" />
-        <div className="absolute bottom-4 left-4 rounded-full bg-lune-gold px-4 py-2 text-sm font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]">
+        <div className="absolute bottom-4 left-4 rounded-full bg-lune-goldDark px-4 py-2 text-sm font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]">
           {formatVnd(room.price)} {t('common.perNight')}
         </div>
       </Link>

@@ -12,8 +12,8 @@ export default function GuestLayout() {
   useEffect(() => {
     const applyTheme = (nextSettings) => {
       const branding = JSON.parse(localStorage.getItem('lune_branding_settings') || '{}');
-      document.documentElement.style.setProperty('--lune-button-color', branding.buttonColor || '#b08a4b');
-      document.documentElement.style.setProperty('--lune-accent-color', branding.accentColor || '#b08a4b');
+      document.documentElement.style.setProperty('--lune-button-color', branding.buttonColor || '#8b6834');
+      document.documentElement.style.setProperty('--lune-accent-color', branding.accentColor || '#8b6834');
       document.documentElement.style.setProperty('--lune-page-bg', branding.backgroundColor || '#fbfaf7');
       setSettings(nextSettings);
     };

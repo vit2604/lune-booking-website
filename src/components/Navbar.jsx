@@ -91,7 +91,7 @@ export default function Navbar() {
             to="/rooms"
             className={
               isHome
-                ? 'inline-flex min-h-14 items-center justify-center rounded-lg bg-lune-gold px-8 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-lune-goldDark'
+                ? 'inline-flex min-h-14 items-center justify-center rounded-lg bg-lune-goldDark px-8 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-lune-goldDeep'
                 : 'btn-gold'
             }
           >

@@ -235,22 +235,22 @@ export default function HomePage() {
         />
         <div className="absolute inset-x-0 bottom-0 z-[2] h-40 bg-gradient-to-t from-black/45 to-transparent" />
 
-        <div className="page-shell relative z-20 flex min-h-[680px] flex-col justify-end pb-0 pt-28 sm:min-h-[820px] sm:pt-32 lg:min-h-screen">
-          <div className="max-w-3xl pb-8 sm:pb-14">
+        <div className="page-shell relative z-20 flex min-h-[560px] flex-col justify-end pb-0 pt-24 sm:min-h-[820px] sm:pt-32 lg:min-h-screen">
+          <div className="max-w-3xl pb-6 sm:pb-14">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-lune-gold sm:text-base">
               {heroSlogan || branding.hotelName}
             </p>
             <h1 className="lune-hero-title mt-5 max-w-2xl font-display text-5xl font-bold leading-[0.98] tracking-normal sm:text-7xl lg:text-8xl">
               {heroTitle}
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-white/88 sm:text-xl">{heroSubtitle}</p>
+            <p className="mt-4 max-w-xl text-lg leading-8 text-white/88 sm:mt-6 sm:text-xl">{heroSubtitle}</p>
             <Link
               to="/rooms"
-              className="mt-8 inline-flex min-h-14 items-center justify-center rounded-lg bg-lune-gold px-8 text-sm font-bold uppercase tracking-wide text-white shadow-[0_18px_45px_rgba(0,0,0,0.22)] transition hover:bg-lune-goldDark"
+              className="mt-6 inline-flex min-h-14 items-center justify-center rounded-xl bg-lune-goldDark px-8 text-sm font-bold uppercase tracking-wide text-white shadow-[0_18px_45px_rgba(0,0,0,0.22)] transition duration-200 hover:bg-lune-goldDeep sm:mt-8"
             >
               {heroButtonText}
             </Link>
-            <div className="mt-7 flex items-center gap-3" aria-label="Hero image selector">
+            <div className="mt-5 flex items-center gap-3 sm:mt-7" aria-label="Hero image selector">
               {heroSlides.map((slide, index) => (
                 <button
                   key={slide.src}
@@ -337,7 +337,7 @@ export default function HomePage() {
             const Icon = item.icon;
             return (
               <div key={item.title} className="group flex gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-[0_16px_45px_rgba(23,20,18,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_60px_rgba(23,20,18,0.1)]">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-lune-cream text-[#4b392a] transition group-hover:bg-lune-gold group-hover:text-white">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-lune-cream text-[#4b392a] transition group-hover:bg-lune-goldDark group-hover:text-white">
                   <Icon className="h-7 w-7" strokeWidth={1.7} aria-hidden="true" />
                 </span>
                 <div>
@@ -495,7 +495,7 @@ export default function HomePage() {
               <>
                 <button
                   type="button"
-                  className="absolute left-0 top-[42%] z-20 hidden h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full border border-stone-200 bg-white text-lune-ink shadow-[0_18px_45px_rgba(23,20,18,0.16)] transition hover:border-lune-gold hover:bg-lune-gold hover:text-white lg:flex"
+                  className="absolute left-0 top-[42%] z-20 hidden h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full border border-stone-200 bg-white text-lune-ink shadow-[0_18px_45px_rgba(23,20,18,0.16)] transition hover:border-lune-goldDark hover:bg-lune-goldDark hover:text-white lg:flex"
                   aria-label="Previous rooms"
                   onClick={() => scrollFeaturedRooms(-1)}
                 >
@@ -503,7 +503,7 @@ export default function HomePage() {
                 </button>
                 <button
                   type="button"
-                  className="absolute right-0 top-[42%] z-20 hidden h-12 w-12 translate-x-1/2 items-center justify-center rounded-full border border-stone-200 bg-white text-lune-ink shadow-[0_18px_45px_rgba(23,20,18,0.16)] transition hover:border-lune-gold hover:bg-lune-gold hover:text-white lg:flex"
+                  className="absolute right-0 top-[42%] z-20 hidden h-12 w-12 translate-x-1/2 items-center justify-center rounded-full border border-stone-200 bg-white text-lune-ink shadow-[0_18px_45px_rgba(23,20,18,0.16)] transition hover:border-lune-goldDark hover:bg-lune-goldDark hover:text-white lg:flex"
                   aria-label="Next rooms"
                   onClick={() => scrollFeaturedRooms(1)}
                 >
@@ -610,7 +610,7 @@ export default function HomePage() {
               })}
               <div className="rounded-lg border border-lune-gold/30 bg-white p-6">
                 <div className="flex gap-4">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-lune-gold text-white">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-lune-goldDark text-white">
                     <Clock className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <div>

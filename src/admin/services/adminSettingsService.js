@@ -7,7 +7,7 @@ const POLICIES_KEY = 'lune_policy_settings';
 const WEBSITE_KEY = 'lune_website_settings';
 const LANGUAGE_SETTINGS_KEY = 'lune_language_settings';
 const BRANDING_ASSETS_VERSION_KEY = 'lune_branding_assets_version';
-const BRANDING_ASSETS_VERSION = '2026-07-08-lune-public-contact-info';
+const BRANDING_ASSETS_VERSION = '2026-07-11-aa-gold-accents';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -25,9 +25,9 @@ export const defaultBrandingSettings = {
   googleMapsLink: brand.googleMapsLink,
   logoUrl: brand.logoUrl,
   primaryColor: '#171412',
-  accentColor: '#b08a4b',
+  accentColor: '#8b6834',
   backgroundColor: '#fbfaf7',
-  buttonColor: '#b08a4b',
+  buttonColor: '#8b6834',
   heroTitle: 'Feel at home, away from home',
   heroSubtitle:
     'Boutique hotel and apartment stays near My Khe Beach with kitchen-equipped rooms, free Wi-Fi, daily housekeeping, and direct Lune support.',
@@ -201,6 +201,14 @@ export function getBrandingSettings() {
       !settings.footerDescription || settings.footerDescription.includes('Boutique apartment stays near the beach')
         ? defaultBrandingSettings.footerDescription
         : settings.footerDescription,
+    buttonColor:
+      !settings.buttonColor || settings.buttonColor === '#b08a4b'
+        ? defaultBrandingSettings.buttonColor
+        : settings.buttonColor,
+    accentColor:
+      !settings.accentColor || settings.accentColor === '#b08a4b'
+        ? defaultBrandingSettings.accentColor
+        : settings.accentColor,
   };
   localStorage.setItem(BRANDING_KEY, JSON.stringify(nextSettings));
   localStorage.setItem(BRANDING_ASSETS_VERSION_KEY, BRANDING_ASSETS_VERSION);

@@ -11,6 +11,7 @@ export default {
           linen: '#ebe2d4',
           gold: '#b08a4b',
           goldDark: '#8b6834',
+          goldDeep: '#6f5329',
           sage: '#6f7d6b',
           mist: '#eef2f0',
         },
