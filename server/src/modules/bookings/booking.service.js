@@ -55,9 +55,14 @@ function normalizeSyncError(error) {
   return String(error?.message || 'Bluejay booking sync failed').slice(0, 1000);
 }
 
-async function syncBookingToBluejay(booking) {
+function canSyncBookingToBluejay(booking) {
+  return booking?.bookingStatus !== 'CANCELLED' && booking?.paymentStatus === 'PAID';
+}
+
+export async function syncBookingToBluejay(booking) {
   if (!isBluejayBookingCreateEnabled()) return booking;
   if (booking.bluejaySyncStatus === 'SYNCED') return booking;
+  if (!canSyncBookingToBluejay(booking)) return booking;
 
   await prisma.booking.update({
     where: { id: booking.id },
@@ -111,7 +116,7 @@ export async function createBooking(input) {
       where: { idempotencyKey: input.idempotencyKey },
       include: bookingInclude,
     });
-    if (existing) return publicBookingSummary(await syncBookingToBluejay(existing));
+    if (existing) return publicBookingSummary(existing);
   }
 
   const phoneVerification = await assertPhoneVerification({
@@ -219,7 +224,7 @@ export async function createBooking(input) {
 
   await consumePhoneVerification(phoneVerification);
 
-  return publicBookingSummary(await syncBookingToBluejay(booking));
+  return publicBookingSummary(booking);
 }
 
 export async function getPublicBooking(bookingCode) {
@@ -276,7 +281,7 @@ export async function updateBookingStatus(bookingCode, bookingStatus) {
 }
 
 export async function updatePaymentStatus(bookingCode, paymentStatus) {
-  return prisma.$transaction(async (tx) => {
+  const booking = await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.update({ where: { bookingCode }, data: { paymentStatus }, include: bookingInclude });
     await tx.payment.updateMany({
       where: { bookingId: booking.id },
@@ -287,6 +292,7 @@ export async function updatePaymentStatus(bookingCode, paymentStatus) {
     });
     return tx.booking.findUnique({ where: { bookingCode }, include: bookingInclude });
   });
+  return syncBookingToBluejay(booking);
 }
 
 export async function updateInternalNote(bookingCode, internalNote) {

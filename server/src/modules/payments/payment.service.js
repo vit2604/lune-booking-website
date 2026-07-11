@@ -4,6 +4,7 @@ import { prisma } from '../../config/prisma.js';
 import { env } from '../../config/env.js';
 import { isAllowedPaymentMethod } from '../../constants/paymentMethods.js';
 import { createHttpError } from '../../utils/responseUtils.js';
+import { syncBookingToBluejay } from '../bookings/booking.service.js';
 
 const defaultPaymentMethods = {
   payAtProperty: {
@@ -556,20 +557,26 @@ export async function handlePayosWebhook(payload) {
   const nextStatus = payment.status === 'PAID' && status !== 'PAID' ? 'PAID' : status;
   const paidAt = nextStatus === 'PAID' ? payment.paidAt || new Date() : payment.paidAt;
 
-  await prisma.$transaction([
-    prisma.payment.update({
+  const updatedBooking = await prisma.$transaction(async (tx) => {
+    await tx.payment.update({
       where: { id: payment.id },
       data: {
         status: nextStatus,
         paidAt,
         rawPayloadJson: { ...(payment.rawPayloadJson || {}), lastWebhook: verified },
       },
-    }),
-    prisma.booking.update({
+    });
+
+    return tx.booking.update({
       where: { id: payment.bookingId },
       data: { paymentStatus: nextStatus },
-    }),
-  ]);
+      include: { room: { include: { images: true, ratePeriods: true } }, guest: true, payments: true },
+    });
+  });
+
+  if (nextStatus === 'PAID') {
+    await syncBookingToBluejay(updatedBooking);
+  }
 
   return { received: true, matched: true, bookingCode: payment.booking.bookingCode, paymentStatus: nextStatus };
 }
