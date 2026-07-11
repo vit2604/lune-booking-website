@@ -14,7 +14,7 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
   const approxText = getApproxPriceText(room.price, currentCurrency, currentLanguage);
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-[0_18px_55px_rgba(23,20,18,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_80px_rgba(23,20,18,0.14)]">
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-softLg">
       <Link to={`/rooms/${room.slug}`} className="relative block overflow-hidden">
         <img
           src={room.image}
@@ -42,15 +42,15 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
         </div>
 
         <div className="mt-4 grid gap-2 text-sm text-stone-600 sm:grid-cols-3 sm:text-xs">
-          <span className="flex items-center gap-1.5 rounded-md bg-lune-mist px-2 py-2">
+          <span className="flex items-center gap-1.5 rounded-lg bg-lune-mist px-2 py-2">
             <Maximize2 className="h-3.5 w-3.5 text-lune-sage" aria-hidden="true" />
             {room.size}
           </span>
-          <span className="flex items-center gap-1.5 rounded-md bg-lune-mist px-2 py-2">
+          <span className="flex items-center gap-1.5 rounded-lg bg-lune-mist px-2 py-2">
             <Users className="h-3.5 w-3.5 text-lune-sage" aria-hidden="true" />
             {room.maxGuests} {room.maxGuests === 1 ? t('common.guest') : t('common.guestsPlural')}
           </span>
-          <span className="flex items-center gap-1.5 rounded-md bg-lune-mist px-2 py-2">
+          <span className="flex items-center gap-1.5 rounded-lg bg-lune-mist px-2 py-2">
             <BedDouble className="h-3.5 w-3.5 text-lune-sage" aria-hidden="true" />
             {localizedRoom.bed}
           </span>

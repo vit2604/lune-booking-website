@@ -59,7 +59,7 @@
   }
 
   .input-field {
-    @apply min-h-12 w-full rounded-md border border-stone-200 bg-white px-3 py-3 text-base text-lune-ink outline-none transition focus:border-lune-gold focus:ring-2 focus:ring-lune-gold/20 sm:text-sm;
+    @apply min-h-12 w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-base text-lune-ink outline-none transition duration-200 focus:border-lune-gold focus:ring-2 focus:ring-lune-gold/20 sm:text-sm;
   }
 
   .label {
@@ -67,29 +67,29 @@
   }
 
   .btn-primary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-lune-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-lune-charcoal focus:outline-none focus:ring-2 focus:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-lune-ink px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:bg-lune-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-gold {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-lune-gold px-5 py-3 text-sm font-semibold text-white transition hover:bg-lune-goldDark focus:outline-none focus:ring-2 focus:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-lune-gold px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:bg-lune-goldDark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
     background: var(--lune-button-color, #b08a4b);
   }
 
   .btn-secondary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-lune-ink transition hover:border-lune-gold hover:text-lune-goldDark focus:outline-none focus:ring-2 focus:ring-lune-gold/30;
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-lune-ink transition duration-200 hover:border-lune-gold hover:text-lune-goldDark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/30;
   }
 
   .card {
-    @apply rounded-lg border border-stone-200 bg-white shadow-soft;
+    @apply rounded-2xl border border-stone-200 bg-white shadow-soft;
   }
 
   .section-title {
-    @apply font-display text-3xl font-bold leading-tight text-lune-ink sm:text-4xl lg:text-5xl;
+    @apply font-display text-4xl font-bold leading-[1.08] text-lune-ink sm:text-5xl lg:text-6xl;
     word-break: normal;
     overflow-wrap: normal;
     hyphens: none;
     text-wrap: balance;
-    letter-spacing: 0;
+    letter-spacing: -0.01em;
   }
 
   .muted-text {
@@ -196,86 +196,63 @@
   }
 
   .reveal-variant-curve-left.is-visible {
-    animation: revealCurveLeft var(--reveal-duration, 760ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
+    animation: revealSlideRight var(--reveal-duration, 600ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
   }
 
   .reveal-variant-curve-right.is-visible {
-    animation: revealCurveRight var(--reveal-duration, 760ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
+    animation: revealSlideLeft var(--reveal-duration, 600ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
   }
 
   .reveal-variant-float.is-visible {
-    animation: revealFloat var(--reveal-duration, 700ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
+    animation: revealRise var(--reveal-duration, 600ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
   }
 
   .reveal-variant-zoom.is-visible {
-    animation: revealZoom var(--reveal-duration, 620ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
+    animation: revealZoom var(--reveal-duration, 560ms) cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
   }
 }
 
-@keyframes revealCurveLeft {
-  0% {
+@keyframes revealSlideRight {
+  from {
     opacity: 0;
-    transform: translate3d(-46px, 34px, 0) rotate(-2.8deg) scale(0.985);
-    filter: blur(8px);
+    transform: translate3d(-24px, 8px, 0);
   }
-  58% {
+  to {
     opacity: 1;
-    transform: translate3d(10px, -7px, 0) rotate(0.7deg) scale(1.005);
-    filter: blur(0);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) rotate(0) scale(1);
-    filter: blur(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
-@keyframes revealCurveRight {
-  0% {
+@keyframes revealSlideLeft {
+  from {
     opacity: 0;
-    transform: translate3d(46px, 34px, 0) rotate(2.8deg) scale(0.985);
-    filter: blur(8px);
+    transform: translate3d(24px, 8px, 0);
   }
-  58% {
+  to {
     opacity: 1;
-    transform: translate3d(-10px, -7px, 0) rotate(-0.7deg) scale(1.005);
-    filter: blur(0);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) rotate(0) scale(1);
-    filter: blur(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
-@keyframes revealFloat {
-  0% {
+@keyframes revealRise {
+  from {
     opacity: 0;
-    transform: translate3d(0, 42px, 0) scale(0.97);
-    filter: blur(6px);
+    transform: translate3d(0, 20px, 0);
   }
-  62% {
+  to {
     opacity: 1;
-    transform: translate3d(0, -9px, 0) scale(1.012);
-    filter: blur(0);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes revealZoom {
-  0% {
+  from {
     opacity: 0;
-    transform: translate3d(0, 18px, 0) scale(0.94);
-    filter: blur(5px);
+    transform: scale(0.985);
   }
-  100% {
+  to {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0);
+    transform: scale(1);
   }
 }
 

@@ -6,6 +6,7 @@ export const paymentChoices = [
   { id: 'cash', method: 'cashAtProperty', labelKey: 'payment.optCashTitle', descKey: 'payment.optCashDesc', icon: 'banknote' },
   { id: 'card', method: 'creditCard', labelKey: 'payment.optCardTitle', descKey: 'payment.optCardDesc', icon: 'card' },
   { id: 'deposit', method: 'bankTransfer', labelKey: 'payment.optDepositTitle', descKey: 'payment.optDepositDesc', icon: 'transfer' },
+  { id: 'payos', method: 'vietQr', labelKey: 'payment.vietQr', descKey: 'payment.vietQrDesc', icon: 'qr' },
 ];
 
 const roundVnd = (value) => Math.max(0, Math.round(Number(value) || 0));
@@ -47,6 +48,19 @@ export function computePaymentBreakdown({ total, choice, depositPercent }) {
       depositPercent: percent,
       depositAmount,
       balanceAtProperty: base - depositAmount,
+    };
+  }
+
+  if (choice === 'payos') {
+    return {
+      choice,
+      method: 'vietQr',
+      surcharge: 0,
+      grandTotal: base,
+      dueNow: base,
+      depositPercent: 0,
+      depositAmount: 0,
+      balanceAtProperty: 0,
     };
   }
 

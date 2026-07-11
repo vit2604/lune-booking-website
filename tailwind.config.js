@@ -17,10 +17,11 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['"Cormorant Garamond"', 'Georgia', 'Cambria', 'serif'],
       },
       boxShadow: {
         soft: '0 18px 45px rgba(23, 20, 18, 0.08)',
+        softLg: '0 28px 70px rgba(23, 20, 18, 0.14)',
       },
       animation: {
         scaleIn: 'scaleIn 0.45s ease-out',
