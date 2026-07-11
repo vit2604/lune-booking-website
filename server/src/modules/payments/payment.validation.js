@@ -8,6 +8,11 @@ export const createPaymentSchema = {
         body: z.object({
           bookingCode: z.string().regex(/^LUNE-\d{8}-\d{4}$/),
           method: z.enum(paymentMethodKeys),
+          amount: z.number().int().positive().optional(),
+          paymentPurpose: z.enum(['deposit', 'full']).optional(),
+          depositPercent: z.number().min(0).max(100).optional(),
+          balanceAmount: z.number().int().min(0).optional(),
+          grandTotal: z.number().int().positive().optional(),
         }),
         params: z.object({}).passthrough(),
         query: z.object({}).passthrough(),

@@ -205,15 +205,17 @@ function getPayosClient() {
   return payosClient;
 }
 
-function buildPayosOrderCode(bookingCode) {
+function buildPayosOrderCode(bookingCode, amount) {
   const digits = String(bookingCode || '').replace(/\D/g, '');
-  const value = Number(digits.slice(-12));
+  const amountSuffix = String(Math.max(0, Math.round(Number(amount) || 0)) % 10000).padStart(4, '0');
+  const value = Number(`${digits.slice(-8)}${amountSuffix}`);
   if (Number.isSafeInteger(value) && value > 0) return value;
   return Date.now();
 }
 
-function buildPayosDescription(booking) {
-  return `LUNE ${String(booking.bookingCode || '').replace(/\D/g, '').slice(-10)}`.slice(0, 25);
+function buildPayosDescription(booking, paymentContext = {}) {
+  const prefix = paymentContext.paymentPurpose === 'deposit' ? 'LUNE COC' : 'LUNE';
+  return `${prefix} ${String(booking.bookingCode || '').replace(/\D/g, '').slice(-10)}`.slice(0, 25);
 }
 
 function getFrontendUrl(path = '/') {
@@ -224,7 +226,7 @@ function getFrontendUrl(path = '/') {
   return `${firstOrigin || 'http://localhost:5173'}${path}`;
 }
 
-async function createPayosPaymentLink(booking) {
+async function createPayosPaymentLink(booking, paymentContext = {}) {
   const payos = getPayosClient();
   if (!payos) {
     return {
@@ -234,7 +236,8 @@ async function createPayosPaymentLink(booking) {
     };
   }
 
-  const orderCode = buildPayosOrderCode(booking.bookingCode);
+  const paymentAmount = Math.max(1, Math.round(Number(paymentContext.amount || booking.totalPrice || 0)));
+  const orderCode = buildPayosOrderCode(booking.bookingCode, paymentAmount);
   const returnUrl = env.PAYOS_RETURN_URL || getFrontendUrl(`/success?bookingCode=${encodeURIComponent(booking.bookingCode)}`);
   const cancelUrl = env.PAYOS_CANCEL_URL || getFrontendUrl('/payment');
 
@@ -242,8 +245,8 @@ async function createPayosPaymentLink(booking) {
   try {
     paymentLink = await payos.paymentRequests.create({
       orderCode,
-      amount: booking.totalPrice,
-      description: buildPayosDescription(booking),
+      amount: paymentAmount,
+      description: buildPayosDescription(booking, paymentContext),
       returnUrl,
       cancelUrl,
       buyerName: booking.guest?.fullName || undefined,
@@ -251,9 +254,13 @@ async function createPayosPaymentLink(booking) {
       buyerPhone: booking.guest?.phoneNumber ? `${booking.guest.phoneCode || ''}${booking.guest.phoneNumber}` : undefined,
       items: [
         {
-          name: String(booking.room?.name || booking.bookingCode).slice(0, 80),
+          name: String(
+            paymentContext.paymentPurpose === 'deposit'
+              ? `Deposit ${booking.room?.name || booking.bookingCode}`
+              : booking.room?.name || booking.bookingCode,
+          ).slice(0, 80),
           quantity: 1,
-          price: booking.totalPrice,
+          price: paymentAmount,
         },
       ],
     });
@@ -269,6 +276,11 @@ async function createPayosPaymentLink(booking) {
     provider: 'payOS',
     configured: true,
     orderCode,
+    amount: paymentAmount,
+    paymentPurpose: paymentContext.paymentPurpose || 'full',
+    depositPercent: paymentContext.depositPercent ?? null,
+    balanceAmount: paymentContext.balanceAmount ?? null,
+    bookingTotal: booking.totalPrice,
     paymentLinkId: paymentLink.paymentLinkId,
     checkoutUrl: paymentLink.checkoutUrl,
     qrCode: paymentLink.qrCode,
@@ -375,7 +387,28 @@ export function generateTransferContent(booking, template) {
     .slice(0, 120);
 }
 
-export async function createPaymentRequest({ bookingCode, method }) {
+function normalizeRequestedPaymentAmount({ booking, amount, grandTotal }) {
+  const bookingTotal = Math.max(1, Math.round(Number(booking.totalPrice || 0)));
+  const requestedAmount = amount === undefined ? bookingTotal : Math.round(Number(amount));
+  const maxAmount = Math.max(bookingTotal, Math.round(Number(grandTotal || bookingTotal)));
+  if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
+    throw createHttpError(400, 'Invalid payment amount');
+  }
+  if (requestedAmount > maxAmount) {
+    throw createHttpError(400, 'Payment amount cannot exceed booking total');
+  }
+  return requestedAmount;
+}
+
+export async function createPaymentRequest({
+  bookingCode,
+  method,
+  amount,
+  paymentPurpose = 'full',
+  depositPercent,
+  balanceAmount,
+  grandTotal,
+}) {
   const booking = await prisma.booking.findUnique({
     where: { bookingCode },
     include: { guest: true, payments: true, room: true },
@@ -384,6 +417,14 @@ export async function createPaymentRequest({ bookingCode, method }) {
   if (booking.bookingStatus === 'CANCELLED') throw createHttpError(409, 'Cancelled bookings cannot be paid');
   if (!isAllowedPaymentMethod(method)) throw createHttpError(400, 'Payment method is not supported');
   if (!booking.totalPrice || booking.totalPrice <= 0) throw createHttpError(400, 'Invalid booking amount');
+  const paymentAmount = normalizeRequestedPaymentAmount({ booking, amount, grandTotal });
+  const normalizedPurpose = paymentPurpose === 'deposit' && paymentAmount < booking.totalPrice ? 'deposit' : 'full';
+  const normalizedDepositPercent =
+    normalizedPurpose === 'deposit' && Number.isFinite(Number(depositPercent)) ? Number(depositPercent) : null;
+  const normalizedBalanceAmount =
+    normalizedPurpose === 'deposit' && Number.isFinite(Number(balanceAmount))
+      ? Math.max(0, Math.round(Number(balanceAmount)))
+      : null;
 
   const settings = await getPaymentSettings();
   const selected = settings.find((item) => item.key === method);
@@ -404,12 +445,17 @@ export async function createPaymentRequest({ bookingCode, method }) {
     orderBy: { createdAt: 'desc' },
   });
 
-  if (method === 'vietQr' && reusablePayment?.rawPayloadJson?.configured) {
+  if (method === 'vietQr' && reusablePayment?.rawPayloadJson?.configured && Number(reusablePayment.amount) === paymentAmount) {
     const providerPayload = reusablePayment.rawPayloadJson;
     return {
       bookingCode,
       method,
       paymentStatus: reusablePayment.status,
+      amountDueNow: reusablePayment.amount,
+      paymentPurpose: providerPayload.paymentPurpose || normalizedPurpose,
+      depositPercent: providerPayload.depositPercent ?? normalizedDepositPercent,
+      balanceAmount: providerPayload.balanceAmount ?? normalizedBalanceAmount,
+      bookingTotal: providerPayload.bookingTotal || booking.totalPrice,
       payment: {
         id: reusablePayment.id,
         method: reusablePayment.method,
@@ -430,7 +476,16 @@ export async function createPaymentRequest({ bookingCode, method }) {
     };
   }
 
-  const providerPayload = method === 'vietQr' ? await createPayosPaymentLink(booking) : null;
+  const paymentContext = {
+    amount: paymentAmount,
+    paymentPurpose: normalizedPurpose,
+    depositPercent: normalizedDepositPercent,
+    balanceAmount: normalizedBalanceAmount,
+    grandTotal: grandTotal ? Math.round(Number(grandTotal)) : booking.totalPrice,
+    bookingTotal: booking.totalPrice,
+  };
+
+  const providerPayload = method === 'vietQr' ? await createPayosPaymentLink(booking, paymentContext) : null;
 
   const payment = await prisma.$transaction(async (tx) => {
     await tx.booking.update({
@@ -443,12 +498,15 @@ export async function createPaymentRequest({ bookingCode, method }) {
 
     const paymentData = {
       provider: cleanString(selected.provider || selected.providerName || '', 80) || null,
-      amount: booking.totalPrice,
+      amount: paymentAmount,
       currency: booking.currency,
       status: statusAfterConfirm,
       transferContent,
       transactionRef: providerPayload?.paymentLinkId || null,
-      rawPayloadJson: providerPayload || { note: 'Mock payment request. Production must call backend provider integration.' },
+      rawPayloadJson: providerPayload || {
+        note: 'Mock payment request. Production must call backend provider integration.',
+        ...paymentContext,
+      },
     };
 
     const existingPayment = await tx.payment.findFirst({
@@ -477,6 +535,11 @@ export async function createPaymentRequest({ bookingCode, method }) {
     bookingCode,
     method,
     paymentStatus: statusAfterConfirm,
+    amountDueNow: paymentAmount,
+    paymentPurpose: normalizedPurpose,
+    depositPercent: normalizedDepositPercent,
+    balanceAmount: normalizedBalanceAmount,
+    bookingTotal: booking.totalPrice,
     payment: {
       id: payment.id,
       method: payment.method,

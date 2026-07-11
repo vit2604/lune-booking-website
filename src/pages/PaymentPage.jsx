@@ -130,6 +130,13 @@ export default function PaymentPage() {
     [booking],
   );
   const guestIsVietnamese = useMemo(() => isVietnameseGuest(paymentGuestInfo), [paymentGuestInfo]);
+  const payosMethod = paymentMethodMap.get('vietQr');
+  const depositUsesPayos =
+    choice === 'deposit' &&
+    guestIsVietnamese &&
+    Boolean(payosMethod && payosMethod.enabled !== false && payosMethod.visibleForGuests !== false);
+  const effectivePaymentMethod = depositUsesPayos ? 'vietQr' : breakdown.method;
+  const isPayosFlow = effectivePaymentMethod === 'vietQr';
   const visiblePaymentChoices = useMemo(() => {
     let choices;
     if (!availablePaymentMethods.length) {
@@ -179,8 +186,8 @@ export default function PaymentPage() {
   const currentBooking = {
     ...booking,
     paymentChoice: choice,
-    paymentMethod: breakdown.method,
-    paymentStatus: getPaymentStatus(breakdown.method),
+    paymentMethod: effectivePaymentMethod,
+    paymentStatus: getPaymentStatus(effectivePaymentMethod),
     cardSurcharge: breakdown.surcharge,
     depositPercent: breakdown.depositPercent,
     depositAmount: breakdown.depositAmount,
@@ -211,8 +218,8 @@ export default function PaymentPage() {
       totalPrice: baseTotal,
       guests: Number(booking.guests || 1),
       paymentChoice: choice,
-      paymentMethod: breakdown.method,
-      paymentStatus: getPaymentStatus(breakdown.method),
+      paymentMethod: effectivePaymentMethod,
+      paymentStatus: getPaymentStatus(effectivePaymentMethod),
       cardSurcharge: breakdown.surcharge,
       depositPercent: breakdown.depositPercent,
       depositAmount: breakdown.depositAmount,
@@ -226,12 +233,18 @@ export default function PaymentPage() {
     try {
       let paymentResult = null;
       if (booking.bookingCode) {
-        paymentResult = await createPaymentWithFallback(booking.bookingCode, breakdown.method);
-      } else if (breakdown.method === 'vietQr') {
+        paymentResult = await createPaymentWithFallback(booking.bookingCode, effectivePaymentMethod, {
+          amount: choice === 'deposit' ? breakdown.depositAmount : breakdown.dueNow || breakdown.grandTotal,
+          paymentPurpose: choice === 'deposit' ? 'deposit' : 'full',
+          depositPercent: choice === 'deposit' ? breakdown.depositPercent : undefined,
+          balanceAmount: choice === 'deposit' ? breakdown.balanceAtProperty : undefined,
+          grandTotal: breakdown.grandTotal,
+        });
+      } else if (isPayosFlow) {
         throw new Error(t('payment.payosNotConfigured'));
       }
 
-      if (breakdown.method === 'vietQr') {
+      if (isPayosFlow) {
         setPaymentRequest(paymentResult);
         const checkoutUrl = payosCheckoutUrlFromResult(paymentResult);
         if (!checkoutUrl) {
@@ -371,56 +384,67 @@ export default function PaymentPage() {
                     {t('payment.foreignBankingNote')}
                   </p>
                 ) : null}
-                <p className="mt-4 text-sm leading-6 text-stone-700">{t('payment.transferInstruction')}</p>
-                <dl className="mt-3 grid gap-3 text-sm">
-                  <div className="rounded-md bg-white p-3">
-                    <dt className="text-stone-500">{t('payment.bankName')}</dt>
-                    <dd className="mt-1 font-semibold text-lune-ink">{bankMethod.bankName || 'PLACEHOLDER_BANK_NAME'}</dd>
-                  </div>
-                  <div className="grid gap-2 rounded-md bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                    <div>
-                      <dt className="text-stone-500">{t('payment.accountNumber')}</dt>
-                      <dd className="mt-1 break-all font-semibold text-lune-ink">
-                        {bankMethod.accountNumber || 'PLACEHOLDER_ACCOUNT_NUMBER'}
-                      </dd>
+                {depositUsesPayos ? (
+                  <div className="mt-4 rounded-md border border-stone-200 bg-white p-4 text-sm leading-6 text-stone-700">
+                    <div className="flex items-start gap-3">
+                      <QrCode className="mt-0.5 h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
+                      <p>{t('payment.depositPayosInstruction')}</p>
                     </div>
-                    <button
-                      className="btn-secondary min-h-10 px-3 py-2"
-                      type="button"
-                      onClick={() => copyText(t('payment.accountNumber'), bankMethod.accountNumber || '')}
-                    >
-                      <Copy className="h-4 w-4" aria-hidden="true" />
-                      {t('payment.copy')}
-                    </button>
                   </div>
-                  <div className="rounded-md bg-white p-3">
-                    <dt className="text-stone-500">{t('payment.accountHolder')}</dt>
-                    <dd className="mt-1 font-semibold text-lune-ink">{bankMethod.accountHolder || 'LUNE BOUTIQUE HOTEL'}</dd>
-                  </div>
-                  <div className="grid gap-2 rounded-md bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                    <div>
-                      <dt className="text-stone-500">{t('payment.transferContent')}</dt>
-                      <dd className="mt-1 break-words font-semibold text-lune-ink">{transferContent}</dd>
+                ) : (
+                  <>
+                    <p className="mt-4 text-sm leading-6 text-stone-700">{t('payment.transferInstruction')}</p>
+                    <dl className="mt-3 grid gap-3 text-sm">
+                      <div className="rounded-md bg-white p-3">
+                        <dt className="text-stone-500">{t('payment.bankName')}</dt>
+                        <dd className="mt-1 font-semibold text-lune-ink">{bankMethod.bankName || 'PLACEHOLDER_BANK_NAME'}</dd>
+                      </div>
+                      <div className="grid gap-2 rounded-md bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                        <div>
+                          <dt className="text-stone-500">{t('payment.accountNumber')}</dt>
+                          <dd className="mt-1 break-all font-semibold text-lune-ink">
+                            {bankMethod.accountNumber || 'PLACEHOLDER_ACCOUNT_NUMBER'}
+                          </dd>
+                        </div>
+                        <button
+                          className="btn-secondary min-h-10 px-3 py-2"
+                          type="button"
+                          onClick={() => copyText(t('payment.accountNumber'), bankMethod.accountNumber || '')}
+                        >
+                          <Copy className="h-4 w-4" aria-hidden="true" />
+                          {t('payment.copy')}
+                        </button>
+                      </div>
+                      <div className="rounded-md bg-white p-3">
+                        <dt className="text-stone-500">{t('payment.accountHolder')}</dt>
+                        <dd className="mt-1 font-semibold text-lune-ink">{bankMethod.accountHolder || 'LUNE BOUTIQUE HOTEL'}</dd>
+                      </div>
+                      <div className="grid gap-2 rounded-md bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                        <div>
+                          <dt className="text-stone-500">{t('payment.transferContent')}</dt>
+                          <dd className="mt-1 break-words font-semibold text-lune-ink">{transferContent}</dd>
+                        </div>
+                        <button
+                          className="btn-secondary min-h-10 px-3 py-2"
+                          type="button"
+                          onClick={() => copyText(t('payment.transferContent'), transferContent)}
+                        >
+                          <Copy className="h-4 w-4" aria-hidden="true" />
+                          {t('payment.copy')}
+                        </button>
+                      </div>
+                    </dl>
+                    <div className="mt-4 grid place-items-center rounded-lg bg-white p-5">
+                      {bankQrSrc ? (
+                        <img src={bankQrSrc} alt={t('payment.qrPlaceholder')} className="h-56 w-56 rounded-md object-contain" />
+                      ) : (
+                        <div className="grid h-56 w-56 max-w-full place-items-center rounded-md border border-dashed border-stone-300 bg-lune-cream">
+                          <QrCode className="h-20 w-20 text-lune-goldDark" aria-hidden="true" />
+                        </div>
+                      )}
                     </div>
-                    <button
-                      className="btn-secondary min-h-10 px-3 py-2"
-                      type="button"
-                      onClick={() => copyText(t('payment.transferContent'), transferContent)}
-                    >
-                      <Copy className="h-4 w-4" aria-hidden="true" />
-                      {t('payment.copy')}
-                    </button>
-                  </div>
-                </dl>
-                <div className="mt-4 grid place-items-center rounded-lg bg-white p-5">
-                  {bankQrSrc ? (
-                    <img src={bankQrSrc} alt={t('payment.qrPlaceholder')} className="h-56 w-56 rounded-md object-contain" />
-                  ) : (
-                    <div className="grid h-56 w-56 max-w-full place-items-center rounded-md border border-dashed border-stone-300 bg-lune-cream">
-                      <QrCode className="h-20 w-20 text-lune-goldDark" aria-hidden="true" />
-                    </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             ) : null}
 
@@ -481,7 +505,7 @@ export default function PaymentPage() {
             {error ? <p className="mt-4 text-sm font-medium text-red-600">{error}</p> : null}
 
             <button className="btn-gold mt-8 w-full sm:w-auto" type="button" disabled={confirming} onClick={handleConfirm}>
-              {confirming ? t('common.confirming') : choice === 'payos' ? t('payment.createPayosQr') : t('payment.confirmBooking')}
+              {confirming ? t('common.confirming') : isPayosFlow ? t('payment.createPayosQr') : t('payment.confirmBooking')}
             </button>
           </RevealOnScroll>
 

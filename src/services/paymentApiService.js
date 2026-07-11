@@ -24,12 +24,27 @@ export async function getPaymentMethodsWithFallback() {
   }
 }
 
-export async function createPaymentWithFallback(bookingCode, method) {
+export async function createPaymentWithFallback(bookingCode, method, details = {}) {
   try {
-    return { source: 'api', payment: await apiRequest('/payments/create', { method: 'POST', body: { bookingCode, method } }) };
+    return {
+      source: 'api',
+      payment: await apiRequest('/payments/create', {
+        method: 'POST',
+        body: { bookingCode, method, ...details },
+      }),
+    };
   } catch (_error) {
     if (!canUseMockFallback()) throw _error;
     const payAtPropertyMethods = new Set(['payAtProperty', 'cashAtProperty']);
-    return { source: 'local', payment: { bookingCode, method, paymentStatus: payAtPropertyMethods.has(method) ? 'pay_at_property' : 'pending' } };
+    return {
+      source: 'local',
+      payment: {
+        bookingCode,
+        method,
+        amountDueNow: details.amount,
+        paymentPurpose: details.paymentPurpose,
+        paymentStatus: payAtPropertyMethods.has(method) ? 'pay_at_property' : 'pending',
+      },
+    };
   }
 }
