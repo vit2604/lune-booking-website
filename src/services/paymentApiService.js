@@ -29,6 +29,7 @@ export async function createPaymentWithFallback(bookingCode, method) {
     return { source: 'api', payment: await apiRequest('/payments/create', { method: 'POST', body: { bookingCode, method } }) };
   } catch (_error) {
     if (!canUseMockFallback()) throw _error;
-    return { source: 'local', payment: { bookingCode, method, paymentStatus: method === 'payAtProperty' ? 'pay_at_property' : 'pending' } };
+    const payAtPropertyMethods = new Set(['payAtProperty', 'cashAtProperty']);
+    return { source: 'local', payment: { bookingCode, method, paymentStatus: payAtPropertyMethods.has(method) ? 'pay_at_property' : 'pending' } };
   }
 }

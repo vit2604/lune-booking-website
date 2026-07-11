@@ -116,13 +116,15 @@ export function getDefaultPaymentMethods() {
 function normalizeSetting(setting) {
   const config = stripSensitiveFields(setting.configJson || {}) || {};
   const shouldExposePayos = setting.key === 'vietQr' && payosIsConfigured();
+  const enabled = setting.key === 'vietQr' ? shouldExposePayos : setting.enabled;
+  const visibleForGuests = setting.key === 'vietQr' ? shouldExposePayos && setting.visibleForGuests : setting.visibleForGuests;
   return {
     key: setting.key,
     ...config,
     displayName: shouldExposePayos ? 'PayOS QR' : setting.displayName,
     description: shouldExposePayos ? 'Scan QR code or open PayOS checkout to pay securely.' : setting.description,
-    enabled: shouldExposePayos ? true : setting.enabled,
-    visibleForGuests: setting.visibleForGuests,
+    enabled,
+    visibleForGuests,
     sortOrder: setting.sortOrder,
     payosConfigured: setting.key === 'vietQr' ? payosIsConfigured() : undefined,
   };

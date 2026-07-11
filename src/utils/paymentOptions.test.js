@@ -28,6 +28,15 @@ describe('computePaymentBreakdown', () => {
     expect(b.grandTotal).toBe(2_000_000);
   });
 
+  it('charges the full amount through PayOS without changing the total', () => {
+    const b = computePaymentBreakdown({ total: 2_000_000, choice: 'payos' });
+    expect(b.method).toBe('vietQr');
+    expect(b.surcharge).toBe(0);
+    expect(b.grandTotal).toBe(2_000_000);
+    expect(b.dueNow).toBe(2_000_000);
+    expect(b.balanceAtProperty).toBe(0);
+  });
+
   it('enforces the 10% minimum deposit', () => {
     expect(clampDepositPercent(0)).toBe(10);
     expect(clampDepositPercent(5)).toBe(10);

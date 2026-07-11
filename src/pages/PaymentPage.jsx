@@ -9,7 +9,7 @@ import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { useTranslation } from '../i18n/useTranslation.js';
 import { persistBooking } from '../services/bookingService.js';
-import { createPaymentWithFallback } from '../services/paymentApiService.js';
+import { createPaymentWithFallback, getPaymentMethodsWithFallback } from '../services/paymentApiService.js';
 import { generateTransferContent, getPaymentSettings } from '../services/paymentService.js';
 import { formatCurrency, getPaymentStatus } from '../utils/booking.js';
 import {
@@ -20,7 +20,25 @@ import {
 } from '../utils/paymentOptions.js';
 import { loadBookingDraft, saveBookingDraft, saveConfirmedBooking } from '../utils/storage.js';
 
-const choiceIcons = { cash: Banknote, card: CreditCard, deposit: Building2 };
+const choiceIcons = { cash: Banknote, card: CreditCard, deposit: Building2, payos: QrCode };
+
+function paymentPayloadFromResult(result) {
+  return result?.payment?.payment || result?.payment || null;
+}
+
+function payosCheckoutUrlFromResult(result) {
+  const payload = paymentPayloadFromResult(result);
+  return payload?.checkoutUrl || payload?.payos?.checkoutUrl || '';
+}
+
+function payosQrImageFromResult(result) {
+  const payload = paymentPayloadFromResult(result);
+  return payload?.payos?.qrImage || '';
+}
+
+function paymentMessageFromResult(result) {
+  return result?.payment?.message || '';
+}
 
 function safePaymentImageSrc(src) {
   const value = String(src || '').trim();
@@ -59,6 +77,8 @@ export default function PaymentPage() {
   const [depositPercent, setDepositPercent] = useState(String(MIN_DEPOSIT_PERCENT));
   const [settings, setSettings] = useState(getPaymentSettings());
   const [branding, setBranding] = useState(getBrandingSettings());
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState([]);
+  const [paymentRequest, setPaymentRequest] = useState(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState('');
   const [confirming, setConfirming] = useState(false);
@@ -67,13 +87,25 @@ export default function PaymentPage() {
 
   useEffect(() => {
     setBooking(loadBookingDraft());
+    let active = true;
+    const loadPaymentMethods = async () => {
+      try {
+        const result = await getPaymentMethodsWithFallback();
+        if (active) setAvailablePaymentMethods(result.methods || []);
+      } catch {
+        if (active) setAvailablePaymentMethods([]);
+      }
+    };
     const refresh = () => {
       setSettings(getPaymentSettings());
       setBranding(getBrandingSettings());
+      loadPaymentMethods();
     };
+    loadPaymentMethods();
     window.addEventListener('lune:settings-updated', refresh);
     window.addEventListener('storage', refresh);
     return () => {
+      active = false;
       window.removeEventListener('lune:settings-updated', refresh);
       window.removeEventListener('storage', refresh);
     };
@@ -82,6 +114,27 @@ export default function PaymentPage() {
   const room = useMemo(() => getRoomById(booking?.roomId) || roomFromBookingDraft(booking), [booking]);
   const baseTotal = Number(booking?.total ?? booking?.totalPrice ?? 0);
   const breakdown = computePaymentBreakdown({ total: baseTotal, choice, depositPercent });
+  const paymentMethodMap = useMemo(
+    () => new Map(availablePaymentMethods.map((method) => [method.key || method.id, method])),
+    [availablePaymentMethods],
+  );
+  const visiblePaymentChoices = useMemo(() => {
+    if (!availablePaymentMethods.length) {
+      return paymentChoices.filter((option) => option.method !== 'vietQr');
+    }
+    return paymentChoices.filter((option) => {
+      const method = paymentMethodMap.get(option.method);
+      return Boolean(method && method.enabled !== false && method.visibleForGuests !== false);
+    });
+  }, [availablePaymentMethods.length, paymentMethodMap]);
+
+  useEffect(() => {
+    if (!visiblePaymentChoices.length) return;
+    if (!visiblePaymentChoices.some((option) => option.id === choice)) {
+      setChoice(visiblePaymentChoices[0].id);
+      setPaymentRequest(null);
+    }
+  }, [choice, visiblePaymentChoices]);
 
   if (!booking || !room) {
     return (
@@ -132,6 +185,7 @@ export default function PaymentPage() {
   const handleConfirm = async () => {
     setConfirming(true);
     setError('');
+    setPaymentRequest(null);
     const confirmed = {
       ...booking,
       roomId: booking.roomId || room.id,
@@ -154,14 +208,42 @@ export default function PaymentPage() {
       updatedAt: new Date().toISOString(),
     };
 
-    // Record the method on the backend when reachable; never block the guest on it.
-    if (booking.bookingCode) {
-      await createPaymentWithFallback(booking.bookingCode, breakdown.method).catch(() => {});
+    try {
+      let paymentResult = null;
+      if (booking.bookingCode) {
+        paymentResult = await createPaymentWithFallback(booking.bookingCode, breakdown.method);
+      } else if (breakdown.method === 'vietQr') {
+        throw new Error(t('payment.payosNotConfigured'));
+      }
+
+      if (breakdown.method === 'vietQr') {
+        setPaymentRequest(paymentResult);
+        const checkoutUrl = payosCheckoutUrlFromResult(paymentResult);
+        if (!checkoutUrl) {
+          throw new Error(paymentMessageFromResult(paymentResult) || t('payment.payosNotConfigured'));
+        }
+        const confirmedWithPayos = {
+          ...confirmed,
+          paymentStatus: paymentResult?.payment?.paymentStatus || confirmed.paymentStatus,
+          payosCheckoutUrl: checkoutUrl,
+          payosQrImage: payosQrImageFromResult(paymentResult),
+        };
+        saveConfirmedBooking(confirmedWithPayos);
+        saveBookingDraft(confirmedWithPayos);
+        persistBooking(confirmedWithPayos);
+        window.location.assign(checkoutUrl);
+        return;
+      }
+
+      saveConfirmedBooking(confirmed);
+      saveBookingDraft(confirmed);
+      persistBooking(confirmed);
+      navigate('/success');
+    } catch (paymentError) {
+      setError(paymentError?.message || t('payment.payosNotConfigured'));
+    } finally {
+      setConfirming(false);
     }
-    saveConfirmedBooking(confirmed);
-    saveBookingDraft(confirmed);
-    persistBooking(confirmed);
-    navigate('/success');
   };
 
   return (
@@ -182,7 +264,7 @@ export default function PaymentPage() {
             <fieldset className="mt-8">
               <legend className="label">{t('payment.choosePayment')}</legend>
               <div className="mt-2 grid gap-3">
-                {paymentChoices.map((option) => {
+                {visiblePaymentChoices.map((option) => {
                   const Icon = choiceIcons[option.id];
                   const active = choice === option.id;
                   return (
@@ -200,6 +282,7 @@ export default function PaymentPage() {
                         checked={active}
                         onChange={() => {
                           setChoice(option.id);
+                          setPaymentRequest(null);
                           setError('');
                         }}
                       />
@@ -318,6 +401,37 @@ export default function PaymentPage() {
               </div>
             ) : null}
 
+            {choice === 'payos' ? (
+              <div className="mt-6 rounded-lg border border-lune-gold/30 bg-lune-cream p-5">
+                <div className="flex items-start gap-3 text-sm leading-7 text-stone-700">
+                  <QrCode className="mt-0.5 h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
+                  <div>
+                    <p>{t('payment.payosScanNote')}</p>
+                    <p className="mt-2 font-semibold text-lune-ink">{formatCurrency(breakdown.dueNow)}</p>
+                  </div>
+                </div>
+                {payosQrImageFromResult(paymentRequest) ? (
+                  <div className="mt-4 grid place-items-center rounded-lg bg-white p-5">
+                    <img
+                      src={payosQrImageFromResult(paymentRequest)}
+                      alt={t('payment.vietQr')}
+                      className="h-56 w-56 rounded-md object-contain"
+                    />
+                  </div>
+                ) : null}
+                {payosCheckoutUrlFromResult(paymentRequest) ? (
+                  <a
+                    className="btn-secondary mt-4 w-full justify-center sm:w-auto"
+                    href={payosCheckoutUrlFromResult(paymentRequest)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t('payment.openPayosCheckout')}
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="mt-6 rounded-lg border border-stone-200 bg-white p-5">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-lune-ink">
                 <CheckCircle2 className="h-5 w-5 text-lune-sage" aria-hidden="true" />
@@ -344,7 +458,7 @@ export default function PaymentPage() {
             {error ? <p className="mt-4 text-sm font-medium text-red-600">{error}</p> : null}
 
             <button className="btn-gold mt-8 w-full sm:w-auto" type="button" disabled={confirming} onClick={handleConfirm}>
-              {confirming ? t('common.confirming') : t('payment.confirmBooking')}
+              {confirming ? t('common.confirming') : choice === 'payos' ? t('payment.createPayosQr') : t('payment.confirmBooking')}
             </button>
           </RevealOnScroll>
 
