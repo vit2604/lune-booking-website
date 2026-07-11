@@ -1,4 +1,5 @@
 import { currencyConfig } from '../config/currencyConfig.js';
+import { storageKeys } from '../constants/storageKeys.js';
 
 const localeMap = {
   VND: 'en-US',
@@ -19,8 +20,25 @@ const localeMap = {
 };
 
 export function convertFromVND(amount, targetCurrency = 'VND') {
-  const rate = currencyConfig.mockRates[targetCurrency] || 1;
+  const rate = getRateForCurrency(targetCurrency);
   return Math.round((Number(amount) || 0) / rate);
+}
+
+function getStoredRates() {
+  if (typeof window === 'undefined' || !window.localStorage) return {};
+  try {
+    const payload = JSON.parse(localStorage.getItem(storageKeys.currencyRates) || '{}');
+    return payload?.rates && typeof payload.rates === 'object' ? payload.rates : {};
+  } catch {
+    return {};
+  }
+}
+
+export function getRateForCurrency(currency = 'VND') {
+  const targetCurrency = String(currency || 'VND').toUpperCase();
+  const liveRate = Number(getStoredRates()[targetCurrency]);
+  if (Number.isFinite(liveRate) && liveRate > 0) return liveRate;
+  return currencyConfig.mockRates[targetCurrency] || 1;
 }
 
 export function formatCurrency(amount, currency = 'VND') {

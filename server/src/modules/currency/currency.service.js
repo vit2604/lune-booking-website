@@ -3,7 +3,7 @@ import { env } from '../../config/env.js';
 import { fallbackRates, normalizeCurrencyList } from '../../utils/currencyUtils.js';
 
 const cacheDurationMs = 6 * 60 * 60 * 1000;
-const provider = env.CURRENCY_PROVIDER || 'frankfurter';
+const provider = env.CURRENCY_PROVIDER === 'frankfurter' ? 'exchangerate-api' : env.CURRENCY_PROVIDER || 'exchangerate-api';
 
 function buildFallbackRates(targets) {
   return targets.reduce((acc, currency) => {
@@ -52,23 +52,21 @@ async function saveRates(rates) {
 }
 
 export async function fetchLiveRates(targets) {
-  const supportedByProvider = targets.filter((currency) => !['VND', 'TWD', 'IDR'].includes(currency));
+  const supportedByProvider = targets.filter((currency) => currency !== 'VND');
   if (!supportedByProvider.length) return {};
 
-  // Frankfurter does not reliably support VND as base, so the server derives VND-per-target via USD.
-  // If production uses an API key, call it from backend only and keep secrets in server .env.
-  const symbols = supportedByProvider.filter((currency) => currency !== 'USD').join(',');
-  const url = `${env.FRANKFURTER_BASE_URL}/latest?base=USD${symbols ? `&symbols=${symbols}` : ''}`;
+  const url = `${env.EXCHANGE_RATE_BASE_URL}/USD`;
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Currency provider failed with ${response.status}`);
   const payload = await response.json();
-  const usdToVnd = fallbackRates.USD;
+  const providerRates = payload.rates || {};
+  const usdToVnd = Number(providerRates.VND) || fallbackRates.USD;
   const rates = {};
 
   supportedByProvider.forEach((currency) => {
     if (currency === 'VND') rates[currency] = 1;
     else if (currency === 'USD') rates[currency] = usdToVnd;
-    else if (payload.rates?.[currency]) rates[currency] = usdToVnd / Number(payload.rates[currency]);
+    else if (providerRates[currency]) rates[currency] = usdToVnd / Number(providerRates[currency]);
   });
 
   return rates;

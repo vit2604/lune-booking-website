@@ -30,9 +30,11 @@ services:
       - key: ADMIN_EMAIL
         sync: false
       - key: CURRENCY_PROVIDER
-        value: frankfurter
+        value: exchangerate-api
       - key: FRANKFURTER_BASE_URL
         value: https://api.frankfurter.dev/v1
+      - key: EXCHANGE_RATE_BASE_URL
+        value: https://open.er-api.com/v6/latest
       - key: BLUEJAY_ENABLED
         value: 'true'
       - key: BLUEJAY_CREATE_BOOKING_ENABLED

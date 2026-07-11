@@ -35,6 +35,7 @@ const schema = z.object({
   ADMIN_EMAIL: optionalEmail,
   CURRENCY_PROVIDER: z.string().default('frankfurter'),
   FRANKFURTER_BASE_URL: z.string().url().default('https://api.frankfurter.dev/v1'),
+  EXCHANGE_RATE_BASE_URL: z.string().url().default('https://open.er-api.com/v6/latest'),
   BLUEJAY_ENABLED: optionalBoolean(false),
   BLUEJAY_API_BASE_URL: optionalUrl,
   BLUEJAY_AVAILABILITY_PATH: z.string().default('/search-roomtypes'),
