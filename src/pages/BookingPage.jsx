@@ -115,7 +115,6 @@ export default function BookingPage() {
     phoneCode: '+84 Vietnam',
     phone: '',
     country: 'Vietnam',
-    nationality: '',
     arrivalTime: '',
     specialRequest: '',
   });
@@ -514,10 +513,6 @@ export default function BookingPage() {
                 <select className="input-field" value={form.country} onChange={(event) => updateForm('country', event.target.value)}>
                   {countries.map((country) => <option key={country} value={country}>{country}</option>)}
                 </select>
-              </label>
-              <label>
-                <span className="label">{t('booking.nationality')}</span>
-                <input className="input-field" value={form.nationality} onChange={(event) => updateForm('nationality', event.target.value)} />
               </label>
               <label>
                 <span className="label">{t('booking.arrivalTime')}</span>

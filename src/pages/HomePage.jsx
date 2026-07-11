@@ -26,7 +26,7 @@ import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { fetchRoomsWithFallback } from '../services/roomApiService.js';
-import { buildBookingDraft, getDefaultDates } from '../utils/booking.js';
+import { addDays, buildBookingDraft, getDefaultDates, toDateInputValue } from '../utils/booking.js';
 import { saveBookingDraft } from '../utils/storage.js';
 
 const defaultAmenities = [
@@ -41,10 +41,28 @@ const defaultAmenities = [
 export default function HomePage() {
   const navigate = useNavigate();
   const defaults = getDefaultDates();
+  const today = toDateInputValue(new Date());
+  const nextDay = (date) => toDateInputValue(addDays(new Date(`${date}T12:00:00`), 1));
+  const [heroDates, setHeroDates] = useState({ checkIn: defaults.checkIn, checkOut: defaults.checkOut });
   const [rooms, setRooms] = useState(getVisibleRooms());
   const [branding, setBranding] = useState(getBrandingSettings());
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
+
+  const setCheckIn = (value) => {
+    const checkIn = value && value < today ? today : value;
+    setHeroDates((current) => ({
+      checkIn,
+      checkOut: !current.checkOut || current.checkOut <= checkIn ? nextDay(checkIn) : current.checkOut,
+    }));
+  };
+
+  const setCheckOut = (value) => {
+    setHeroDates((current) => ({
+      ...current,
+      checkOut: value <= current.checkIn ? nextDay(current.checkIn) : value,
+    }));
+  };
   const { t, currentLanguage } = useTranslation();
   useDocumentMeta({
     title: BRAND,
@@ -166,11 +184,11 @@ export default function HomePage() {
 
   const handleSearch = (event) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const guests = new FormData(event.currentTarget).get('guests');
     const params = new URLSearchParams({
-      checkIn: form.get('checkIn'),
-      checkOut: form.get('checkOut'),
-      guests: form.get('guests'),
+      checkIn: heroDates.checkIn,
+      checkOut: heroDates.checkOut,
+      guests,
     });
     navigate(`/rooms?${params.toString()}`);
   };
@@ -264,8 +282,9 @@ export default function HomePage() {
                   className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
                   type="date"
                   name="checkIn"
-                  defaultValue={defaults.checkIn}
-                  min={defaults.checkIn}
+                  value={heroDates.checkIn}
+                  min={today}
+                  onChange={(event) => setCheckIn(event.target.value)}
                 />
               </span>
             </label>
@@ -277,8 +296,9 @@ export default function HomePage() {
                   className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
                   type="date"
                   name="checkOut"
-                  defaultValue={defaults.checkOut}
-                  min={defaults.checkOut}
+                  value={heroDates.checkOut}
+                  min={nextDay(heroDates.checkIn)}
+                  onChange={(event) => setCheckOut(event.target.value)}
                 />
               </span>
             </label>

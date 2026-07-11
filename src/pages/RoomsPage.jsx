@@ -12,13 +12,6 @@ import { addDays, buildBookingDraft, getDefaultDates, toDateInputValue, validate
 import { isRoomAvailable } from '../utils/bookingAvailabilityUtils.js';
 import { saveBookingDraft } from '../utils/storage.js';
 
-const priceOptions = [
-  { label: 'Any price', value: 'all' },
-  { label: 'Under 1,000,000 VND', value: '1000000' },
-  { label: 'Under 1,200,000 VND', value: '1200000' },
-  { label: 'Under 1,400,000 VND', value: '1400000' },
-];
-
 export default function RoomsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -35,9 +28,7 @@ export default function RoomsPage() {
   const [bookings, setBookings] = useState(getBookings());
   const [filters, setFilters] = useState({
     guests: Number(searchParams.get('guests')) || 1,
-    maxPrice: 'all',
     type: 'all',
-    sort: 'low',
     checkIn: initialCheckIn,
     checkOut: initialCheckOut,
   });
@@ -94,10 +85,9 @@ export default function RoomsPage() {
   const filteredRooms = useMemo(() => {
     return rooms
       .filter((room) => room.maxGuests >= filters.guests)
-      .filter((room) => filters.maxPrice === 'all' || room.price <= Number(filters.maxPrice))
       .filter((room) => filters.type === 'all' || room.type === filters.type)
       .filter((room) => isRoomAvailable(room.id, filters.checkIn, filters.checkOut, bookings, room))
-      .sort((a, b) => (filters.sort === 'low' ? a.price - b.price : b.price - a.price));
+      .sort((a, b) => a.price - b.price);
   }, [bookings, filters, rooms]);
 
   const updateFilter = (key, value) => {
@@ -204,20 +194,6 @@ export default function RoomsPage() {
                 </select>
               </label>
               <label>
-                <span className="label">{t('rooms.priceRange')}</span>
-                <select
-                  className="input-field"
-                  value={filters.maxPrice}
-                  onChange={(event) => updateFilter('maxPrice', event.target.value)}
-                >
-                  {priceOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.value === 'all' ? t('rooms.anyPrice') : option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
                 <span className="label">{t('rooms.roomType')}</span>
                 <select
                   className="input-field"
@@ -230,17 +206,6 @@ export default function RoomsPage() {
                       {type}
                     </option>
                   ))}
-                </select>
-              </label>
-              <label>
-                <span className="label">{t('rooms.sort')}</span>
-                <select
-                  className="input-field"
-                  value={filters.sort}
-                  onChange={(event) => updateFilter('sort', event.target.value)}
-                >
-                  <option value="low">{t('rooms.lowToHigh')}</option>
-                  <option value="high">{t('rooms.highToLow')}</option>
                 </select>
               </label>
             </div>
