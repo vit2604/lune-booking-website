@@ -64,6 +64,6 @@ export const paymentStatusSchema = z.object({
 
 export const internalNoteSchema = z.object({
   params: z.object({ bookingCode: z.string().min(1) }),
-  body: z.object({ internalNote: z.string().default('') }),
+  body: z.object({ internalNote: z.string().max(5000).default('') }),
   query: z.object({}).passthrough(),
 });

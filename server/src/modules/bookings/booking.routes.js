@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAdmin, requireAuth } from '../../middlewares/authMiddleware.js';
-import { bookingRateLimit } from '../../middlewares/rateLimitMiddleware.js';
+import { bookingRateLimit, publicReadRateLimit } from '../../middlewares/rateLimitMiddleware.js';
 import { validate } from '../../middlewares/validateMiddleware.js';
 import {
   adminBooking,
@@ -25,7 +25,7 @@ export const publicBookingRouter = Router();
 export const adminBookingRouter = Router();
 
 publicBookingRouter.post('/', bookingRateLimit, validate(createBookingSchema), publicCreateBooking);
-publicBookingRouter.get('/:bookingCode', validate(bookingCodeSchema), publicBooking);
+publicBookingRouter.get('/:bookingCode', publicReadRateLimit, validate(bookingCodeSchema), publicBooking);
 
 adminBookingRouter.use(requireAuth, requireAdmin);
 adminBookingRouter.get('/', validate(adminBookingsQuerySchema), adminBookings);

@@ -4,7 +4,8 @@ import morgan from 'morgan';
 import { prisma } from './config/prisma.js';
 import { corsMiddleware } from './config/cors.js';
 import { env } from './config/env.js';
-import { authRateLimit } from './middlewares/rateLimitMiddleware.js';
+import { aiRateLimit, authRateLimit, generalRateLimit } from './middlewares/rateLimitMiddleware.js';
+import { noStoreForSensitive } from './middlewares/cacheControlMiddleware.js';
 import { errorMiddleware, notFoundMiddleware } from './middlewares/errorMiddleware.js';
 import { requestContextMiddleware } from './middlewares/requestContextMiddleware.js';
 import { aiRouter } from './modules/ai/ai.routes.js';
@@ -71,13 +72,22 @@ export function createApp() {
     return sendSuccess(res, payload);
   });
 
+  // Payment webhooks are mounted before the general rate limiter and are
+  // signature-verified, so legitimate provider bursts are never throttled.
+  app.use('/api/webhooks', paymentWebhookRouter);
+
+  // Prevent caching of PII/payment/admin responses, then apply the baseline
+  // API rate limit to everything below.
+  app.use(noStoreForSensitive);
+  app.use('/api', generalRateLimit);
+
   app.use('/api/auth', authRateLimit, authRouter);
   app.use('/api/rooms', publicRoomRouter);
   app.use('/api/bookings', publicBookingRouter);
   app.use('/api', publicPaymentRouter);
   app.use('/api/settings', publicSettingRouter);
   app.use('/api/currency', currencyRouter);
-  app.use('/api/ai', aiRouter);
+  app.use('/api/ai', aiRateLimit, aiRouter);
   app.use('/api/chat', publicChatRouter);
   app.use('/api/phone-verification', phoneVerificationRouter);
   app.use('/api/admin/rooms', adminRoomRouter);
@@ -88,7 +98,6 @@ export function createApp() {
   app.use('/api/admin/settings', adminSettingRouter);
   app.use('/api/admin/chat', adminChatRouter);
   app.use('/api/admin/media', adminMediaRouter);
-  app.use('/api/webhooks', paymentWebhookRouter);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);

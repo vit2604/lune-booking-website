@@ -5,7 +5,14 @@ This MVP does not process real card payments in the frontend.
 ## Active safeguards
 
 - Payment API accepts only known payment method IDs.
-- Public booking and payment endpoints are rate-limited.
+- Public booking and payment endpoints are rate-limited; a baseline limiter also
+  covers the whole API, and AI translation and booking lookup have their own caps.
+- Booking codes are unguessable capability tokens (CSPRNG, 8 digits) to prevent
+  enumeration of booking/guest data.
+- The public booking lookup (`GET /api/bookings/:code`) returns no guest PII
+  (no name/email/phone/country) — only stay, price, and status details.
+- API responses with PII/payment/admin data send `Cache-Control: no-store`
+  (backend), independent of the Vercel SPA headers.
 - Payment settings strip secret-like fields before saving or returning data.
 - Payment requests cannot be created for cancelled bookings.
 - Payment requests reuse an existing pending payment instead of creating duplicates repeatedly.

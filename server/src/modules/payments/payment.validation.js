@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import { paymentMethodKeys } from '../../constants/paymentMethods.js';
 
+const bookingCodePattern = /^LUNE-\d{8}-\d{4,8}$/;
+
 export const createPaymentSchema = {
   safeParse: (payload) =>
     z
       .object({
         body: z.object({
-          bookingCode: z.string().regex(/^LUNE-\d{8}-\d{4}$/),
+          bookingCode: z.string().regex(bookingCodePattern),
           method: z.enum(paymentMethodKeys),
           amount: z.number().int().positive().optional(),
           paymentPurpose: z.enum(['deposit', 'full']).optional(),
@@ -25,7 +27,7 @@ export const verifyPaymentSchema = {
     z
       .object({
         body: z.object({
-          bookingCode: z.string().regex(/^LUNE-\d{8}-\d{4}$/),
+          bookingCode: z.string().regex(bookingCodePattern),
         }),
         params: z.object({}).passthrough(),
         query: z.object({}).passthrough(),

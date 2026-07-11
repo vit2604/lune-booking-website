@@ -51,6 +51,34 @@ function publicBookingSummary(booking) {
   };
 }
 
+// Public lookup projection: booking codes are unguessable capability tokens,
+// but this endpoint is unauthenticated, so it must never echo guest PII
+// (name/email/phone/country). Callers only need status + stay/price details.
+function publicBookingLookup(booking) {
+  return {
+    bookingCode: booking.bookingCode,
+    roomId: booking.roomId,
+    roomName: booking.room?.name,
+    roomImage: booking.room?.images?.find((image) => image.isMain)?.url || booking.room?.images?.[0]?.url || '',
+    checkIn: booking.checkIn,
+    checkOut: booking.checkOut,
+    nights: booking.nights,
+    guests: booking.guests,
+    pricePerNight: booking.pricePerNight,
+    subtotal: booking.subtotal,
+    discountAmount: booking.discountAmount,
+    serviceFee: booking.serviceFee,
+    taxAmount: booking.taxAmount,
+    totalPrice: booking.totalPrice,
+    total: booking.totalPrice,
+    currency: booking.currency,
+    bookingStatus: booking.bookingStatus,
+    paymentStatus: booking.paymentStatus,
+    paymentMethod: booking.paymentMethod,
+    createdAt: booking.createdAt,
+  };
+}
+
 function normalizeSyncError(error) {
   return String(error?.message || 'Bluejay booking sync failed').slice(0, 1000);
 }
@@ -230,7 +258,7 @@ export async function createBooking(input) {
 export async function getPublicBooking(bookingCode) {
   const booking = await prisma.booking.findUnique({ where: { bookingCode }, include: bookingInclude });
   if (!booking) throw createHttpError(404, 'Booking not found');
-  return publicBookingSummary(booking);
+  return publicBookingLookup(booking);
 }
 
 export async function listAdminBookings(query) {
