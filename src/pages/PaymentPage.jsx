@@ -15,6 +15,8 @@ import { formatCurrency, getPaymentStatus } from '../utils/booking.js';
 import {
   clampDepositPercent,
   computePaymentBreakdown,
+  filterPaymentChoicesForGuest,
+  isVietnameseGuest,
   MIN_DEPOSIT_PERCENT,
   paymentChoices,
 } from '../utils/paymentOptions.js';
@@ -118,15 +120,28 @@ export default function PaymentPage() {
     () => new Map(availablePaymentMethods.map((method) => [method.key || method.id, method])),
     [availablePaymentMethods],
   );
+  const paymentGuestInfo = useMemo(
+    () => ({
+      ...(booking?.guest || {}),
+      ...(booking?.guestInfo || {}),
+      country: booking?.guestInfo?.country || booking?.guest?.country || booking?.country || '',
+      phoneCode: booking?.guestInfo?.phoneCode || booking?.guest?.phoneCode || booking?.phoneCode || '',
+    }),
+    [booking],
+  );
+  const guestIsVietnamese = useMemo(() => isVietnameseGuest(paymentGuestInfo), [paymentGuestInfo]);
   const visiblePaymentChoices = useMemo(() => {
+    let choices;
     if (!availablePaymentMethods.length) {
-      return paymentChoices.filter((option) => option.method !== 'vietQr');
+      choices = paymentChoices.filter((option) => option.method !== 'vietQr');
+    } else {
+      choices = paymentChoices.filter((option) => {
+        const method = paymentMethodMap.get(option.method);
+        return Boolean(method && method.enabled !== false && method.visibleForGuests !== false);
+      });
     }
-    return paymentChoices.filter((option) => {
-      const method = paymentMethodMap.get(option.method);
-      return Boolean(method && method.enabled !== false && method.visibleForGuests !== false);
-    });
-  }, [availablePaymentMethods.length, paymentMethodMap]);
+    return filterPaymentChoicesForGuest(choices, paymentGuestInfo);
+  }, [availablePaymentMethods.length, paymentGuestInfo, paymentMethodMap]);
 
   useEffect(() => {
     if (!visiblePaymentChoices.length) return;
@@ -263,6 +278,9 @@ export default function PaymentPage() {
 
             <fieldset className="mt-8">
               <legend className="label">{t('payment.choosePayment')}</legend>
+              <p className="mt-2 rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-stone-700">
+                {guestIsVietnamese ? t('payment.vietnamPaymentNotice') : t('payment.foreignPaymentNotice')}
+              </p>
               <div className="mt-2 grid gap-3">
                 {visiblePaymentChoices.map((option) => {
                   const Icon = choiceIcons[option.id];
@@ -348,6 +366,11 @@ export default function PaymentPage() {
                   </div>
                 </dl>
 
+                {!guestIsVietnamese ? (
+                  <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+                    {t('payment.foreignBankingNote')}
+                  </p>
+                ) : null}
                 <p className="mt-4 text-sm leading-6 text-stone-700">{t('payment.transferInstruction')}</p>
                 <dl className="mt-3 grid gap-3 text-sm">
                   <div className="rounded-md bg-white p-3">

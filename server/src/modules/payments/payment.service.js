@@ -45,10 +45,10 @@ const defaultPaymentMethods = {
     provider: 'payOS',
   },
   creditCard: {
-    enabled: false,
+    enabled: true,
     visibleForGuests: true,
     displayName: 'Credit/Debit Card',
-    description: 'Card payment placeholder. Never process card data directly in frontend.',
+    description: 'International card at property. A 5% card fee applies.',
     sortOrder: 5,
     statusAfterConfirm: 'PENDING',
   },
@@ -116,13 +116,19 @@ export function getDefaultPaymentMethods() {
 function normalizeSetting(setting) {
   const config = stripSensitiveFields(setting.configJson || {}) || {};
   const shouldExposePayos = setting.key === 'vietQr' && payosIsConfigured();
-  const enabled = setting.key === 'vietQr' ? shouldExposePayos : setting.enabled;
-  const visibleForGuests = setting.key === 'vietQr' ? shouldExposePayos && setting.visibleForGuests : setting.visibleForGuests;
+  const shouldExposeCreditCard = setting.key === 'creditCard';
+  const enabled = setting.key === 'vietQr' ? shouldExposePayos : shouldExposeCreditCard ? true : setting.enabled;
+  const visibleForGuests =
+    setting.key === 'vietQr' ? shouldExposePayos && setting.visibleForGuests : shouldExposeCreditCard ? true : setting.visibleForGuests;
   return {
     key: setting.key,
     ...config,
-    displayName: shouldExposePayos ? 'PayOS QR' : setting.displayName,
-    description: shouldExposePayos ? 'Scan QR code or open PayOS checkout to pay securely.' : setting.description,
+    displayName: shouldExposePayos ? 'PayOS QR' : shouldExposeCreditCard ? 'International card' : setting.displayName,
+    description: shouldExposePayos
+      ? 'Scan QR code or open PayOS checkout to pay securely.'
+      : shouldExposeCreditCard
+        ? 'International card at property. A 5% card fee applies.'
+        : setting.description,
     enabled,
     visibleForGuests,
     sortOrder: setting.sortOrder,

@@ -226,7 +226,7 @@ const paymentMethods = {
     qrImageUrl: '',
   },
   vietQr: { enabled: false, visibleForGuests: true, displayName: 'VietQR', sortOrder: 4, statusAfterConfirm: 'PENDING' },
-  creditCard: { enabled: false, visibleForGuests: true, displayName: 'Credit/Debit Card', sortOrder: 5, statusAfterConfirm: 'PENDING' },
+  creditCard: { enabled: true, visibleForGuests: true, displayName: 'International card', sortOrder: 5, statusAfterConfirm: 'PENDING' },
   stripe: { enabled: false, visibleForGuests: true, displayName: 'Stripe', sortOrder: 6, backendEndpoint: '/api/payments/stripe/create', statusAfterConfirm: 'PENDING' },
   paypal: { enabled: false, visibleForGuests: true, displayName: 'PayPal', sortOrder: 7, backendEndpoint: '/api/payments/paypal/create', statusAfterConfirm: 'PENDING' },
   vnpay: { enabled: false, visibleForGuests: true, displayName: 'VNPay', sortOrder: 8, backendEndpoint: '/api/payments/vnpay/create', statusAfterConfirm: 'PENDING' },

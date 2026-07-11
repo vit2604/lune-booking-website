@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { clampDepositPercent, computePaymentBreakdown } from './paymentOptions.js';
+import {
+  clampDepositPercent,
+  computePaymentBreakdown,
+  filterPaymentChoicesForGuest,
+  isVietnameseGuest,
+  paymentChoices,
+} from './paymentOptions.js';
 
 describe('computePaymentBreakdown', () => {
   it('leaves the total unchanged for cash and settles everything at the property', () => {
@@ -50,5 +56,23 @@ describe('computePaymentBreakdown', () => {
     const b = computePaymentBreakdown({ total: 1_679_752, choice: 'card' });
     expect(Number.isInteger(b.surcharge)).toBe(true);
     expect(b.surcharge).toBe(83_988);
+  });
+});
+
+describe('guest payment choices', () => {
+  it('detects Vietnamese guests by country or phone code', () => {
+    expect(isVietnameseGuest({ country: 'Vietnam' })).toBe(true);
+    expect(isVietnameseGuest({ country: 'France', phoneCode: '+84 Vietnam' })).toBe(true);
+    expect(isVietnameseGuest({ country: 'France', phoneCode: '+33 France' })).toBe(false);
+  });
+
+  it('hides cash and card-at-property choices for Vietnamese guests', () => {
+    const choices = filterPaymentChoicesForGuest(paymentChoices, { country: 'Vietnam' }).map((choice) => choice.id);
+    expect(choices).toEqual(['deposit', 'payos']);
+  });
+
+  it('shows cash, Vietnam bank transfer, and international card for foreign guests', () => {
+    const choices = filterPaymentChoicesForGuest(paymentChoices, { country: 'United States' }).map((choice) => choice.id);
+    expect(choices).toEqual(['cash', 'deposit', 'card']);
   });
 });

@@ -26,7 +26,6 @@ export function normalizeBookingForApi(booking) {
       phoneCode: splitPhoneCode(guestInfo.phoneCode),
       phoneNumber: guestInfo.phone || guestInfo.phoneNumber || '',
       country: guestInfo.country || 'Vietnam',
-      nationality: guestInfo.nationality || '',
     },
     specialRequest: guestInfo.specialRequest || booking.specialRequest || '',
     arrivalTime: guestInfo.arrivalTime || booking.arrivalTime || '',
