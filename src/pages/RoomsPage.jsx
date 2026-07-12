@@ -36,10 +36,14 @@ export default function RoomsPage() {
   const [bookingError, setBookingError] = useState('');
   const [processingRoom, setProcessingRoom] = useState('');
   const { t, currentLanguage } = useTranslation();
-  const roomTypeOptions = rooms.map((room) => ({
-    value: room.id,
-    label: room.name,
-  }));
+  const roomTypeOptions = useMemo(() => {
+    const roomMap = new Map();
+    [...getVisibleRooms(), ...rooms].forEach((room) => {
+      if (!room?.id) return;
+      roomMap.set(room.id, room.translations?.[currentLanguage]?.name || room.name);
+    });
+    return Array.from(roomMap, ([value, label]) => ({ value, label }));
+  }, [currentLanguage, rooms]);
   useDocumentMeta({
     title: `${t('nav.rooms')} | ${BRAND}`,
     description: t('rooms.title'),
