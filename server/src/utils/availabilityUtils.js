@@ -17,6 +17,17 @@ export async function checkExistingBookings(roomId, checkIn, checkOut, db = pris
   return bookings.find((booking) => hasDateOverlap({ checkIn, checkOut }, booking)) || null;
 }
 
+export async function countExistingBookings(roomId, checkIn, checkOut, db = prisma) {
+  const bookings = await db.booking.findMany({
+    where: {
+      roomId,
+      bookingStatus: { in: bookingStatusesHoldingRoom },
+    },
+    select: { checkIn: true, checkOut: true },
+  });
+  return bookings.filter((booking) => hasDateOverlap({ checkIn, checkOut }, booking)).length;
+}
+
 export async function checkBlockedDates(roomId, checkIn, checkOut, db = prisma) {
   const blockedDates = await db.roomBlockedDate.findMany({
     where: { roomId },
@@ -28,11 +39,17 @@ export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1, opt
   const db = options.db || prisma;
   const adultGuests = Number(options.adults || guests || 1);
   const childGuests = Number(options.children || 0);
-  const bookingConflict = await checkExistingBookings(roomId, checkIn, checkOut, db);
-  if (bookingConflict) return { available: false, reason: 'Room already has a booking for selected dates' };
+  const localHoldCount = await countExistingBookings(roomId, checkIn, checkOut, db);
   const blockedPeriod = await checkBlockedDates(roomId, checkIn, checkOut, db);
   if (blockedPeriod) return { available: false, reason: blockedPeriod.reason || 'Room is blocked for selected dates' };
   if (options.checkExternal === false) {
+    const localInventoryLimit = Number(options.localInventoryLimit || 0);
+    if (localInventoryLimit > 0) {
+      return localHoldCount < localInventoryLimit
+        ? { available: true, reason: '', externalSource: 'local', localHoldCount }
+        : { available: false, reason: 'All PMS inventory is held by existing website bookings', localHoldCount };
+    }
+    if (localHoldCount > 0) return { available: false, reason: 'Room already has a booking for selected dates', localHoldCount };
     return { available: true, reason: '', externalSource: 'local' };
   }
   const bluejayAvailability = await checkBluejayRoomAvailability({
@@ -50,10 +67,23 @@ export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1, opt
       externalSource: 'bluejay',
     };
   }
+  const bluejayInventory = Number(bluejayAvailability.inventory || 0);
+  if (bluejayAvailability.checked && bluejayInventory > 0 && localHoldCount >= bluejayInventory) {
+    return {
+      available: false,
+      reason: 'All PMS inventory is held by existing website bookings',
+      externalSource: 'bluejay',
+      localHoldCount,
+    };
+  }
+  if (!bluejayAvailability.checked && localHoldCount > 0) {
+    return { available: false, reason: 'Room already has a booking for selected dates', localHoldCount };
+  }
   return {
     available: true,
     reason: '',
     externalSource: bluejayAvailability.checked ? 'bluejay' : 'local',
+    localHoldCount,
   };
 }
 
@@ -67,13 +97,8 @@ export async function getAvailableRooms({ checkIn, checkOut, guests, adults, chi
   const adultCount = Math.max(1, Number(adults || Number(guests || 0) - childCount || guests || 1));
   const locallyAvailableRooms = rooms.filter((room) => {
     if (!fitsRoomCapacity(room.maxGuests, adultCount, childCount)) return false;
-    const bookingConflict = room.bookings.some(
-      (booking) =>
-        bookingStatusesHoldingRoom.includes(booking.bookingStatus) &&
-        hasDateOverlap({ checkIn, checkOut }, booking),
-    );
     const blockedConflict = room.blockedDates.some((period) => hasDateOverlap({ checkIn, checkOut }, period));
-    return !bookingConflict && !blockedConflict;
+    return !blockedConflict;
   });
 
   const externalChecks = await Promise.all(
@@ -83,7 +108,17 @@ export async function getAvailableRooms({ checkIn, checkOut, guests, adults, chi
     })),
   );
 
-  return externalChecks.filter(({ check }) => !check.checked || check.available).map(({ room }) => room);
+  return externalChecks
+    .filter(({ room, check }) => {
+      const localHoldCount = room.bookings.filter(
+        (booking) =>
+          bookingStatusesHoldingRoom.includes(booking.bookingStatus) &&
+          hasDateOverlap({ checkIn, checkOut }, booking),
+      ).length;
+      if (check.checked) return check.available && localHoldCount < Number(check.inventory || 0);
+      return localHoldCount === 0;
+    })
+    .map(({ room }) => room);
 }
 
 export async function assertRoomCanBeBooked(room, checkIn, checkOut, guests, options = {}) {

@@ -190,7 +190,8 @@ export async function createBooking(input) {
     adults: input.adults,
     children: input.children,
   });
-  const externalPriceSummary = externalStay.rooms?.[room.id]?.priceSummary || null;
+  const externalRoomAvailability = externalStay.rooms?.[room.id] || null;
+  const externalPriceSummary = externalRoomAvailability?.priceSummary || null;
 
   const bookingCode = await createUniqueBookingCode(prisma);
   const paymentStatus =
@@ -206,6 +207,7 @@ export async function createBooking(input) {
       checkExternal: false,
       adults: input.adults,
       children: input.children,
+      localInventoryLimit: externalRoomAvailability?.checked ? externalRoomAvailability.inventory : undefined,
     });
     if (!lockedAvailability.ok) {
       throw createHttpError(lockedAvailability.statusCode, lockedAvailability.message);

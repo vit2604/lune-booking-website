@@ -189,6 +189,7 @@ export async function listPublicRooms(query = {}) {
             checkExternal: false,
             adults: occupancy.adults,
             children: occupancy.children,
+            localInventoryLimit: bluejayRoom?.checked ? bluejayRoom.inventory : undefined,
           },
         );
         const bluejayAvailable = !bluejayRoom?.checked || bluejayRoom.available;
@@ -244,11 +245,6 @@ export async function getPublicRoom(slug, query = {}) {
 export async function getRoomAvailability(roomId, query) {
   const room = await prisma.room.findUnique({ where: { id: roomId }, include: roomInclude });
   if (!room) throw createHttpError(404, 'Room not found');
-  const validation = await assertRoomCanBeBooked(room, query.checkIn, query.checkOut, query.guests || 1, {
-    checkExternal: false,
-    adults: query.adults || query.guests || 1,
-    children: query.children || 0,
-  });
   const bluejayStay = await getBluejayStayAvailability({
     roomIds: [room.id],
     checkIn: query.checkIn,
@@ -258,6 +254,12 @@ export async function getRoomAvailability(roomId, query) {
     children: query.children || 0,
   });
   const bluejayRoom = bluejayStay.rooms?.[room.id] || null;
+  const validation = await assertRoomCanBeBooked(room, query.checkIn, query.checkOut, query.guests || 1, {
+    checkExternal: false,
+    adults: query.adults || query.guests || 1,
+    children: query.children || 0,
+    localInventoryLimit: bluejayRoom?.checked ? bluejayRoom.inventory : undefined,
+  });
   const bluejayAvailable = !bluejayRoom?.checked || bluejayRoom.available;
   const available = validation.ok && bluejayAvailable;
   const price =
