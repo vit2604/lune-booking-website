@@ -12,6 +12,7 @@ import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { fetchRoomsWithFallback } from '../services/roomApiService.js';
 import { addDays, buildBookingDraft, getDefaultDates, toDateInputValue, validateStay } from '../utils/booking.js';
 import { isRoomAvailable } from '../utils/bookingAvailabilityUtils.js';
+import { fitsRoomCapacity, getRoomCapacity } from '../utils/occupancy.js';
 import { saveBookingDraft } from '../utils/storage.js';
 
 export default function RoomsPage() {
@@ -101,7 +102,7 @@ export default function RoomsPage() {
 
   const filteredRooms = useMemo(() => {
     return rooms
-      .filter((room) => room.maxGuests >= filters.guests)
+      .filter((room) => fitsRoomCapacity(room.maxGuests, filters.adults, filters.children))
       .filter((room) => filters.type === 'all' || room.id === filters.type)
       .filter((room) => isRoomAvailable(room.id, filters.checkIn, filters.checkOut, bookings, room))
       .sort((a, b) => a.price - b.price);
@@ -147,7 +148,7 @@ export default function RoomsPage() {
         checkOutRequired: t('errors.checkOutRequired'),
         checkoutAfterCheckin: t('errors.checkoutAfterCheckin'),
         guestsRequired: t('errors.guestsRequired'),
-        guestsMax: t('errors.guestsMax', { max: room.maxGuests }),
+        guestsMax: t('errors.guestsMax', { max: getRoomCapacity(room.maxGuests).maxTotal }),
         checkInPast: t('errors.checkInPast'),
       },
     });

@@ -1,4 +1,5 @@
 import { Users } from 'lucide-react';
+import { getMaxChildren, getRoomCapacity } from '../utils/occupancy.js';
 
 export default function GuestSelector({
   adults = 1,
@@ -9,13 +10,14 @@ export default function GuestSelector({
   t,
   showIcon = true,
 }) {
-  const adultCount = Math.max(1, Number(adults || 1));
+  const { maxAdults } = getRoomCapacity(maxGuests);
+  const adultCount = Math.min(maxAdults, Math.max(1, Number(adults || 1)));
   const childCount = Math.max(0, Number(children || 0));
-  const maxChildren = Math.max(0, Number(maxGuests || 4) - adultCount);
+  const maxChildren = getMaxChildren(maxGuests, adultCount);
 
   const updateAdults = (value) => {
-    const nextAdults = Math.max(1, Number(value || 1));
-    const nextChildren = Math.min(childCount, Math.max(0, Number(maxGuests || 4) - nextAdults));
+    const nextAdults = Math.min(maxAdults, Math.max(1, Number(value || 1)));
+    const nextChildren = Math.min(childCount, getMaxChildren(maxGuests, nextAdults));
     onChange?.({
       adults: nextAdults,
       children: nextChildren,
@@ -43,7 +45,7 @@ export default function GuestSelector({
             value={adultCount}
             onChange={(event) => updateAdults(event.target.value)}
           >
-            {Array.from({ length: Number(maxGuests || 4) }, (_, index) => index + 1).map((value) => (
+            {Array.from({ length: maxAdults }, (_, index) => index + 1).map((value) => (
               <option key={value} value={value}>
                 {value}
               </option>

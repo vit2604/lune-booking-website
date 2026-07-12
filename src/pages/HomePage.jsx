@@ -4,9 +4,11 @@ import {
   BedDouble,
   Building2,
   CalendarDays,
+  Car,
   ChevronLeft,
   ChevronRight,
   Clock,
+  ExternalLink,
   Headphones,
   MapPin,
   ShieldCheck,
@@ -212,6 +214,11 @@ export default function HomePage() {
     if (featured.length <= 1) return;
     setFeaturedStartIndex((current) => (current + direction + featured.length) % featured.length);
   };
+
+  const parkingArea = branding.address || '92-94 Thạch Lam, Sơn Trà, Đà Nẵng';
+  const parkingQuery = encodeURIComponent(`bãi đỗ xe ô tô gần ${parkingArea}`);
+  const parkingEmbedUrl = `https://www.google.com/maps?q=${parkingQuery}&output=embed`;
+  const parkingMapsUrl = `https://www.google.com/maps/search/?api=1&query=${parkingQuery}`;
 
   return (
     <>
@@ -437,6 +444,40 @@ export default function HomePage() {
                   <span className="mt-1 block text-sm text-stone-500">{label}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </RevealOnScroll>
+
+      <RevealOnScroll as="section" variant="curve-left" className="section-space bg-lune-cream">
+        <div className="page-shell">
+          <div className="grid gap-8 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-[0_22px_60px_rgba(23,20,18,0.08)] lg:grid-cols-[1fr_1.1fr]">
+            <div className="flex flex-col justify-center gap-5 p-6 sm:p-10">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-lune-cream px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-lune-goldDark">
+                <Car className="h-4 w-4" aria-hidden="true" />
+                {t('home.parkingEyebrow')}
+              </span>
+              <h2 className="section-title">{t('home.parkingTitle')}</h2>
+              <p className="muted-text max-w-xl">{t('home.parkingBody')}</p>
+              <a
+                className="btn-gold w-fit"
+                href={parkingMapsUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                {t('home.parkingMapCta')}
+              </a>
+            </div>
+            <div className="relative min-h-[320px] bg-lune-cream lg:min-h-[420px]">
+              <iframe
+                className="absolute inset-0 h-full w-full"
+                src={parkingEmbedUrl}
+                title={t('home.parkingTitle')}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
             </div>
           </div>
         </div>

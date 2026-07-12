@@ -2,6 +2,7 @@ import { bookingStatusesHoldingRoom } from '../constants/bookingStatus.js';
 import { prisma } from '../config/prisma.js';
 import { checkBluejayRoomAvailability } from '../modules/bluejay/bluejay.service.js';
 import { calculateNights, hasDateOverlap, toHotelDate, validateDateRange } from './dateUtils.js';
+import { fitsRoomCapacity, getRoomCapacity } from './occupancy.js';
 
 export { calculateNights, hasDateOverlap, validateDateRange };
 
@@ -58,14 +59,13 @@ export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1, opt
 
 export async function getAvailableRooms({ checkIn, checkOut, guests, adults, children = 0 }) {
   const rooms = await prisma.room.findMany({
-    where: {
-      status: 'ACTIVE',
-      maxGuests: guests ? { gte: Number(guests) } : undefined,
-    },
+    where: { status: 'ACTIVE' },
     include: { bookings: true, blockedDates: true },
   });
 
+  const requestedTotal = Number(guests || Number(adults || 0) + Number(children || 0) || 1);
   const locallyAvailableRooms = rooms.filter((room) => {
+    if (getRoomCapacity(room.maxGuests).maxTotal < requestedTotal) return false;
     const bookingConflict = room.bookings.some(
       (booking) =>
         bookingStatusesHoldingRoom.includes(booking.bookingStatus) &&
@@ -91,8 +91,14 @@ export async function assertRoomCanBeBooked(room, checkIn, checkOut, guests, opt
   }
   const range = validateDateRange(checkIn, checkOut);
   if (!range.ok) return { ok: false, statusCode: 400, message: range.message };
-  if (Number(guests || 1) > Number(room.maxGuests || 1)) {
-    return { ok: false, statusCode: 400, message: `This room allows up to ${room.maxGuests} guests` };
+  const capacity = getRoomCapacity(room.maxGuests);
+  const adultCount = Number(options.adults || guests || 1);
+  const childCount = Number(options.children || 0);
+  const partyFits = options.adults
+    ? fitsRoomCapacity(room.maxGuests, adultCount, childCount)
+    : Number(guests || 1) <= capacity.maxTotal;
+  if (!partyFits) {
+    return { ok: false, statusCode: 400, message: `This room allows up to ${capacity.maxTotal} guests` };
   }
   if (range.nights < room.minNights) {
     return { ok: false, statusCode: 400, message: `Minimum stay is ${room.minNights} night(s)` };

@@ -1,3 +1,5 @@
+import { getMaxChildren, getRoomCapacity } from './occupancy.js';
+
 export const SERVICE_FEE_PLACEHOLDER = 0;
 
 export const formatCurrency = (value) =>
@@ -85,20 +87,22 @@ export const validateStay = ({ checkIn, checkOut, guests, maxGuests, messages = 
     errors.checkOut = messages.checkoutAfterCheckin || 'Check-out date must be after check-in date.';
   }
 
+  const maxTotal = maxGuests ? getRoomCapacity(maxGuests).maxTotal : 0;
   if (!guestCount || guestCount < 1) {
     errors.guests = messages.guestsRequired || 'Please select at least 1 guest.';
-  } else if (maxGuests && guestCount > maxGuests) {
-    errors.guests = messages.guestsMax || `This room allows up to ${maxGuests} guests.`;
+  } else if (maxTotal && guestCount > maxTotal) {
+    errors.guests = messages.guestsMax || `This room allows up to ${maxTotal} guests.`;
   }
 
   return errors;
 };
 
 export const normalizeGuestCounts = ({ adults, children, guests, maxGuests } = {}) => {
-  const max = Math.max(1, Number(maxGuests || 4));
+  const effectiveMax = Number(maxGuests) || 4;
+  const { maxAdults } = getRoomCapacity(effectiveMax);
   const fallbackGuests = Math.max(1, Number(guests || 1));
-  const adultCount = Math.min(max, Math.max(1, Number(adults || fallbackGuests || 1)));
-  const childCount = Math.min(Math.max(0, max - adultCount), Math.max(0, Number(children || 0)));
+  const adultCount = Math.min(maxAdults, Math.max(1, Number(adults || fallbackGuests || 1)));
+  const childCount = Math.min(getMaxChildren(effectiveMax, adultCount), Math.max(0, Number(children || 0)));
   return {
     adults: adultCount,
     children: childCount,

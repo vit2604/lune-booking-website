@@ -8,6 +8,7 @@ import {
   isValidDateRange,
   normalizeDate,
 } from './dateUtils.js';
+import { getRoomCapacity } from './occupancy.js';
 
 const holdingStatuses = ['received', 'confirmed'];
 
@@ -58,7 +59,7 @@ export function getAvailableRooms(rooms, checkIn, checkOut, guests = 1, bookings
   return rooms.filter(
     (room) =>
       room.status !== 'hidden' &&
-      Number(room.maxGuests || 1) >= Number(guests || 1) &&
+      getRoomCapacity(room.maxGuests).maxTotal >= Number(guests || 1) &&
       isRoomAvailable(room.id, checkIn, checkOut, bookings, room),
   );
 }

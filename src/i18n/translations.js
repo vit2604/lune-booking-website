@@ -58,6 +58,11 @@ export const translations = {
       heroTitle: 'Stay Comfortably in Da Nang',
       heroSubtitle: 'A boutique apartment experience near the beach',
       searchRooms: 'Search Rooms',
+      parkingEyebrow: 'Getting here by car',
+      parkingTitle: 'No on-site car parking',
+      parkingBody:
+        'Lune Boutique does not have its own car park. If you arrive by car, please use one of the public parking areas near the hotel shown on the map below. Motorbike parking is available at the property.',
+      parkingMapCta: 'Find nearby car parking on Google Maps',
       aboutEyebrow: 'About Lune Boutique',
       aboutTitle: 'Modern apartment comfort beside Da Nang beach.',
       aboutBody:
@@ -260,6 +265,11 @@ export const translations = {
       heroTitle: 'Lưu trú thoải mái tại Đà Nẵng',
       heroSubtitle: 'Trải nghiệm căn hộ boutique gần biển',
       searchRooms: 'Tìm phòng',
+      parkingEyebrow: 'Di chuyển bằng ô tô',
+      parkingTitle: 'Khách sạn không có bãi đậu ô tô',
+      parkingBody:
+        'Lune Boutique hiện chưa hỗ trợ bãi đậu ô tô riêng. Nếu quý khách đi ô tô, vui lòng tham khảo các khu vực bãi đậu xe công cộng gần khách sạn được hiển thị trên bản đồ bên dưới. Khách sạn có chỗ để xe máy.',
+      parkingMapCta: 'Xem bãi đậu ô tô gần đây trên Google Maps',
       aboutEyebrow: 'Về Lune Boutique',
       aboutTitle: 'Căn hộ hiện đại và tiện nghi gần biển Đà Nẵng.',
       aboutBody: 'Tọa lạc tại {address}, {hotelName} phù hợp với du khách cần một nơi lưu trú sạch, yên tĩnh và linh hoạt.',
