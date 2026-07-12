@@ -25,7 +25,7 @@ import { sendSuccess } from './utils/responseUtils.js';
 export function createApp() {
   const app = express();
 
-  app.set('trust proxy', 1);
+  app.set('trust proxy', true);
 
   app.use(helmet());
   app.use(corsMiddleware());

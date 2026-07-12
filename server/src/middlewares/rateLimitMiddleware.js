@@ -4,7 +4,7 @@ import rateLimit from 'express-rate-limit';
 // per-route limiters below still apply on top of this.
 export const generalRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 600,
+  limit: 5000,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
