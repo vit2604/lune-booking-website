@@ -293,9 +293,6 @@ export default function PaymentPage() {
 
             <fieldset className="mt-8">
               <legend className="label">{t('payment.choosePayment')}</legend>
-              <p className="mt-2 rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-stone-700">
-                {guestIsVietnamese ? t('payment.vietnamPaymentNotice') : t('payment.foreignPaymentNotice')}
-              </p>
               <div className="mt-2 grid gap-3">
                 {visiblePaymentChoices.map((option) => {
                   const Icon = choiceIcons[option.id];
@@ -507,7 +504,11 @@ export default function PaymentPage() {
             {error ? <p className="mt-4 text-sm font-medium text-red-600">{error}</p> : null}
 
             <button className="btn-gold mt-8 w-full sm:w-auto" type="button" disabled={confirming} onClick={handleConfirm}>
-              {confirming ? t('common.confirming') : isPayosFlow ? t('payment.createPayosQr') : t('payment.confirmBooking')}
+              {confirming
+                ? t('common.confirming')
+                : isPayosFlow
+                  ? t(choice === 'deposit' ? 'payment.confirmDeposit' : 'payment.confirmPayment')
+                  : t('payment.confirmBooking')}
             </button>
           </RevealOnScroll>
 

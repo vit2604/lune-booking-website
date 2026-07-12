@@ -20,10 +20,9 @@ export function isVietnameseGuest(guestInfo = {}) {
 }
 
 export function filterPaymentChoicesForGuest(choices, guestInfo = {}) {
-  const allowedIds = isVietnameseGuest(guestInfo)
-    ? new Set(['deposit', 'payos'])
-    : new Set(['cash', 'deposit', 'card']);
-  return choices.filter((choice) => allowedIds.has(choice.id));
+  const preferredOrder = isVietnameseGuest(guestInfo) ? ['deposit', 'payos'] : ['payos', 'cash', 'card'];
+  const choiceMap = new Map(choices.map((choice) => [choice.id, choice]));
+  return preferredOrder.map((id) => choiceMap.get(id)).filter(Boolean);
 }
 
 const roundVnd = (value) => Math.max(0, Math.round(Number(value) || 0));

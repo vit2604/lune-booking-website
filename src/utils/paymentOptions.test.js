@@ -34,7 +34,7 @@ describe('computePaymentBreakdown', () => {
     expect(b.grandTotal).toBe(2_000_000);
   });
 
-  it('charges the full amount through PayOS without changing the total', () => {
+  it('charges the full amount through QR payment without changing the total', () => {
     const b = computePaymentBreakdown({ total: 2_000_000, choice: 'payos' });
     expect(b.method).toBe('vietQr');
     expect(b.surcharge).toBe(0);
@@ -71,8 +71,8 @@ describe('guest payment choices', () => {
     expect(choices).toEqual(['deposit', 'payos']);
   });
 
-  it('shows cash, Vietnam bank transfer, and international card for foreign guests', () => {
+  it('shows QR payment, cash, and international card for foreign guests', () => {
     const choices = filterPaymentChoicesForGuest(paymentChoices, { country: 'United States' }).map((choice) => choice.id);
-    expect(choices).toEqual(['cash', 'deposit', 'card']);
+    expect(choices).toEqual(['payos', 'cash', 'card']);
   });
 });

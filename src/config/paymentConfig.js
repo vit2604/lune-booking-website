@@ -44,9 +44,9 @@ export const defaultPaymentConfig = {
     vietQr: {
       enabled: false,
       visibleForGuests: true,
-      displayName: 'VietQR',
-      description: 'Vietnam QR bank payment placeholder for future integration.',
-      paymentNote: 'VietQR is prepared as a placeholder for future backend integration.',
+      displayName: 'QR payment',
+      description: 'Pay securely by QR code.',
+      paymentNote: 'QR payment is prepared for secure online payment.',
       iconName: 'qr',
       sortOrder: 40,
       provider: 'VietQR',

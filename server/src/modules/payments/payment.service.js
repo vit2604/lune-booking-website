@@ -39,8 +39,8 @@ const defaultPaymentMethods = {
   vietQr: {
     enabled: true,
     visibleForGuests: true,
-    displayName: 'PayOS QR',
-    description: 'Scan QR code or open PayOS checkout to pay securely.',
+    displayName: 'QR payment',
+    description: 'Pay securely by QR code.',
     sortOrder: 4,
     statusAfterConfirm: 'PENDING',
     provider: 'payOS',
@@ -124,9 +124,9 @@ function normalizeSetting(setting) {
   return {
     key: setting.key,
     ...config,
-    displayName: shouldExposePayos ? 'PayOS QR' : shouldExposeCreditCard ? 'International card' : setting.displayName,
+    displayName: shouldExposePayos ? 'QR payment' : shouldExposeCreditCard ? 'International card' : setting.displayName,
     description: shouldExposePayos
-      ? 'Scan QR code or open PayOS checkout to pay securely.'
+      ? 'Pay securely by QR code.'
       : shouldExposeCreditCard
         ? 'International card at property. A 5% card fee applies.'
         : setting.description,
@@ -232,7 +232,7 @@ async function createPayosPaymentLink(booking, paymentContext = {}) {
     return {
       provider: 'payOS',
       configured: false,
-      message: 'PayOS is not configured. Please set PAYOS_CLIENT_ID, PAYOS_API_KEY, and PAYOS_CHECKSUM_KEY in backend environment variables.',
+      message: 'Online QR payment is not configured. Please contact Lune support.',
     };
   }
 
@@ -265,7 +265,7 @@ async function createPayosPaymentLink(booking, paymentContext = {}) {
       ],
     });
   } catch (error) {
-    throw createHttpError(502, 'Could not create PayOS payment QR. Please try bank transfer or contact Lune support.', {
+    throw createHttpError(502, 'Could not create QR payment. Please try bank transfer or contact Lune support.', {
       provider: 'payOS',
       code: error.code,
       desc: error.desc,
@@ -472,7 +472,7 @@ export async function createPaymentRequest({
         updatedAt: reusablePayment.updatedAt,
       },
       bankInfo: null,
-      message: 'Existing PayOS QR payment link returned.',
+      message: 'Existing QR payment link returned.',
     };
   }
 
@@ -569,9 +569,9 @@ export async function createPaymentRequest({
       method === 'payAtProperty' || method === 'cashAtProperty'
         ? 'You can pay directly at the property.'
         : method === 'vietQr' && providerPayload?.configured
-          ? 'PayOS QR payment link created.'
+          ? 'QR payment link created.'
           : method === 'vietQr'
-            ? providerPayload?.message || 'PayOS is not configured.'
+            ? providerPayload?.message || 'Online QR payment is not configured.'
         : 'Payment request created as a placeholder.',
   };
 }
@@ -595,7 +595,7 @@ function mapPayosStatus(status) {
 
 export async function handlePayosWebhook(payload) {
   const payos = getPayosClient();
-  if (!payos) throw createHttpError(503, 'PayOS is not configured');
+  if (!payos) throw createHttpError(503, 'Online QR payment is not configured');
 
   const verified = await payos.webhooks.verify(payload);
   const paymentLinkId = verified.paymentLinkId || verified.data?.paymentLinkId;
