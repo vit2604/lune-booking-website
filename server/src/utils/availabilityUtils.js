@@ -63,9 +63,10 @@ export async function getAvailableRooms({ checkIn, checkOut, guests, adults, chi
     include: { bookings: true, blockedDates: true },
   });
 
-  const requestedTotal = Number(guests || Number(adults || 0) + Number(children || 0) || 1);
+  const childCount = Math.max(0, Number(children || 0));
+  const adultCount = Math.max(1, Number(adults || Number(guests || 0) - childCount || guests || 1));
   const locallyAvailableRooms = rooms.filter((room) => {
-    if (getRoomCapacity(room.maxGuests).maxTotal < requestedTotal) return false;
+    if (!fitsRoomCapacity(room.maxGuests, adultCount, childCount)) return false;
     const bookingConflict = room.bookings.some(
       (booking) =>
         bookingStatusesHoldingRoom.includes(booking.bookingStatus) &&

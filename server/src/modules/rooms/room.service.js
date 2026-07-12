@@ -2,6 +2,7 @@ import { prisma } from '../../config/prisma.js';
 import { getBluejayStayAvailability } from '../bluejay/bluejay.service.js';
 import { assertRoomCanBeBooked, isRoomAvailable } from '../../utils/availabilityUtils.js';
 import { toHotelDate } from '../../utils/dateUtils.js';
+import { fitsRoomCapacity } from '../../utils/occupancy.js';
 import { calculateTotalPrice } from '../../utils/priceUtils.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 import { sanitizePublicAssetUrl } from '../../utils/sanitizeUtils.js';
@@ -136,30 +137,43 @@ function withStayContext(priceSummary, query = {}) {
   };
 }
 
+function getRequestedOccupancy(query = {}) {
+  const children = Math.max(0, Number(query.children || 0));
+  const rawGuests = Number(query.guests || 0);
+  const adults = Math.max(1, Number(query.adults || rawGuests - children || rawGuests || 1));
+  return {
+    adults,
+    children,
+    guests: Math.max(1, adults + children),
+  };
+}
+
 export async function listPublicRooms(query = {}) {
+  const occupancy = getRequestedOccupancy(query);
   const rooms = await prisma.room.findMany({
     where: {
       status: 'ACTIVE',
-      maxGuests: query.guests ? { gte: Number(query.guests) } : undefined,
+      maxGuests: { gte: occupancy.adults },
     },
     include: roomInclude,
     orderBy: [{ sortOrder: 'asc' }, { basePrice: 'asc' }],
   });
+  const capacityMatchedRooms = rooms.filter((room) => fitsRoomCapacity(room.maxGuests, occupancy.adults, occupancy.children));
 
   const hasStayDates = Boolean(query.checkIn && query.checkOut);
   const bluejayStay = hasStayDates
     ? await getBluejayStayAvailability({
-        roomIds: rooms.map((room) => room.id),
+        roomIds: capacityMatchedRooms.map((room) => room.id),
         checkIn: query.checkIn,
         checkOut: query.checkOut,
-        guests: query.guests || 1,
-        adults: query.adults || query.guests || 1,
-        children: query.children || 0,
+        guests: occupancy.guests,
+        adults: occupancy.adults,
+        children: occupancy.children,
       })
     : { checked: false, rooms: {} };
 
   const mapped = await Promise.all(
-    rooms.map(async (room) => {
+    capacityMatchedRooms.map(async (room) => {
       const localized = localizeRoom(room, query.lang || 'en');
       let availabilityStatus = 'available';
       let available = true;
@@ -170,11 +184,11 @@ export async function listPublicRooms(query = {}) {
           room.id,
           toHotelDate(query.checkIn),
           toHotelDate(query.checkOut),
-          query.guests || 1,
+          occupancy.guests,
           {
             checkExternal: false,
-            adults: query.adults || query.guests || 1,
-            children: query.children || 0,
+            adults: occupancy.adults,
+            children: occupancy.children,
           },
         );
         const bluejayAvailable = !bluejayRoom?.checked || bluejayRoom.available;
