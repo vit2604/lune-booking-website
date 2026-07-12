@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import { getBookings } from '../admin/services/adminBookingService.js';
+import DateInput from '../components/DateInput.jsx';
 import RoomCard from '../components/RoomCard.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
@@ -34,8 +35,11 @@ export default function RoomsPage() {
   });
   const [bookingError, setBookingError] = useState('');
   const [processingRoom, setProcessingRoom] = useState('');
-  const roomTypes = [...new Set(rooms.map((room) => room.type).filter(Boolean))];
   const { t, currentLanguage } = useTranslation();
+  const roomTypeOptions = rooms.map((room) => ({
+    value: room.id,
+    label: room.name,
+  }));
   useDocumentMeta({
     title: `${t('nav.rooms')} | ${BRAND}`,
     description: t('rooms.title'),
@@ -85,7 +89,7 @@ export default function RoomsPage() {
   const filteredRooms = useMemo(() => {
     return rooms
       .filter((room) => room.maxGuests >= filters.guests)
-      .filter((room) => filters.type === 'all' || room.type === filters.type)
+      .filter((room) => filters.type === 'all' || room.id === filters.type)
       .filter((room) => isRoomAvailable(room.id, filters.checkIn, filters.checkOut, bookings, room))
       .sort((a, b) => a.price - b.price);
   }, [bookings, filters, rooms]);
@@ -161,9 +165,8 @@ export default function RoomsPage() {
             <div className="mt-6 grid gap-4">
               <label>
                 <span className="label">{t('common.checkIn')}</span>
-                <input
+                <DateInput
                   className="input-field"
-                  type="date"
                   min={today}
                   value={filters.checkIn}
                   onChange={(event) => updateFilter('checkIn', event.target.value)}
@@ -171,9 +174,8 @@ export default function RoomsPage() {
               </label>
               <label>
                 <span className="label">{t('common.checkOut')}</span>
-                <input
+                <DateInput
                   className="input-field"
-                  type="date"
                   min={filters.checkIn ? toDateInputValue(addDays(new Date(`${filters.checkIn}T12:00:00`), 1)) : today}
                   value={filters.checkOut}
                   onChange={(event) => updateFilter('checkOut', event.target.value)}
@@ -201,9 +203,9 @@ export default function RoomsPage() {
                   onChange={(event) => updateFilter('type', event.target.value)}
                 >
                   <option value="all">{t('rooms.allTypes')}</option>
-                  {roomTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
+                  {roomTypeOptions.map((roomType) => (
+                    <option key={roomType.value} value={roomType.value}>
+                      {roomType.label}
                     </option>
                   ))}
                 </select>

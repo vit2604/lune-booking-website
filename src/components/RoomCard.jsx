@@ -31,8 +31,7 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="eyebrow">{localizedRoom.type}</p>
-            <h3 className="mt-2 font-display text-3xl font-bold text-lune-ink">{localizedRoom.name}</h3>
+            <h3 className="font-display text-3xl font-bold text-lune-ink">{localizedRoom.name}</h3>
           </div>
           <div className="hidden text-right sm:block">
             <p className="text-lg font-bold text-lune-ink">{formatVnd(room.price)}</p>

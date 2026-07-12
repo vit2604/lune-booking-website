@@ -1,5 +1,6 @@
 import { CalendarDays, Edit, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import DateInput from '../../components/DateInput.jsx';
 import AdminTable from '../components/AdminTable.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 import {
@@ -10,6 +11,7 @@ import {
   adminUpdateRatePeriod,
 } from '../../services/adminApiService.js';
 import { formatCurrency, toDateInputValue, addDays } from '../../utils/booking.js';
+import { formatDateInputDisplay, formatShortDisplayDate } from '../../utils/dateFormatUtils.js';
 
 const initialDates = () => {
   const today = new Date();
@@ -276,18 +278,16 @@ export default function AdminRateCalendar() {
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-semibold text-lune-ink">
                 Start date
-                <input
+                <DateInput
                   className="input-field"
-                  type="date"
                   value={form.startDate}
                   onChange={(event) => setForm((current) => ({ ...current, startDate: event.target.value }))}
                 />
               </label>
               <label className="grid gap-2 text-sm font-semibold text-lune-ink">
                 End date
-                <input
+                <DateInput
                   className="input-field"
-                  type="date"
                   value={form.endDate}
                   onChange={(event) => setForm((current) => ({ ...current, endDate: event.target.value }))}
                 />
@@ -372,7 +372,7 @@ export default function AdminRateCalendar() {
                   }`}
                   onClick={() => selectPreviewDate(date, rate)}
                 >
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">{date.slice(5)}</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">{formatShortDisplayDate(date)}</span>
                   <span className="mt-3 block text-lg font-bold text-lune-ink">{formatCurrency(price).replace(' VND', '')}</span>
                   <span className="mt-1 block text-xs font-semibold text-stone-500">{rate ? 'Custom rate' : 'Base rate'}</span>
                 </button>
@@ -402,8 +402,8 @@ export default function AdminRateCalendar() {
                     <p className="font-semibold text-lune-ink">{period.room?.name || 'Room'}</p>
                     <p className="text-xs text-stone-500">Base {formatCurrency(period.room?.basePrice || 0)}</p>
                   </td>
-                  <td className="px-4 py-4 font-semibold">{period.startDate}</td>
-                  <td className="px-4 py-4 font-semibold">{period.endDate}</td>
+                  <td className="px-4 py-4 font-semibold">{formatDateInputDisplay(period.startDate)}</td>
+                  <td className="px-4 py-4 font-semibold">{formatDateInputDisplay(period.endDate)}</td>
                   <td className="px-4 py-4 font-bold text-lune-goldDark">{formatCurrency(period.price)}</td>
                   <td className="px-4 py-4 text-stone-600">{period.note || '-'}</td>
                   <td className="px-4 py-4">
@@ -432,7 +432,7 @@ export default function AdminRateCalendar() {
       <ConfirmModal
         open={Boolean(deleteTarget)}
         title="Delete rate period?"
-        message={`Remove custom price for ${deleteTarget?.room?.name || 'this room'} from ${deleteTarget?.startDate || ''} to ${deleteTarget?.endDate || ''}?`}
+        message={`Remove custom price for ${deleteTarget?.room?.name || 'this room'} from ${formatDateInputDisplay(deleteTarget?.startDate) || ''} to ${formatDateInputDisplay(deleteTarget?.endDate) || ''}?`}
         confirmText="Delete rate"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}

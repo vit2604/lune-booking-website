@@ -1,6 +1,7 @@
 import { getDefaultDates, toDateInputValue } from '../utils/booking.js';
 import { addDaysToDateString, calculateNights } from '../utils/dateUtils.js';
 import { useTranslation } from '../i18n/useTranslation.js';
+import DateInput from './DateInput.jsx';
 
 export default function DateSelector({
   checkIn,
@@ -29,9 +30,8 @@ export default function DateSelector({
     <div className={compact ? 'grid gap-3' : 'grid gap-4 sm:grid-cols-3'}>
       <label>
         <span className="label">{t('common.checkIn')}</span>
-        <input
+        <DateInput
           className={inputClass}
-          type="date"
           min={today}
           value={checkIn || defaults.checkIn}
           onChange={(event) => handleCheckInChange(event.target.value)}
@@ -39,9 +39,8 @@ export default function DateSelector({
       </label>
       <label>
         <span className="label">{t('common.checkOut')}</span>
-        <input
+        <DateInput
           className={inputClass}
-          type="date"
           min={checkoutMin}
           value={checkOut || defaults.checkOut}
           onChange={(event) => onChange({ checkOut: event.target.value })}

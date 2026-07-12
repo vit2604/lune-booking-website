@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import { defaultBrandingSettings, getBrandingSettings } from '../admin/services/adminSettingsService.js';
+import DateInput from '../components/DateInput.jsx';
 import RoomCard from '../components/RoomCard.jsx';
 import BookingPolicy from '../components/BookingPolicy.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
@@ -278,9 +279,8 @@ export default function HomePage() {
               <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.checkInDate')}</span>
               <span className="mt-3 flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-stone-200">
                 <CalendarDays className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
-                <input
+                <DateInput
                   className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
-                  type="date"
                   name="checkIn"
                   value={heroDates.checkIn}
                   min={today}
@@ -292,9 +292,8 @@ export default function HomePage() {
               <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.checkOutDate')}</span>
               <span className="mt-3 flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-stone-200">
                 <CalendarDays className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
-                <input
+                <DateInput
                   className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
-                  type="date"
                   name="checkOut"
                   value={heroDates.checkOut}
                   min={nextDay(heroDates.checkIn)}
