@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { readJsonStorage, storageKeys } from '../../constants/storageKeys.js';
 import { getAdminToken } from '../../services/apiClient.js';
 import { adminGetChatSession, adminListChatSessions, adminSendChatMessage } from '../../services/adminApiService.js';
-import { translateForAdmin, translateForGuest } from '../../services/aiTranslationService.js';
+import { translateForAdmin } from '../../services/aiTranslationService.js';
 import { connectChatSocket } from '../../services/socketChatClient.js';
 
 function getLocalSessions() {
@@ -12,6 +12,12 @@ function getLocalSessions() {
 
 function getLocalMessages(sessionCode) {
   return readJsonStorage(storageKeys.chatMessages, []).filter((message) => message.sessionCode === sessionCode);
+}
+
+function appendUniqueMessage(current, message) {
+  const key = message.id || message.createdAt;
+  if (key && current.some((item) => (item.id || item.createdAt) === key)) return current;
+  return [...current, message];
 }
 
 export default function AdminMessages() {
@@ -50,11 +56,7 @@ export default function AdminMessages() {
     const handleMessage = (message) => {
       refresh();
       if (message.sessionCode !== selected?.sessionCode) return;
-      setMessages((current) => {
-        const key = message.id || message.createdAt;
-        if (key && current.some((item) => (item.id || item.createdAt) === key)) return current;
-        return [...current, message];
-      });
+      setMessages((current) => appendUniqueMessage(current, message));
     };
 
     socket.on('admin:new_session', handleSessionUpdate);
@@ -94,31 +96,26 @@ export default function AdminMessages() {
     if (!clean || !selected) return;
 
     setTranslationNotice('');
-    const guestLanguage = selected.language || 'en';
-    const translation =
-      guestLanguage === 'vi' ? { translatedText: clean, translated: false } : await translateForGuest(clean, guestLanguage);
-    const outgoingMessage = translation.translatedText || clean;
 
     try {
-      const created = await adminSendChatMessage(selected.sessionCode, outgoingMessage);
-      setMessages((current) => [...current, { ...created, adminOriginalText: clean }]);
+      const created = await adminSendChatMessage(selected.sessionCode, clean);
+      setMessages((current) => appendUniqueMessage(current, created));
     } catch {
       const localMessages = readJsonStorage(storageKeys.chatMessages, []);
       const created = {
         id: crypto.randomUUID(),
         sessionCode: selected.sessionCode,
         senderType: 'ADMIN',
-        message: outgoingMessage,
-        adminOriginalText: clean,
+        message: clean,
         createdAt: new Date().toISOString(),
       };
       localStorage.setItem(storageKeys.chatMessages, JSON.stringify([...localMessages, created]));
-      setMessages((current) => [...current, created]);
+      setMessages((current) => appendUniqueMessage(current, created));
       window.dispatchEvent(new Event('lune:chat-updated'));
     }
 
-    if (translation.translated) {
-      setTranslationNotice(`AI translated your reply to ${guestLanguage.toUpperCase()} before sending.`);
+    if ((selected.language || 'vi') !== 'vi') {
+      setTranslationNotice(`Reply saved in Vietnamese. The guest chat translates it to ${(selected.language || 'en').toUpperCase()}.`);
     }
     setReply('');
   };
@@ -192,18 +189,15 @@ export default function AdminMessages() {
                 {messages.map((message) => {
                   const isAdmin = message.senderType === 'ADMIN';
                   const translation = translatedMessages[message.id || message.createdAt];
+                  const originalText = message.message || message.text;
+                  const primaryText = !isAdmin && translation?.translated ? translation.translatedText : originalText;
                   return (
                     <div key={message.id || message.createdAt} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[78%] rounded-lg px-3 py-2 text-sm leading-6 ${isAdmin ? 'bg-lune-ink text-white' : 'bg-white text-stone-700'}`}>
-                        <p>{message.message || message.text}</p>
+                        <p>{primaryText}</p>
                         {!isAdmin && translation?.translated ? (
                           <p className="mt-2 rounded-md bg-lune-cream px-2 py-1 text-xs font-medium text-lune-ink">
-                            AI Vietnamese: {translation.translatedText}
-                          </p>
-                        ) : null}
-                        {isAdmin && message.adminOriginalText && message.adminOriginalText !== message.message ? (
-                          <p className="mt-2 rounded-md bg-white/10 px-2 py-1 text-xs text-white/80">
-                            Original VI: {message.adminOriginalText}
+                            Original: {originalText}
                           </p>
                         ) : null}
                       </div>
