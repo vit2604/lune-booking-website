@@ -9,6 +9,8 @@ function normalizeApiRoom(room, query = {}) {
         checkIn: query.checkIn || room.priceSummary.checkIn,
         checkOut: query.checkOut || room.priceSummary.checkOut,
         guests: Number(query.guests || room.priceSummary.guests || 1),
+        adults: Number(query.adults || room.priceSummary.adults || query.guests || 1),
+        children: Number(query.children || room.priceSummary.children || 0),
       }
     : null;
   return {

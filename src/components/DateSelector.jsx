@@ -2,11 +2,14 @@ import { getDefaultDates, toDateInputValue } from '../utils/booking.js';
 import { addDaysToDateString, calculateNights } from '../utils/dateUtils.js';
 import { useTranslation } from '../i18n/useTranslation.js';
 import DateInput from './DateInput.jsx';
+import GuestSelector from './GuestSelector.jsx';
 
 export default function DateSelector({
   checkIn,
   checkOut,
   guests,
+  adults,
+  children,
   maxGuests = 4,
   onChange,
   compact = false,
@@ -48,17 +51,14 @@ export default function DateSelector({
       </label>
       <label>
         <span className="label">{t('common.guests')}</span>
-        <select
+        <GuestSelector
           className={inputClass}
-          value={guests || 1}
-          onChange={(event) => onChange({ guests: Number(event.target.value) })}
-        >
-          {Array.from({ length: maxGuests }, (_, index) => index + 1).map((value) => (
-            <option key={value} value={value}>
-              {value} {value === 1 ? t('common.guest') : t('common.guestsPlural')}
-            </option>
-          ))}
-        </select>
+          adults={adults || guests || 1}
+          children={children || 0}
+          maxGuests={maxGuests}
+          onChange={onChange}
+          t={t}
+        />
       </label>
     </div>
   );

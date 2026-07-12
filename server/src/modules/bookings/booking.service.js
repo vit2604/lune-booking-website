@@ -26,6 +26,8 @@ function publicBookingSummary(booking) {
     checkOut: booking.checkOut,
     nights: booking.nights,
     guests: booking.guests,
+    adults: booking.adults,
+    children: booking.children,
     pricePerNight: booking.pricePerNight,
     subtotal: booking.subtotal,
     discountAmount: booking.discountAmount,
@@ -64,6 +66,8 @@ function publicBookingLookup(booking) {
     checkOut: booking.checkOut,
     nights: booking.nights,
     guests: booking.guests,
+    adults: booking.adults,
+    children: booking.children,
     pricePerNight: booking.pricePerNight,
     subtotal: booking.subtotal,
     discountAmount: booking.discountAmount,
@@ -85,6 +89,17 @@ function normalizeSyncError(error) {
 
 function canSyncBookingToBluejay(booking) {
   return booking?.bookingStatus !== 'CANCELLED' && booking?.paymentStatus === 'PAID';
+}
+
+function normalizeGuestBreakdown(input) {
+  const childGuests = Math.max(0, Number(input.children || 0));
+  const totalGuests = Math.max(1, Number(input.guests || 1));
+  const adultGuests = Math.max(1, Number(input.adults || totalGuests - childGuests || 1));
+  return {
+    adults: adultGuests,
+    children: childGuests,
+    guests: adultGuests + childGuests,
+  };
 }
 
 export async function syncBookingToBluejay(booking) {
@@ -139,6 +154,14 @@ export async function syncBookingToBluejay(booking) {
 }
 
 export async function createBooking(input) {
+  const guestBreakdown = normalizeGuestBreakdown(input);
+  input = {
+    ...input,
+    guests: guestBreakdown.guests,
+    adults: guestBreakdown.adults,
+    children: guestBreakdown.children,
+  };
+
   if (input.idempotencyKey) {
     const existing = await prisma.booking.findUnique({
       where: { idempotencyKey: input.idempotencyKey },
@@ -154,13 +177,18 @@ export async function createBooking(input) {
   });
 
   const room = await prisma.room.findUnique({ where: { id: input.roomId }, include: { ratePeriods: true } });
-  const availability = await assertRoomCanBeBooked(room, input.checkIn, input.checkOut, input.guests);
+  const availability = await assertRoomCanBeBooked(room, input.checkIn, input.checkOut, input.guests, {
+    adults: input.adults,
+    children: input.children,
+  });
   if (!availability.ok) throw createHttpError(availability.statusCode, availability.message);
   const externalStay = await getBluejayStayAvailability({
     roomIds: [room.id],
     checkIn: input.checkIn,
     checkOut: input.checkOut,
     guests: input.guests,
+    adults: input.adults,
+    children: input.children,
   });
   const externalPriceSummary = externalStay.rooms?.[room.id]?.priceSummary || null;
 
@@ -176,6 +204,8 @@ export async function createBooking(input) {
     const lockedAvailability = await assertRoomCanBeBooked(lockedRoom, input.checkIn, input.checkOut, input.guests, {
       db: tx,
       checkExternal: false,
+      adults: input.adults,
+      children: input.children,
     });
     if (!lockedAvailability.ok) {
       throw createHttpError(lockedAvailability.statusCode, lockedAvailability.message);
@@ -219,6 +249,8 @@ export async function createBooking(input) {
         checkOut: toHotelDate(input.checkOut),
         nights: price.nights,
         guests: Number(input.guests),
+        adults: Number(input.adults),
+        children: Number(input.children),
         pricePerNight: price.pricePerNight,
         subtotal: price.subtotal,
         discountAmount: price.discountAmount,

@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import { getBookings } from '../admin/services/adminBookingService.js';
 import DateInput from '../components/DateInput.jsx';
+import GuestSelector from '../components/GuestSelector.jsx';
 import RoomCard from '../components/RoomCard.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
@@ -20,6 +21,10 @@ export default function RoomsPage() {
   const initialToday = toDateInputValue(new Date());
   const urlCheckIn = searchParams.get('checkIn');
   const urlCheckOut = searchParams.get('checkOut');
+  const urlGuests = Number(searchParams.get('guests')) || 1;
+  const urlAdults = Number(searchParams.get('adults')) || urlGuests;
+  const urlChildren = Number(searchParams.get('children')) || 0;
+  const initialGuests = Math.max(1, Number(searchParams.get('guests')) || urlAdults + urlChildren);
   const initialCheckIn = urlCheckIn && urlCheckIn >= initialToday ? urlCheckIn : defaults.checkIn;
   const initialCheckOut =
     urlCheckOut && urlCheckOut > initialCheckIn
@@ -28,7 +33,9 @@ export default function RoomsPage() {
   const [rooms, setRooms] = useState(getVisibleRooms());
   const [bookings, setBookings] = useState(getBookings());
   const [filters, setFilters] = useState({
-    guests: Number(searchParams.get('guests')) || 1,
+    guests: initialGuests,
+    adults: urlAdults,
+    children: urlChildren,
     type: 'all',
     checkIn: initialCheckIn,
     checkOut: initialCheckOut,
@@ -61,6 +68,8 @@ export default function RoomsPage() {
             checkIn: filters.checkIn,
             checkOut: filters.checkOut,
             guests: filters.guests,
+            adults: filters.adults,
+            children: filters.children,
           },
           { timeoutMs: 12000 },
         );
@@ -88,7 +97,7 @@ export default function RoomsPage() {
       window.removeEventListener('lune:bookings-updated', refresh);
       window.removeEventListener('focus', refresh);
     };
-  }, [currentLanguage, filters.checkIn, filters.checkOut, filters.guests, t]);
+  }, [currentLanguage, filters.checkIn, filters.checkOut, filters.guests, filters.adults, filters.children, t]);
 
   const filteredRooms = useMemo(() => {
     return rooms
@@ -113,6 +122,13 @@ export default function RoomsPage() {
         return {
           ...current,
           checkOut: toDateInputValue(addDays(new Date(`${current.checkIn}T12:00:00`), 1)),
+        };
+      }
+      if (key === 'adults' || key === 'children') {
+        const next = { ...current, ...value };
+        return {
+          ...next,
+          guests: Number(next.adults || 1) + Number(next.children || 0),
         };
       }
       return { ...current, [key]: value };
@@ -152,6 +168,8 @@ export default function RoomsPage() {
       checkIn: filters.checkIn,
       checkOut: filters.checkOut,
       guests: filters.guests,
+      adults: filters.adults,
+      children: filters.children,
     });
     saveBookingDraft(draft);
     navigate('/booking');
@@ -187,17 +205,13 @@ export default function RoomsPage() {
               </label>
               <label>
                 <span className="label">{t('common.guests')}</span>
-                <select
-                  className="input-field"
-                  value={filters.guests}
-                  onChange={(event) => updateFilter('guests', Number(event.target.value))}
-                >
-                  {[1, 2, 3, 4].map((guest) => (
-                    <option key={guest} value={guest}>
-                      {guest} {guest === 1 ? t('common.guest') : t('common.guestsPlural')}
-                    </option>
-                  ))}
-                </select>
+                <GuestSelector
+                  adults={filters.adults}
+                  children={filters.children}
+                  maxGuests={4}
+                  onChange={(value) => updateFilter('adults', value)}
+                  t={t}
+                />
               </label>
               <label>
                 <span className="label">{t('rooms.roomType')}</span>
@@ -248,9 +262,9 @@ export default function RoomsPage() {
 
             {filteredRooms.length === 0 ? (
               <div className="mt-8 rounded-lg border border-stone-200 bg-white p-8 text-center">
-                <h3 className="font-display text-3xl font-bold text-lune-ink">{t('common.noRooms')}</h3>
+                <h3 className="font-display text-3xl font-bold text-lune-ink">{t('rooms.noRoomsForSelectionTitle')}</h3>
                 <p className="mt-2 text-sm text-stone-600">
-                  {t('common.noRooms')}
+                  {t('rooms.noRoomsForSelectionBody')}
                 </p>
               </div>
             ) : null}

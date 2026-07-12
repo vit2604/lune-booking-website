@@ -1,7 +1,7 @@
 import { CalendarDays, CreditCard, Hash, ReceiptText, Users } from 'lucide-react';
 import { useCurrency } from '../i18n/useCurrency.js';
 import { useTranslation } from '../i18n/useTranslation.js';
-import { formatCurrency } from '../utils/booking.js';
+import { formatCurrency, formatGuestBreakdown } from '../utils/booking.js';
 import { getApproxPriceText } from '../utils/currencyUtils.js';
 import { formatDisplayDate } from '../utils/dateFormatUtils.js';
 
@@ -92,7 +92,7 @@ export default function BookingSummary({ booking, room, className = '' }) {
               <Users className="h-4 w-4" aria-hidden="true" />
               {t('common.guests')}
             </span>
-            <strong className="font-semibold text-lune-ink">{booking.guests}</strong>
+            <strong className="text-right font-semibold text-lune-ink">{formatGuestBreakdown(booking, t)}</strong>
           </div>
           <div className="flex items-center justify-between gap-4 border-t border-stone-100 pt-3">
             <span className="text-stone-500">{t('common.nights')}</span>

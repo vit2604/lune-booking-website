@@ -247,7 +247,19 @@ function sumPriceInDay(priceInDay = []) {
   return money(priceInDay.reduce((sum, item) => sum + Number(item.amount ?? item.price ?? 0), 0));
 }
 
-function buildBluejayPriceSummary(ratePlan, checkIn, checkOut, guests = 1) {
+function normalizeOccupancy({ guests = 1, adults, children, child } = {}) {
+  const childCount = Math.max(0, Number(children ?? child ?? 0));
+  const totalGuests = Math.max(1, Number(guests || 1));
+  const adultCount = Math.max(1, Number(adults || totalGuests - childCount || 1));
+  return {
+    adults: adultCount,
+    children: childCount,
+    guests: adultCount + childCount,
+  };
+}
+
+function buildBluejayPriceSummary(ratePlan, checkIn, checkOut, guests = 1, adults, children = 0) {
+  const occupancy = normalizeOccupancy({ guests, adults, children });
   const nights = calculateNights(checkIn, checkOut);
   const nightlyRates = Array.isArray(ratePlan?.price_in_day)
     ? ratePlan.price_in_day.map((item) => ({
@@ -267,7 +279,9 @@ function buildBluejayPriceSummary(ratePlan, checkIn, checkOut, guests = 1) {
     nights,
     checkIn: normalizeDate(checkIn),
     checkOut: normalizeDate(checkOut),
-    guests: Number(guests || 1),
+    guests: occupancy.guests,
+    adults: occupancy.adults,
+    children: occupancy.children,
     nightlyRates,
     subtotal,
     discountAmount: 0,
@@ -321,7 +335,8 @@ export async function listBluejayRoomTypes({ image = 'none', lang = 'vi-VN' } = 
   );
 }
 
-export async function searchBluejayRoomTypes({ checkIn, checkOut, guests = 1, child = 0, image = 'none', lang = 'vi-VN' }) {
+export async function searchBluejayRoomTypes({ checkIn, checkOut, guests = 1, adults, children, child = 0, image = 'none', lang = 'vi-VN' }) {
+  const occupancy = normalizeOccupancy({ guests, adults, children, child });
   return withTimeout(async (signal) =>
     bluejayRequest('/search-roomtypes', {
       signal,
@@ -329,8 +344,8 @@ export async function searchBluejayRoomTypes({ checkIn, checkOut, guests = 1, ch
         property: env.BLUEJAY_PROPERTY_ID,
         from: normalizeDate(checkIn),
         to: normalizeDate(checkOut),
-        adult: Number(guests || 1),
-        child: Number(child || 0),
+        adult: occupancy.adults,
+        child: occupancy.children,
         image,
         lang,
       },
@@ -338,10 +353,10 @@ export async function searchBluejayRoomTypes({ checkIn, checkOut, guests = 1, ch
   );
 }
 
-export async function diagnoseBluejayAvailability({ roomId, checkIn, checkOut, guests = 1 }) {
+export async function diagnoseBluejayAvailability({ roomId, checkIn, checkOut, guests = 1, adults, children = 0 }) {
   const roomTypePayload = await listBluejayRoomTypes();
   const searchPayload =
-    checkIn && checkOut ? await searchBluejayRoomTypes({ checkIn, checkOut, guests }) : { data: { attributes: [] } };
+    checkIn && checkOut ? await searchBluejayRoomTypes({ checkIn, checkOut, guests, adults, children }) : { data: { attributes: [] } };
 
   const roomTypes = getRoomTypeList(roomTypePayload).map(normalizeRoomType);
   const searchRoomTypes = getRoomTypeList(searchPayload).map(normalizeRoomType);
@@ -363,7 +378,7 @@ export async function diagnoseBluejayAvailability({ roomId, checkIn, checkOut, g
     search: {
       checkIn: normalizeDate(checkIn),
       checkOut: normalizeDate(checkOut),
-      guests: Number(guests || 1),
+      guests: normalizeOccupancy({ guests, adults, children }).guests,
       roomTypeCount: searchRoomTypes.length,
       availableTotal: searchRoomTypes.reduce((sum, item) => sum + Number(item.available || 0), 0),
       ratePlanTotal: searchRoomTypes.reduce((sum, item) => sum + item.rates.length, 0),
@@ -389,7 +404,7 @@ export async function diagnoseBluejayAvailability({ roomId, checkIn, checkOut, g
   };
 }
 
-export async function checkBluejayRoomAvailability({ roomId, checkIn, checkOut, guests }) {
+export async function checkBluejayRoomAvailability({ roomId, checkIn, checkOut, guests, adults, children = 0 }) {
   if (!isBluejayEnabled()) {
     return { checked: false, available: true, reason: 'Bluejay availability is disabled' };
   }
@@ -400,7 +415,7 @@ export async function checkBluejayRoomAvailability({ roomId, checkIn, checkOut, 
   }
 
   try {
-    const payload = await searchBluejayRoomTypes({ checkIn, checkOut, guests });
+    const payload = await searchBluejayRoomTypes({ checkIn, checkOut, guests, adults, children });
     const matchedRoomType = selectMatchedRoomType(getRoomTypeList(payload), externalRoomId);
 
     if (!matchedRoomType) {
@@ -433,7 +448,7 @@ export async function checkBluejayRoomAvailability({ roomId, checkIn, checkOut, 
   }
 }
 
-export async function getBluejayStayAvailability({ roomIds = [], checkIn, checkOut, guests = 1 }) {
+export async function getBluejayStayAvailability({ roomIds = [], checkIn, checkOut, guests = 1, adults, children = 0 }) {
   const uniqueRoomIds = [...new Set(roomIds.filter(Boolean))];
   if (!isBluejayEnabled()) {
     return { checked: false, source: 'local', rooms: {} };
@@ -454,7 +469,8 @@ export async function getBluejayStayAvailability({ roomIds = [], checkIn, checkO
     );
 
   try {
-    const payload = await searchBluejayRoomTypes({ checkIn, checkOut, guests });
+    const occupancy = normalizeOccupancy({ guests, adults, children });
+    const payload = await searchBluejayRoomTypes({ checkIn, checkOut, guests: occupancy.guests, adults: occupancy.adults, children: occupancy.children });
     const roomTypes = getRoomTypeList(payload);
     const rooms = {};
 
@@ -484,7 +500,7 @@ export async function getBluejayStayAvailability({ roomIds = [], checkIn, checkO
         ratePlanId: ratePlan?.rateplan_id || null,
         ratePlanName: ratePlan?.title || ratePlan?.name || '',
         reason: available ? '' : 'Bluejay returned no available inventory or no rate plan for this stay',
-        priceSummary: ratePlan ? buildBluejayPriceSummary(ratePlan, checkIn, checkOut, guests) : null,
+        priceSummary: ratePlan ? buildBluejayPriceSummary(ratePlan, checkIn, checkOut, occupancy.guests, occupancy.adults, occupancy.children) : null,
       };
     });
 
@@ -508,6 +524,8 @@ async function getCreateBookingContext({ booking, room }) {
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     guests: booking.guests,
+    adults: booking.adults,
+    children: booking.children,
   });
   const matchedRoomType = selectMatchedRoomType(getRoomTypeList(payload), externalRoomId);
   const ratePlan = selectRatePlan(matchedRoomType, room.id, externalRoomId);
@@ -561,8 +579,8 @@ function buildBluejayBookingPayload({ booking, room, ratePlan, externalRoomId })
         ],
         rateplan: {
           rate_plan_id: Number(ratePlan.rateplan_id),
-          occ_adult: Number(booking.guests || 1),
-          occ_child: 0,
+          occ_adult: Number(booking.adults || booking.guests || 1),
+          occ_child: Number(booking.children || 0),
           meal_plans: {
             breakfast: Boolean(mealPlan.breakfast),
             lunch: Boolean(mealPlan.lunch),

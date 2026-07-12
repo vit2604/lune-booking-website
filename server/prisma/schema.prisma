@@ -200,10 +200,12 @@ model Booking {
   roomId         String
   guestId        String
   checkIn        DateTime
-  checkOut       DateTime
-  nights         Int
-  guests         Int
-  pricePerNight  Int
+    checkOut       DateTime
+    nights         Int
+    guests         Int
+    adults         Int           @default(1)
+    children       Int           @default(0)
+    pricePerNight  Int
   subtotal       Int
   discountAmount Int           @default(0)
   serviceFee     Int           @default(0)

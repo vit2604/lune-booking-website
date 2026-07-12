@@ -5,6 +5,7 @@ import BookingSummary from '../components/BookingSummary.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
+import { formatGuestBreakdown } from '../utils/booking.js';
 import { formatDisplayDate } from '../utils/dateFormatUtils.js';
 import { loadConfirmedBooking } from '../utils/storage.js';
 
@@ -77,7 +78,7 @@ export default function SuccessPage() {
     [t('common.checkIn'), formatDisplayDate(booking?.checkIn, currentLanguage)],
     [t('common.checkOut'), formatDisplayDate(booking?.checkOut, currentLanguage)],
     [t('common.nights'), booking?.nights],
-    [t('common.guests'), booking?.guests],
+    [t('common.guests'), booking ? formatGuestBreakdown(booking, t) : ''],
     [t('common.selectedPaymentMethod'), paymentMethodLabel],
     [t('common.paymentStatus'), statusLabel('payment', booking?.paymentStatus)],
     [t('common.bookingStatus'), statusLabel('booking', booking?.bookingStatus)],

@@ -131,6 +131,8 @@ function withStayContext(priceSummary, query = {}) {
     checkIn: query.checkIn,
     checkOut: query.checkOut,
     guests: Number(query.guests || 1),
+    adults: Number(query.adults || query.guests || 1),
+    children: Number(query.children || 0),
   };
 }
 
@@ -151,6 +153,8 @@ export async function listPublicRooms(query = {}) {
         checkIn: query.checkIn,
         checkOut: query.checkOut,
         guests: query.guests || 1,
+        adults: query.adults || query.guests || 1,
+        children: query.children || 0,
       })
     : { checked: false, rooms: {} };
 
@@ -167,7 +171,11 @@ export async function listPublicRooms(query = {}) {
           toHotelDate(query.checkIn),
           toHotelDate(query.checkOut),
           query.guests || 1,
-          { checkExternal: false },
+          {
+            checkExternal: false,
+            adults: query.adults || query.guests || 1,
+            children: query.children || 0,
+          },
         );
         const bluejayAvailable = !bluejayRoom?.checked || bluejayRoom.available;
         available = check.available && bluejayAvailable;
@@ -224,12 +232,16 @@ export async function getRoomAvailability(roomId, query) {
   if (!room) throw createHttpError(404, 'Room not found');
   const validation = await assertRoomCanBeBooked(room, query.checkIn, query.checkOut, query.guests || 1, {
     checkExternal: false,
+    adults: query.adults || query.guests || 1,
+    children: query.children || 0,
   });
   const bluejayStay = await getBluejayStayAvailability({
     roomIds: [room.id],
     checkIn: query.checkIn,
     checkOut: query.checkOut,
     guests: query.guests || 1,
+    adults: query.adults || query.guests || 1,
+    children: query.children || 0,
   });
   const bluejayRoom = bluejayStay.rooms?.[room.id] || null;
   const bluejayAvailable = !bluejayRoom?.checked || bluejayRoom.available;

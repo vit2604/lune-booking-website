@@ -8,6 +8,8 @@ export const createBookingSchema = z.object({
     checkIn: z.string().min(1),
     checkOut: z.string().min(1),
     guests: z.coerce.number().int().positive(),
+    adults: z.coerce.number().int().positive().optional(),
+    children: z.coerce.number().int().nonnegative().optional(),
     guest: z.object({
       fullName: z.string().trim().min(1).max(120),
       email: z.string().trim().email().max(160).optional().or(z.literal('')),

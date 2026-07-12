@@ -21,6 +21,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import { defaultBrandingSettings, getBrandingSettings } from '../admin/services/adminSettingsService.js';
 import DateInput from '../components/DateInput.jsx';
+import GuestSelector from '../components/GuestSelector.jsx';
 import RoomCard from '../components/RoomCard.jsx';
 import BookingPolicy from '../components/BookingPolicy.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
@@ -45,6 +46,7 @@ export default function HomePage() {
   const today = toDateInputValue(new Date());
   const nextDay = (date) => toDateInputValue(addDays(new Date(`${date}T12:00:00`), 1));
   const [heroDates, setHeroDates] = useState({ checkIn: defaults.checkIn, checkOut: defaults.checkOut });
+  const [heroGuests, setHeroGuests] = useState({ adults: 2, children: 0, guests: 2 });
   const [rooms, setRooms] = useState(getVisibleRooms());
   const [branding, setBranding] = useState(getBrandingSettings());
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
@@ -185,11 +187,12 @@ export default function HomePage() {
 
   const handleSearch = (event) => {
     event.preventDefault();
-    const guests = new FormData(event.currentTarget).get('guests');
     const params = new URLSearchParams({
       checkIn: heroDates.checkIn,
       checkOut: heroDates.checkOut,
-      guests,
+      adults: heroGuests.adults,
+      children: heroGuests.children,
+      guests: heroGuests.guests,
     });
     navigate(`/rooms?${params.toString()}`);
   };
@@ -305,17 +308,15 @@ export default function HomePage() {
               <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.guests')}</span>
               <span className="mt-3 flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-stone-200">
                 <Users className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
-                <select
+                <GuestSelector
                   className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
-                  name="guests"
-                  defaultValue="2"
-                >
-                {[1, 2, 3, 4].map((guest) => (
-                  <option key={guest} value={guest}>
-                    {guest} {guest === 1 ? t('common.guest') : t('common.guestsPlural')}
-                  </option>
-                ))}
-                </select>
+                  adults={heroGuests.adults}
+                  children={heroGuests.children}
+                  maxGuests={4}
+                  onChange={setHeroGuests}
+                  t={t}
+                  showIcon={false}
+                />
               </span>
             </label>
             <button

@@ -32,6 +32,10 @@ export const translations = {
       guests: 'Guests',
       guest: 'guest',
       guestsPlural: 'guests',
+      adults: 'Adults',
+      adult: 'adult',
+      children: 'Children',
+      child: 'child',
       nights: 'Nights',
       night: 'night',
       total: 'Total',
@@ -78,6 +82,9 @@ export const translations = {
       lowToHigh: 'Price low to high',
       highToLow: 'Price high to low',
       viewDetails: 'View Details',
+      noRoomsForSelectionTitle: 'No rooms available for your selection',
+      noRoomsForSelectionBody:
+        'There are no rooms left for the selected dates or for the selected number of adults and children. Please choose another date, adjust guests, or contact Lune for support.',
     },
     roomDetail: {
       backToRooms: 'Back to rooms',
@@ -227,6 +234,10 @@ export const translations = {
       guests: 'Khách',
       guest: 'khách',
       guestsPlural: 'khách',
+      adults: 'Người lớn',
+      adult: 'người lớn',
+      children: 'Trẻ em',
+      child: 'trẻ em',
       nights: 'Số đêm',
       night: 'đêm',
       total: 'Tổng cộng',
@@ -272,6 +283,9 @@ export const translations = {
       lowToHigh: 'Giá thấp đến cao',
       highToLow: 'Giá cao đến thấp',
       viewDetails: 'Xem chi tiết',
+      noRoomsForSelectionTitle: 'Không còn phòng trống cho lựa chọn này',
+      noRoomsForSelectionBody:
+        'Không còn phòng trống cho ngày bạn chọn hoặc không còn phòng phù hợp với số lượng người lớn/trẻ em đã chọn. Vui lòng đổi ngày, điều chỉnh số khách hoặc liên hệ Lune để được hỗ trợ.',
     },
     roomDetail: {
       backToRooms: 'Quay lại danh sách phòng',

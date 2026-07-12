@@ -17,7 +17,15 @@ import {
   updateBookingStatus,
   updatePaymentStatus,
 } from '../services/adminBookingService.js';
-import { formatCurrency, getPaymentMethodLabel } from '../../utils/booking.js';
+import { formatCurrency, formatGuestBreakdown, getPaymentMethodLabel } from '../../utils/booking.js';
+
+const guestLabel = (key) =>
+  ({
+    'common.adult': 'adult',
+    'common.adults': 'adults',
+    'common.child': 'child',
+    'common.children': 'children',
+  })[key] || key;
 
 function normalizeBooking(booking) {
   return {
@@ -199,7 +207,7 @@ export default function AdminBookings() {
                 ['Room', selected.roomName],
                 ['Check-in', selected.checkIn],
                 ['Check-out', selected.checkOut],
-                ['Guests', selected.guests],
+                ['Guests', formatGuestBreakdown(selected, guestLabel)],
                 ['Total', formatCurrency(selected.total)],
                 ['Payment method', getPaymentMethodLabel(selected.paymentMethod)],
                 ['Payment status', selected.paymentStatus],

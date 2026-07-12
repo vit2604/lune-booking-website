@@ -45,6 +45,8 @@ export default function RoomDetailPage() {
     checkIn: defaults.checkIn,
     checkOut: defaults.checkOut,
     guests: room ? Math.min(2, room.maxGuests) : 1,
+    adults: room ? Math.min(2, room.maxGuests) : 1,
+    children: 0,
   });
   const [errors, setErrors] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -62,6 +64,8 @@ export default function RoomDetailPage() {
           checkIn: booking.checkIn,
           checkOut: booking.checkOut,
           guests: booking.guests,
+          adults: booking.adults,
+          children: booking.children,
         });
         if (ignore || !apiRoom) return;
         setRooms((current) => {
@@ -90,7 +94,7 @@ export default function RoomDetailPage() {
       window.removeEventListener('lune:bookings-updated', refresh);
       window.removeEventListener('focus', refresh);
     };
-  }, [slug, currentLanguage, booking.checkIn, booking.checkOut, booking.guests]);
+  }, [slug, currentLanguage, booking.checkIn, booking.checkOut, booking.guests, booking.adults, booking.children]);
 
   const totals = useMemo(() => {
     if (!room) return { nights: 0, roomSubtotal: 0, total: 0 };
@@ -113,7 +117,7 @@ export default function RoomDetailPage() {
       roomSubtotal: calculateRoomSubtotal(room.price, booking.checkIn, booking.checkOut),
       total: calculateGrandTotal(room.price, booking.checkIn, booking.checkOut),
     };
-  }, [booking.checkIn, booking.checkOut, room]);
+  }, [booking.checkIn, booking.checkOut, booking.guests, room]);
 
   const metaRoom = room ? getLocalizedRoom(room, currentLanguage) : null;
   useDocumentMeta({
@@ -313,6 +317,8 @@ export default function RoomDetailPage() {
               checkIn={booking.checkIn}
               checkOut={booking.checkOut}
               guests={booking.guests}
+              adults={booking.adults}
+              children={booking.children}
               maxGuests={room.maxGuests}
               compact
               onChange={handleBookingChange}

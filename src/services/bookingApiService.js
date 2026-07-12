@@ -20,6 +20,8 @@ export function normalizeBookingForApi(booking) {
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     guests: Number(booking.guests || 1),
+    adults: Number(booking.adults || booking.guests || 1),
+    children: Number(booking.children || 0),
     guest: {
       fullName: guestInfo.fullName || guestInfo.name || '',
       email: guestInfo.email || '',

@@ -54,13 +54,18 @@ export const calculateGrandTotal = (pricePerNight, checkIn, checkOut) =>
 export const hasPricedBookingDraft = (booking) =>
   Number(booking?.totalPrice ?? booking?.total ?? booking?.roomSubtotal ?? booking?.subtotal ?? 0) > 0;
 
-const priceSummaryMatchesStay = (priceSummary, { checkIn, checkOut, guests }) => {
+const priceSummaryMatchesStay = (priceSummary, { checkIn, checkOut, guests, adults, children }) => {
   if (!priceSummary) return false;
-  const summaryGuests = Number(priceSummary.guests || guests || 1);
+  const guestCounts = normalizeGuestCounts({ adults, children, guests });
+  const summaryGuests = Number(priceSummary.guests || guestCounts.guests);
+  const summaryAdults = Number(priceSummary.adults || guestCounts.adults);
+  const summaryChildren = Number(priceSummary.children || 0);
   return (
     (!priceSummary.checkIn || priceSummary.checkIn === checkIn) &&
     (!priceSummary.checkOut || priceSummary.checkOut === checkOut) &&
-    summaryGuests === Number(guests || 1)
+    summaryGuests === guestCounts.guests &&
+    summaryAdults === guestCounts.adults &&
+    summaryChildren === guestCounts.children
   );
 };
 
@@ -87,6 +92,32 @@ export const validateStay = ({ checkIn, checkOut, guests, maxGuests, messages = 
   }
 
   return errors;
+};
+
+export const normalizeGuestCounts = ({ adults, children, guests, maxGuests } = {}) => {
+  const max = Math.max(1, Number(maxGuests || 4));
+  const fallbackGuests = Math.max(1, Number(guests || 1));
+  const adultCount = Math.min(max, Math.max(1, Number(adults || fallbackGuests || 1)));
+  const childCount = Math.min(Math.max(0, max - adultCount), Math.max(0, Number(children || 0)));
+  return {
+    adults: adultCount,
+    children: childCount,
+    guests: adultCount + childCount,
+  };
+};
+
+export const formatGuestBreakdown = (booking, t = (key) => key) => {
+  const counts = normalizeGuestCounts({
+    adults: booking?.adults,
+    children: booking?.children,
+    guests: booking?.guests,
+    maxGuests: booking?.maxGuests,
+  });
+  const adultLabel = counts.adults === 1 ? t('common.adult') : t('common.adults');
+  const childLabel = counts.children === 1 ? t('common.child') : t('common.children');
+  const parts = [`${counts.adults} ${adultLabel}`];
+  if (counts.children > 0) parts.push(`${counts.children} ${childLabel}`);
+  return parts.join(', ');
 };
 
 export const getPaymentStatus = (paymentMethod) => {
@@ -124,13 +155,22 @@ export const buildBookingDraft = ({
   checkIn,
   checkOut,
   guests,
+  adults,
+  children,
   guestInfo,
   paymentMethod,
   bookingCode,
   bookingStatus,
 }) => {
-  const guestsCount = Number(guests) || 1;
-  const priceSummary = priceSummaryMatchesStay(room.priceSummary, { checkIn, checkOut, guests: guestsCount })
+  const guestCounts = normalizeGuestCounts({ adults, children, guests, maxGuests: room.maxGuests });
+  const guestsCount = guestCounts.guests;
+  const priceSummary = priceSummaryMatchesStay(room.priceSummary, {
+    checkIn,
+    checkOut,
+    guests: guestsCount,
+    adults: guestCounts.adults,
+    children: guestCounts.children,
+  })
     ? room.priceSummary
     : null;
   const nights = Number(priceSummary?.nights || calculateNights(checkIn, checkOut));
@@ -158,6 +198,8 @@ export const buildBookingDraft = ({
     checkIn,
     checkOut,
     guests: guestsCount,
+    adults: guestCounts.adults,
+    children: guestCounts.children,
     nights,
     roomSubtotal,
     subtotal: roomSubtotal,
@@ -171,6 +213,8 @@ export const buildBookingDraft = ({
           checkIn,
           checkOut,
           guests: guestsCount,
+          adults: guestCounts.adults,
+          children: guestCounts.children,
         }
       : null,
     guestInfo: guestInfo || null,

@@ -149,6 +149,8 @@ export default function BookingPage() {
           checkIn: draft.checkIn,
           checkOut: draft.checkOut,
           guests: draft.guests,
+          adults: draft.adults,
+          children: draft.children,
           guestInfo: draft.guestInfo,
           paymentMethod: draft.paymentMethod,
           bookingCode: draft.bookingCode,
@@ -344,6 +346,8 @@ export default function BookingPage() {
       checkIn: booking.checkIn,
       checkOut: booking.checkOut,
       guests: booking.guests,
+      adults: booking.adults,
+      children: booking.children,
       guestInfo: form,
       paymentMethod: booking.paymentMethod || 'payAtProperty',
       bookingCode: booking.bookingCode,
@@ -368,6 +372,8 @@ export default function BookingPage() {
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     guests: booking.guests,
+    adults: booking.adults,
+    children: booking.children,
     guestInfo: form,
     paymentMethod: booking.paymentMethod || 'payAtProperty',
     bookingCode: booking.bookingCode,
@@ -398,6 +404,8 @@ export default function BookingPage() {
                 checkIn={booking.checkIn}
                 checkOut={booking.checkOut}
                 guests={booking.guests}
+                adults={booking.adults}
+                children={booking.children}
                 maxGuests={room.maxGuests}
                 onChange={updateStay}
               />

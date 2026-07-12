@@ -217,6 +217,8 @@ export default function PaymentPage() {
       total: baseTotal,
       totalPrice: baseTotal,
       guests: Number(booking.guests || 1),
+      adults: Number(booking.adults || booking.guests || 1),
+      children: Number(booking.children || 0),
       paymentChoice: choice,
       paymentMethod: effectivePaymentMethod,
       paymentStatus: getPaymentStatus(effectivePaymentMethod),

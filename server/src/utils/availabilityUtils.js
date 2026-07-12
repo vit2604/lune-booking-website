@@ -25,6 +25,8 @@ export async function checkBlockedDates(roomId, checkIn, checkOut, db = prisma) 
 
 export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1, options = {}) {
   const db = options.db || prisma;
+  const adultGuests = Number(options.adults || guests || 1);
+  const childGuests = Number(options.children || 0);
   const bookingConflict = await checkExistingBookings(roomId, checkIn, checkOut, db);
   if (bookingConflict) return { available: false, reason: 'Room already has a booking for selected dates' };
   const blockedPeriod = await checkBlockedDates(roomId, checkIn, checkOut, db);
@@ -32,7 +34,14 @@ export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1, opt
   if (options.checkExternal === false) {
     return { available: true, reason: '', externalSource: 'local' };
   }
-  const bluejayAvailability = await checkBluejayRoomAvailability({ roomId, checkIn, checkOut, guests });
+  const bluejayAvailability = await checkBluejayRoomAvailability({
+    roomId,
+    checkIn,
+    checkOut,
+    guests,
+    adults: adultGuests,
+    children: childGuests,
+  });
   if (bluejayAvailability.checked && !bluejayAvailability.available) {
     return {
       available: false,
@@ -47,7 +56,7 @@ export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1, opt
   };
 }
 
-export async function getAvailableRooms({ checkIn, checkOut, guests }) {
+export async function getAvailableRooms({ checkIn, checkOut, guests, adults, children = 0 }) {
   const rooms = await prisma.room.findMany({
     where: {
       status: 'ACTIVE',
@@ -69,7 +78,7 @@ export async function getAvailableRooms({ checkIn, checkOut, guests }) {
   const externalChecks = await Promise.all(
     locallyAvailableRooms.map(async (room) => ({
       room,
-      check: await checkBluejayRoomAvailability({ roomId: room.id, checkIn, checkOut, guests }),
+      check: await checkBluejayRoomAvailability({ roomId: room.id, checkIn, checkOut, guests, adults, children }),
     })),
   );
 
