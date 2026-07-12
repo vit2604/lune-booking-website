@@ -37,6 +37,7 @@ export async function fetchRoomsWithFallback(query = {}, options = {}) {
     const data = await apiRequest(`/rooms${params.toString() ? `?${params}` : ''}`, options);
     return { source: 'api', rooms: data.map((room) => normalizeApiRoom(room, query)) };
   } catch (error) {
+    if (query.checkIn && query.checkOut) throw error;
     if (!canUseMockFallback()) throw error;
     return { source: 'local', rooms: getVisibleRooms() };
   }
