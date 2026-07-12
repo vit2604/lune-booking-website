@@ -77,7 +77,7 @@ const rooms = [
   {
     id: 'one-bedroom-condo',
     slug: 'one-bedroom-condo',
-    name: '1-Bedroom Condo',
+    name: 'One Bedroom Apartment',
     shortDescription: 'A compact 18m² condo for solo travelers and couples close to My Khe Beach.',
     fullDescription:
       'The 1-Bedroom Condo is the easiest way to stay at Lune: a comfortable large double bed, private bathroom, air conditioning, free Wi-Fi, and the same warm boutique finishes as the larger apartments.',
@@ -95,7 +95,7 @@ const rooms = [
   {
     id: 'one-bedroom-apartment-balcony',
     slug: 'one-bedroom-apartment-balcony',
-    name: '1-Bedroom Apartment 1 with Balcony',
+    name: 'One Bedroom Studio Apartment with Balcony',
     shortDescription: 'A bright 40m² one-bedroom apartment with a private balcony and extra-long double bed.',
     fullDescription:
       'Apartment 1 pairs a private balcony with a comfortable extra-long double bed and everything two guests need day to day: air conditioning, free Wi-Fi, mini fridge, electric kettle, hairdryer, and a private bathroom with shower.',
@@ -113,7 +113,7 @@ const rooms = [
   {
     id: 'two-bedroom-apartment',
     slug: 'two-bedroom-apartment',
-    name: 'Apartment - 2 Bedrooms',
+    name: 'Two Bedroom Apartment',
     shortDescription: 'A 52m² two-bedroom apartment with two large double beds for up to four guests.',
     fullDescription:
       'With two separate bedrooms and two large double beds across 52m², this apartment gives families and small groups real space to settle in. Air conditioning, free Wi-Fi, and a private bathroom cover the essentials.',
@@ -131,7 +131,7 @@ const rooms = [
   {
     id: 'studio-two-bed-balcony',
     slug: 'studio-two-bed-balcony',
-    name: 'Studio 2 Bed with Balcony',
+    name: 'Studio Apartment with Balcony',
     shortDescription: 'A 40m² non-smoking studio with two double beds and a private balcony.',
     fullDescription:
       'This studio fits up to four guests across two double beds, with a private balcony to unwind on. Air conditioning, free Wi-Fi, mini fridge, electric kettle, hairdryer, and a private bathroom with shower keep daily routines easy.',
@@ -149,7 +149,7 @@ const rooms = [
   {
     id: 'two-bedroom-apartment-balcony',
     slug: 'two-bedroom-apartment-balcony',
-    name: '1-Bedroom Apartment 2 with Balcony',
+    name: 'Two Bedroom Apartment With Balcony',
     shortDescription: 'The most spacious Lune apartment: 56m², two bedrooms, two bathrooms, and a private balcony.',
     fullDescription:
       'Apartment 2 is the largest option at Lune. Two bedrooms with large double beds, two private bathrooms with showers, a wardrobe, and a private balcony give families and groups a genuinely comfortable base.',
@@ -360,7 +360,9 @@ async function ensureRoomImages(roomId, room) {
 async function ensureRoomTranslations(roomId, room) {
   await prisma.roomTranslation.upsert({
     where: { roomId_languageCode: { roomId, languageCode: 'en' } },
-    update: {},
+    update: {
+      name: room.name,
+    },
     create: {
       roomId,
       languageCode: 'en',
@@ -379,7 +381,9 @@ async function ensureRoomTranslations(roomId, room) {
     const [name, shortDescription, fullDescription] = translation;
     await prisma.roomTranslation.upsert({
       where: { roomId_languageCode: { roomId, languageCode } },
-      update: {},
+      update: {
+        name,
+      },
       create: {
         roomId,
         languageCode,
@@ -418,7 +422,9 @@ async function seedRooms() {
   for (const room of rooms) {
     const saved = await prisma.room.upsert({
       where: { slug: room.slug },
-      update: {},
+      update: {
+        name: room.name,
+      },
       create: {
         id: room.id,
         slug: room.slug,

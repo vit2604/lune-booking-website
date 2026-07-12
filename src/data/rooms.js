@@ -84,7 +84,7 @@ const baseRooms = [
   {
     id: 'one-bedroom-condo',
     slug: 'one-bedroom-condo',
-    name: '1-Bedroom Condo',
+    name: 'One Bedroom Apartment',
     type: 'Condo',
     maxGuests: 2,
     bed: '1 large double bed',
@@ -104,7 +104,7 @@ const baseRooms = [
     blockedDates: [],
     translations: {
       en: {
-        name: '1-Bedroom Condo',
+        name: 'One Bedroom Apartment',
         shortDescription:
           'A compact 18m² condo for solo travelers and couples who want a clean, calm room close to My Khe Beach.',
         description:
@@ -157,7 +157,7 @@ const baseRooms = [
   {
     id: 'one-bedroom-apartment-balcony',
     slug: 'one-bedroom-apartment-balcony',
-    name: '1-Bedroom Apartment 1 with Balcony',
+    name: 'One Bedroom Studio Apartment with Balcony',
     type: 'Balcony apartment',
     maxGuests: 2,
     bed: '1 large double bed (extra long)',
@@ -177,7 +177,7 @@ const baseRooms = [
     blockedDates: [],
     translations: {
       en: {
-        name: '1-Bedroom Apartment 1 with Balcony',
+        name: 'One Bedroom Studio Apartment with Balcony',
         shortDescription:
           'A bright 40m² one-bedroom apartment with a private balcony, extra-long double bed, and full in-room comforts.',
         description:
@@ -230,7 +230,7 @@ const baseRooms = [
   {
     id: 'two-bedroom-apartment',
     slug: 'two-bedroom-apartment',
-    name: 'Apartment - 2 Bedrooms',
+    name: 'Two Bedroom Apartment',
     type: 'Two-bedroom apartment',
     maxGuests: 4,
     bed: '2 large double beds',
@@ -250,7 +250,7 @@ const baseRooms = [
     blockedDates: [],
     translations: {
       en: {
-        name: 'Apartment - 2 Bedrooms',
+        name: 'Two Bedroom Apartment',
         shortDescription:
           'A 52m² two-bedroom apartment with two large double beds — room for up to four guests to spread out.',
         description:
@@ -303,7 +303,7 @@ const baseRooms = [
   {
     id: 'studio-two-bed-balcony',
     slug: 'studio-two-bed-balcony',
-    name: 'Studio 2 Bed with Balcony',
+    name: 'Studio Apartment with Balcony',
     type: 'Studio',
     maxGuests: 4,
     bed: '2 double beds',
@@ -323,7 +323,7 @@ const baseRooms = [
     blockedDates: [],
     translations: {
       en: {
-        name: 'Studio 2 Bed with Balcony',
+        name: 'Studio Apartment with Balcony',
         shortDescription:
           'A 40m² non-smoking studio with two double beds and a private balcony — a favorite for small groups.',
         description:
@@ -376,7 +376,7 @@ const baseRooms = [
   {
     id: 'two-bedroom-apartment-balcony',
     slug: 'two-bedroom-apartment-balcony',
-    name: '1-Bedroom Apartment 2 with Balcony',
+    name: 'Two Bedroom Apartment With Balcony',
     type: 'Two-bedroom apartment',
     maxGuests: 4,
     bed: '2 large double beds',
@@ -396,7 +396,7 @@ const baseRooms = [
     blockedDates: [],
     translations: {
       en: {
-        name: '1-Bedroom Apartment 2 with Balcony',
+        name: 'Two Bedroom Apartment With Balcony',
         shortDescription:
           'The most spacious Lune apartment: 56m², two bedrooms, two bathrooms, and a private balcony for up to four guests.',
         description:
