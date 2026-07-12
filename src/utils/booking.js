@@ -125,7 +125,7 @@ export const formatGuestBreakdown = (booking, t = (key) => key) => {
 };
 
 export const getPaymentStatus = (paymentMethod) => {
-  if (['pay-at-property', 'payAtProperty', 'cashAtProperty', 'cash-at-property'].includes(paymentMethod)) {
+  if (['pay-at-property', 'payAtProperty', 'cashAtProperty', 'cash-at-property', 'creditCard'].includes(paymentMethod)) {
     return 'pay_at_property';
   }
   if (paymentMethod === 'creditCardPaidMock') return 'paid_mock';

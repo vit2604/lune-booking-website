@@ -51,7 +51,7 @@ const defaultPaymentMethods = {
     displayName: 'Credit/Debit Card',
     description: 'International card at property. A 5% card fee applies.',
     sortOrder: 5,
-    statusAfterConfirm: 'PENDING',
+    statusAfterConfirm: 'PAY_AT_PROPERTY',
   },
   stripe: {
     enabled: false,
@@ -118,6 +118,7 @@ function normalizeSetting(setting) {
   const config = stripSensitiveFields(setting.configJson || {}) || {};
   const shouldExposePayos = setting.key === 'vietQr' && payosIsConfigured();
   const shouldExposeCreditCard = setting.key === 'creditCard';
+  const shouldPayAtProperty = ['payAtProperty', 'cashAtProperty', 'creditCard'].includes(setting.key);
   const enabled = setting.key === 'vietQr' ? shouldExposePayos : shouldExposeCreditCard ? true : setting.enabled;
   const visibleForGuests =
     setting.key === 'vietQr' ? shouldExposePayos && setting.visibleForGuests : shouldExposeCreditCard ? true : setting.visibleForGuests;
@@ -130,6 +131,9 @@ function normalizeSetting(setting) {
       : shouldExposeCreditCard
         ? 'International card at property. A 5% card fee applies.'
         : setting.description,
+    statusAfterConfirm: shouldPayAtProperty
+      ? 'PAY_AT_PROPERTY'
+      : normalizePaymentStatus(config.statusAfterConfirm || defaultPaymentMethods[setting.key]?.statusAfterConfirm),
     enabled,
     visibleForGuests,
     sortOrder: setting.sortOrder,
@@ -530,6 +534,12 @@ export async function createPaymentRequest({
       },
     });
   });
+
+  const updatedBooking = await prisma.booking.findUnique({
+    where: { id: booking.id },
+    include: { room: { include: { images: true, ratePeriods: true } }, guest: true, payments: true },
+  });
+  await syncBookingToBluejay(updatedBooking);
 
   return {
     bookingCode,

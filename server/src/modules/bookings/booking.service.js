@@ -88,7 +88,12 @@ function normalizeSyncError(error) {
 }
 
 function canSyncBookingToBluejay(booking) {
-  return booking?.bookingStatus !== 'CANCELLED' && booking?.paymentStatus === 'PAID';
+  if (!booking || booking.bookingStatus === 'CANCELLED') return false;
+  if (booking.paymentStatus === 'PAID') return true;
+  return (
+    booking.paymentStatus === 'PAY_AT_PROPERTY' &&
+    ['payAtProperty', 'cashAtProperty', 'creditCard'].includes(booking.paymentMethod)
+  );
 }
 
 function normalizeGuestBreakdown(input) {
