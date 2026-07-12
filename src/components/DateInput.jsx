@@ -1,5 +1,19 @@
 import { formatDateInputDisplay } from '../utils/dateFormatUtils.js';
 
+// The native input is invisible (opacity-0), which also hides the browser's
+// calendar icon — on desktop Chrome/Edge that icon is the only click target
+// that opens the calendar. Open it explicitly on any click instead.
+const openNativePicker = (event) => {
+  const input = event.currentTarget;
+  if (typeof input.showPicker === 'function') {
+    try {
+      input.showPicker();
+    } catch {
+      // showPicker requires a user gesture; fall back to native focus behavior
+    }
+  }
+};
+
 export default function DateInput({
   value,
   onChange,
@@ -19,6 +33,7 @@ export default function DateInput({
         type="date"
         value={value || ''}
         onChange={onChange}
+        onClick={openNativePicker}
         className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
       />
     </span>
