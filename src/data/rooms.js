@@ -85,7 +85,7 @@ const baseRooms = [
     id: 'one-bedroom-condo',
     slug: 'one-bedroom-condo',
     name: 'One Bedroom Apartment',
-    type: 'Condo',
+    type: 'One Bedroom Apartment',
     maxGuests: 2,
     bed: '1 large double bed',
     size: '18m²',
@@ -158,7 +158,7 @@ const baseRooms = [
     id: 'one-bedroom-apartment-balcony',
     slug: 'one-bedroom-apartment-balcony',
     name: 'One Bedroom Studio Apartment with Balcony',
-    type: 'Balcony apartment',
+    type: 'One Bedroom Studio Apartment with Balcony',
     maxGuests: 2,
     bed: '1 large double bed (extra long)',
     size: '40m²',
@@ -231,7 +231,7 @@ const baseRooms = [
     id: 'two-bedroom-apartment',
     slug: 'two-bedroom-apartment',
     name: 'Two Bedroom Apartment',
-    type: 'Two-bedroom apartment',
+    type: 'Two Bedroom Apartment',
     maxGuests: 4,
     bed: '2 large double beds',
     size: '52m²',
@@ -304,7 +304,7 @@ const baseRooms = [
     id: 'studio-two-bed-balcony',
     slug: 'studio-two-bed-balcony',
     name: 'Studio Apartment with Balcony',
-    type: 'Studio',
+    type: 'Studio Apartment with Balcony',
     maxGuests: 4,
     bed: '2 double beds',
     size: '40m²',
@@ -377,7 +377,7 @@ const baseRooms = [
     id: 'two-bedroom-apartment-balcony',
     slug: 'two-bedroom-apartment-balcony',
     name: 'Two Bedroom Apartment With Balcony',
-    type: 'Two-bedroom apartment',
+    type: 'Two Bedroom Apartment With Balcony',
     maxGuests: 4,
     bed: '2 large double beds',
     size: '56m²',
@@ -458,4 +458,10 @@ export const rooms = baseRooms.map((room) => {
   return { ...room, translations };
 });
 
-export const roomTypes = ['Condo', 'Balcony apartment', 'Two-bedroom apartment', 'Studio'];
+export const roomTypes = [
+  'One Bedroom Apartment',
+  'One Bedroom Studio Apartment with Balcony',
+  'Two Bedroom Apartment',
+  'Studio Apartment with Balcony',
+  'Two Bedroom Apartment With Balcony',
+];

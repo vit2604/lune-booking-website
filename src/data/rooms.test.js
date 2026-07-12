@@ -26,8 +26,8 @@ describe('room catalog data', () => {
     const twoBedroom = rooms.find((room) => room.id === 'two-bedroom-apartment');
     const studioTwoBed = rooms.find((room) => room.id === 'studio-two-bed-balcony');
 
-    expect(twoBedroom?.type).toBe('Two-bedroom apartment');
-    expect(studioTwoBed?.type).toBe('Studio');
+    expect(twoBedroom?.type).toBe('Two Bedroom Apartment');
+    expect(studioTwoBed?.type).toBe('Studio Apartment with Balcony');
     expect(twoBedroom?.gallery).not.toEqual(studioTwoBed?.gallery);
     expect(twoBedroom?.image).toBe('/images/lune/type-3-standard/type-3-standard-5.webp');
     expect(studioTwoBed?.image).toBe('/images/lune/type-3-standard/type-3-standard-10.webp');

@@ -3,7 +3,7 @@ import { legacyStorageKeys, readJsonStorage, storageKeys, writeJsonStorage } fro
 
 const ROOMS_KEY = storageKeys.rooms;
 const ROOMS_DATA_VERSION_KEY = 'lune_rooms_data_version';
-const ROOMS_DATA_VERSION = '2026-07-03-agoda-five-rooms';
+const ROOMS_DATA_VERSION = '2026-07-12-pms-five-room-names';
 
 const toSlug = (value) =>
   value
