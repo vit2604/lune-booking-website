@@ -1,4 +1,4 @@
-import { ArrowRight, Trash2, UserRound } from 'lucide-react';
+import { ArrowRight, Plus, Trash2, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getRoomById } from '../admin/services/adminRoomService.js';
