@@ -8,6 +8,7 @@ export const publicRoomsQuerySchema = z.object({
     guests: z.coerce.number().int().positive().optional(),
     adults: z.coerce.number().int().positive().optional(),
     children: z.coerce.number().int().nonnegative().optional(),
+    quantity: z.coerce.number().int().min(1).max(3).optional(),
     currency: z.string().optional(),
   }),
   params: z.object({}).passthrough(),
@@ -22,6 +23,7 @@ export const availabilityQuerySchema = z.object({
     guests: z.coerce.number().int().positive().default(1),
     adults: z.coerce.number().int().positive().optional(),
     children: z.coerce.number().int().nonnegative().optional(),
+    quantity: z.coerce.number().int().min(1).max(3).optional(),
   }),
   body: z.object({}).passthrough(),
 });
@@ -41,6 +43,7 @@ export const roomSlugSchema = z.object({
     guests: z.coerce.number().int().positive().optional(),
     adults: z.coerce.number().int().positive().optional(),
     children: z.coerce.number().int().nonnegative().optional(),
+    quantity: z.coerce.number().int().min(1).max(3).optional(),
   }),
   body: z.object({}).passthrough(),
 });

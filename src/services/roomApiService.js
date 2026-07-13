@@ -53,7 +53,12 @@ export async function fetchRoomWithFallback(slug, query = {}) {
     return {
       source: 'api',
       room: normalizeApiRoom(
-        { ...data.room, priceSummary: data.availability?.price || data.room?.priceSummary || null },
+        {
+          ...data.room,
+          availableQuantity: data.availability?.availableQuantity,
+          bluejay: data.availability?.bluejay,
+          priceSummary: data.availability?.price || data.room?.priceSummary || null,
+        },
         query,
       ),
       availability: data.availability,

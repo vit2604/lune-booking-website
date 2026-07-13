@@ -14,8 +14,18 @@ function createIdempotencyKey() {
 
 export function normalizeBookingForApi(booking) {
   const guestInfo = booking.guestInfo || booking.guest || {};
+  const rooms = booking.rooms?.length
+    ? booking.rooms.map((item) => ({
+        roomId: item.roomId,
+        quantity: Number(item.quantity || 1),
+        guests: Number(item.guests || 1),
+        adults: Number(item.adults || item.guests || 1),
+        children: Number(item.children || 0),
+      }))
+    : undefined;
   return {
     roomId: booking.roomId,
+    rooms,
     idempotencyKey: booking.idempotencyKey,
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,

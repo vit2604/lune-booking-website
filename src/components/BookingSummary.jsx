@@ -1,4 +1,4 @@
-import { CalendarDays, CreditCard, Hash, ReceiptText, Users } from 'lucide-react';
+import { BedDouble, CalendarDays, CreditCard, Hash, ReceiptText, Users } from 'lucide-react';
 import { useCurrency } from '../i18n/useCurrency.js';
 import { useTranslation } from '../i18n/useTranslation.js';
 import { formatCurrency, formatGuestBreakdown } from '../utils/booking.js';
@@ -19,6 +19,10 @@ export default function BookingSummary({ booking, room, className = '' }) {
   const depositAmount = Number(booking.depositAmount || 0);
   const balanceAtProperty = Number(booking.balanceAtProperty ?? 0);
   const grandTotal = Number(booking.grandTotal ?? total + cardSurcharge);
+  const roomItems = booking.rooms?.length ? booking.rooms : null;
+  const totalRooms = roomItems
+    ? roomItems.reduce((sum, item) => sum + Number(item.quantity || 1), 0)
+    : Number(booking.totalRooms || 1);
   const { t, currentLanguage } = useTranslation();
   const { currentCurrency } = useCurrency();
   const approxTotal = getApproxPriceText(grandTotal, currentCurrency, currentLanguage);
@@ -55,12 +59,31 @@ export default function BookingSummary({ booking, room, className = '' }) {
       <div className="space-y-5 p-5">
         <div>
           <p className="eyebrow">{t('common.bookingSummary')}</p>
-          <h2 className="mt-2 font-display text-3xl font-bold text-lune-ink">{roomName}</h2>
+          <h2 className="mt-2 font-display text-3xl font-bold text-lune-ink">
+            {roomItems ? `${totalRooms} ${t('common.roomsLabel')}` : roomName}
+          </h2>
           <p className="mt-1 text-base text-stone-600">
             {formatCurrency(pricePerNight)} <span className="text-stone-500">{t('common.perNight')}</span>
           </p>
           {approxNight ? <p className="mt-1 text-xs text-stone-500">{approxNight}</p> : null}
         </div>
+
+        {roomItems ? (
+          <div className="border-y border-stone-200">
+            {roomItems.map((item) => (
+              <div key={item.roomId} className="flex items-center justify-between gap-3 border-t border-stone-200 py-3 first:border-t-0">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-lune-ink">{item.roomName}</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-stone-500">
+                    <BedDouble className="h-3.5 w-3.5" aria-hidden="true" />
+                    {item.quantity} × {formatCurrency(item.pricePerNight)}
+                  </p>
+                </div>
+                <strong className="shrink-0 text-sm text-lune-ink">{formatCurrency(item.totalPrice)}</strong>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {booking.bookingCode ? (
           <div className="flex items-center justify-between gap-3 rounded-lg bg-lune-mist p-3 text-sm">
@@ -97,6 +120,10 @@ export default function BookingSummary({ booking, room, className = '' }) {
           <div className="flex items-center justify-between gap-4 border-t border-stone-100 pt-3">
             <span className="text-stone-500">{t('common.nights')}</span>
             <strong className="font-semibold text-lune-ink">{nights}</strong>
+          </div>
+          <div className="flex items-center justify-between gap-4 border-t border-stone-100 pt-3">
+            <span className="text-stone-500">{t('common.roomsLabel')}</span>
+            <strong className="font-semibold text-lune-ink">{totalRooms}</strong>
           </div>
           <div className="flex items-center justify-between gap-4 border-t border-stone-100 pt-3">
             <span className="text-stone-500">{t('common.pricePerNight')}</span>

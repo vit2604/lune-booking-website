@@ -177,6 +177,7 @@ export async function listPublicRooms(query = {}) {
       const localized = localizeRoom(room, query.lang || 'en');
       let availabilityStatus = 'available';
       let available = true;
+      let availableQuantity = 1;
       let unavailableReason = '';
       const bluejayRoom = bluejayStay.rooms?.[room.id] || null;
       if (hasStayDates) {
@@ -189,6 +190,7 @@ export async function listPublicRooms(query = {}) {
             checkExternal: false,
             adults: occupancy.adults,
             children: occupancy.children,
+            requestedQuantity: query.quantity || 1,
             localInventoryLimit: bluejayRoom?.checked ? bluejayRoom.inventory : undefined,
           },
         );
@@ -196,6 +198,7 @@ export async function listPublicRooms(query = {}) {
         available = check.available && bluejayAvailable;
         availabilityStatus = available ? 'available' : 'not_available';
         unavailableReason = check.available ? bluejayRoom?.reason || '' : check.reason || '';
+        availableQuantity = Number(check.availableQuantity ?? bluejayRoom?.inventory ?? (available ? 1 : 0));
       }
       const localPriceSummary = hasStayDates
         ? withStayContext(calculateTotalPrice({ room, checkIn: query.checkIn, checkOut: query.checkOut }), query)
@@ -207,6 +210,7 @@ export async function listPublicRooms(query = {}) {
         basePrice: bluejayRoom?.priceSummary?.pricePerNight || localized.basePrice,
         availabilityStatus,
         available,
+        availableQuantity,
         unavailableReason,
         bluejay: bluejayRoom
           ? {
@@ -258,6 +262,7 @@ export async function getRoomAvailability(roomId, query) {
     checkExternal: false,
     adults: query.adults || query.guests || 1,
     children: query.children || 0,
+    requestedQuantity: query.quantity || 1,
     localInventoryLimit: bluejayRoom?.checked ? bluejayRoom.inventory : undefined,
   });
   const bluejayAvailable = !bluejayRoom?.checked || bluejayRoom.available;
@@ -270,6 +275,7 @@ export async function getRoomAvailability(roomId, query) {
     reason: available ? '' : validation.ok ? bluejayRoom?.reason || '' : validation.message,
     nights: price.nights,
     price,
+    availableQuantity: Number(validation.availableQuantity ?? bluejayRoom?.inventory ?? (available ? 1 : 0)),
     bluejay: bluejayRoom
       ? {
           checked: bluejayRoom.checked,

@@ -13,6 +13,7 @@ export default function DateSelector({
   maxGuests = 4,
   onChange,
   compact = false,
+  showGuests = true,
 }) {
   const defaults = getDefaultDates();
   const today = toDateInputValue(new Date());
@@ -30,8 +31,8 @@ export default function DateSelector({
   };
 
   return (
-    <div className={compact ? 'grid gap-3' : 'grid gap-4 sm:grid-cols-3'}>
-      <label>
+    <div className={compact ? 'grid gap-3' : `grid gap-4 ${showGuests ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+      {showGuests ? <label>
         <span className="label">{t('common.checkIn')}</span>
         <DateInput
           className={inputClass}
@@ -39,7 +40,7 @@ export default function DateSelector({
           value={checkIn || defaults.checkIn}
           onChange={(event) => handleCheckInChange(event.target.value)}
         />
-      </label>
+      </label> : null}
       <label>
         <span className="label">{t('common.checkOut')}</span>
         <DateInput

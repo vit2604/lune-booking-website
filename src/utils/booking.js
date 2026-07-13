@@ -1,6 +1,7 @@
 import { getMaxChildren, getRoomCapacity } from './occupancy.js';
 
 export const SERVICE_FEE_PLACEHOLDER = 0;
+export const MAX_ROOMS_PER_BOOKING = 3;
 
 export const formatCurrency = (value) =>
   `${new Intl.NumberFormat('en-US', {
@@ -111,12 +112,20 @@ export const normalizeGuestCounts = ({ adults, children, guests, maxGuests } = {
 };
 
 export const formatGuestBreakdown = (booking, t = (key) => key) => {
-  const counts = normalizeGuestCounts({
-    adults: booking?.adults,
-    children: booking?.children,
-    guests: booking?.guests,
-    maxGuests: booking?.maxGuests,
-  });
+  const counts = booking?.rooms?.length
+    ? booking.rooms.reduce(
+        (total, item) => ({
+          adults: total.adults + Number(item.adults || item.guests || 1) * Number(item.quantity || 1),
+          children: total.children + Number(item.children || 0) * Number(item.quantity || 1),
+        }),
+        { adults: 0, children: 0 },
+      )
+    : normalizeGuestCounts({
+        adults: booking?.adults,
+        children: booking?.children,
+        guests: booking?.guests,
+        maxGuests: booking?.maxGuests,
+      });
   const adultLabel = counts.adults === 1 ? t('common.adult') : t('common.adults');
   const childLabel = counts.children === 1 ? t('common.child') : t('common.children');
   const parts = [`${counts.adults} ${adultLabel}`];
@@ -156,6 +165,8 @@ export const getPaymentMethodLabel = (paymentMethod) => {
 
 export const buildBookingDraft = ({
   room,
+  roomItems,
+  quantity = 1,
   checkIn,
   checkOut,
   guests,
@@ -166,61 +177,132 @@ export const buildBookingDraft = ({
   bookingCode,
   bookingStatus,
 }) => {
-  const guestCounts = normalizeGuestCounts({ adults, children, guests, maxGuests: room.maxGuests });
-  const guestsCount = guestCounts.guests;
-  const priceSummary = priceSummaryMatchesStay(room.priceSummary, {
-    checkIn,
-    checkOut,
-    guests: guestsCount,
-    adults: guestCounts.adults,
-    children: guestCounts.children,
-  })
-    ? room.priceSummary
-    : null;
-  const nights = Number(priceSummary?.nights || calculateNights(checkIn, checkOut));
-  const pricePerNight = Number(priceSummary?.pricePerNight || room.price || room.basePrice || 0);
-  const roomSubtotal = Number(priceSummary?.subtotal ?? priceSummary?.totalPrice ?? nights * pricePerNight);
-  const serviceFee = Number(priceSummary?.serviceFee ?? calculateServiceFee());
-  const totalPrice = Number(priceSummary?.totalPrice ?? roomSubtotal + serviceFee);
+  const selections = roomItems?.length
+    ? roomItems
+    : [{ room, quantity, adults, children, guests }];
+  const nights = calculateNights(checkIn, checkOut);
+  const normalizedRoomItems = selections.map((selection) => {
+    const sourceRoom = selection.room || selection;
+    const itemQuantity = Math.min(
+      MAX_ROOMS_PER_BOOKING,
+      Math.max(1, Number(selection.quantity || sourceRoom.quantity || 1)),
+    );
+    const maxGuests = Number(sourceRoom.maxGuests || selection.maxGuests || guests || 1);
+    const guestCounts = normalizeGuestCounts({
+      adults: selection.adults ?? sourceRoom.adults ?? adults,
+      children: selection.children ?? sourceRoom.children ?? children,
+      guests: selection.guests ?? sourceRoom.guests ?? guests,
+      maxGuests,
+    });
+    const priceSummary = priceSummaryMatchesStay(sourceRoom.priceSummary, {
+      checkIn,
+      checkOut,
+      guests: guestCounts.guests,
+      adults: guestCounts.adults,
+      children: guestCounts.children,
+    })
+      ? sourceRoom.priceSummary
+      : null;
+    const itemNights = Number(priceSummary?.nights || nights);
+    const pricePerNight = Number(priceSummary?.pricePerNight || sourceRoom.pricePerNight || sourceRoom.price || sourceRoom.basePrice || 0);
+    const existingQuantity = Math.max(1, Number(sourceRoom.quantity || selection.quantity || 1));
+    const unitSubtotal = Number(
+      priceSummary?.subtotal ??
+      sourceRoom.unitSubtotal ??
+      (sourceRoom.subtotal ? Number(sourceRoom.subtotal) / existingQuantity : itemNights * pricePerNight),
+    );
+    const unitDiscountAmount = Number(
+      priceSummary?.discountAmount ?? sourceRoom.unitDiscountAmount ?? Number(sourceRoom.discountAmount || 0) / existingQuantity,
+    );
+    const unitServiceFee = Number(
+      priceSummary?.serviceFee ?? sourceRoom.unitServiceFee ?? Number(sourceRoom.serviceFee || 0) / existingQuantity,
+    );
+    const unitTaxAmount = Number(
+      priceSummary?.taxAmount ?? sourceRoom.unitTaxAmount ?? Number(sourceRoom.taxAmount || 0) / existingQuantity,
+    );
+    const unitTotalPrice = Number(
+      priceSummary?.totalPrice ??
+      sourceRoom.unitTotalPrice ??
+      (sourceRoom.totalPrice ? Number(sourceRoom.totalPrice) / existingQuantity : unitSubtotal + unitServiceFee + unitTaxAmount),
+    );
+    const language =
+      typeof localStorage !== 'undefined'
+        ? localStorage.getItem('lune_language') || localStorage.getItem('lune_guest_language') || 'en'
+        : 'en';
+    const roomName =
+      sourceRoom.translations?.[language]?.name ||
+      sourceRoom.translations?.en?.name ||
+      sourceRoom.roomName ||
+      sourceRoom.name;
+
+    return {
+      roomId: sourceRoom.id || sourceRoom.roomId,
+      roomName,
+      roomImage: sourceRoom.image || sourceRoom.roomImage || sourceRoom.mainImage || '',
+      maxGuests,
+      availableQuantity: Number(sourceRoom.availableQuantity ?? sourceRoom.bluejay?.inventory ?? MAX_ROOMS_PER_BOOKING),
+      roomType: sourceRoom.type || sourceRoom.roomType || 'Apartment',
+      size: sourceRoom.size || '',
+      bed: sourceRoom.bed || sourceRoom.bedType || sourceRoom.beds || '',
+      quantity: itemQuantity,
+      guests: guestCounts.guests,
+      adults: guestCounts.adults,
+      children: guestCounts.children,
+      pricePerNight,
+      nights: itemNights,
+      unitSubtotal,
+      unitDiscountAmount,
+      unitServiceFee,
+      unitTaxAmount,
+      unitTotalPrice,
+      subtotal: unitSubtotal * itemQuantity,
+      discountAmount: unitDiscountAmount * itemQuantity,
+      serviceFee: unitServiceFee * itemQuantity,
+      taxAmount: unitTaxAmount * itemQuantity,
+      totalPrice: unitTotalPrice * itemQuantity,
+      nightlyRates: priceSummary?.nightlyRates || sourceRoom.nightlyRates || [],
+      priceSummary,
+    };
+  });
+  const primaryRoom = normalizedRoomItems[0];
+  const roomSubtotal = normalizedRoomItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const discountAmount = normalizedRoomItems.reduce((sum, item) => sum + item.discountAmount, 0);
+  const serviceFee = normalizedRoomItems.reduce((sum, item) => sum + item.serviceFee, 0);
+  const taxAmount = normalizedRoomItems.reduce((sum, item) => sum + item.taxAmount, 0);
+  const totalPrice = normalizedRoomItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const totalRooms = normalizedRoomItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalAdults = normalizedRoomItems.reduce((sum, item) => sum + item.adults * item.quantity, 0);
+  const totalChildren = normalizedRoomItems.reduce((sum, item) => sum + item.children * item.quantity, 0);
+  const pricePerNight = normalizedRoomItems.reduce((sum, item) => sum + item.pricePerNight * item.quantity, 0);
   const selectedPaymentMethod = paymentMethod || 'payAtProperty';
-  const language =
-    typeof localStorage !== 'undefined'
-      ? localStorage.getItem('lune_language') || localStorage.getItem('lune_guest_language') || 'en'
-      : 'en';
-  const localizedRoomName = room.translations?.[language]?.name || room.translations?.en?.name || room.name;
 
   return {
     bookingCode: bookingCode || createBookingCode(),
-    roomId: room.id,
-    roomName: localizedRoomName,
-    roomImage: room.image,
-    maxGuests: room.maxGuests,
-    roomType: room.type,
-    size: room.size,
-    bed: room.bed || room.bedType || room.beds,
+    roomId: primaryRoom.roomId,
+    roomName: primaryRoom.roomName,
+    roomImage: primaryRoom.roomImage,
+    maxGuests: primaryRoom.maxGuests,
+    roomType: primaryRoom.roomType,
+    size: primaryRoom.size,
+    bed: primaryRoom.bed,
+    rooms: normalizedRoomItems,
+    totalRooms,
     pricePerNight,
     checkIn,
     checkOut,
-    guests: guestsCount,
-    adults: guestCounts.adults,
-    children: guestCounts.children,
+    guests: totalAdults + totalChildren,
+    adults: totalAdults,
+    children: totalChildren,
     nights,
     roomSubtotal,
     subtotal: roomSubtotal,
+    discountAmount,
     serviceFee,
+    taxAmount,
     total: totalPrice,
     totalPrice,
-    nightlyRates: priceSummary?.nightlyRates || [],
-    priceSummary: priceSummary
-      ? {
-          ...priceSummary,
-          checkIn,
-          checkOut,
-          guests: guestsCount,
-          adults: guestCounts.adults,
-          children: guestCounts.children,
-        }
-      : null,
+    nightlyRates: primaryRoom.nightlyRates,
+    priceSummary: primaryRoom.priceSummary,
     guestInfo: guestInfo || null,
     paymentMethod: selectedPaymentMethod,
     bookingStatus: bookingStatus || 'received',

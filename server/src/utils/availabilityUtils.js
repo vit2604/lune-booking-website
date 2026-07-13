@@ -9,23 +9,48 @@ export { calculateNights, hasDateOverlap, validateDateRange };
 export async function checkExistingBookings(roomId, checkIn, checkOut, db = prisma) {
   const bookings = await db.booking.findMany({
     where: {
-      roomId,
       bookingStatus: { in: bookingStatusesHoldingRoom },
+      OR: [{ roomId }, { roomItems: { some: { roomId } } }],
     },
-    select: { bookingCode: true, checkIn: true, checkOut: true },
+    select: {
+      bookingCode: true,
+      checkIn: true,
+      checkOut: true,
+      roomId: true,
+      roomItems: { where: { roomId }, select: { quantity: true } },
+    },
   });
   return bookings.find((booking) => hasDateOverlap({ checkIn, checkOut }, booking)) || null;
 }
 
-export async function countExistingBookings(roomId, checkIn, checkOut, db = prisma) {
+export async function countExistingBookings(
+  roomId,
+  checkIn,
+  checkOut,
+  db = prisma,
+  { onlyWithoutBluejayCode = false } = {},
+) {
   const bookings = await db.booking.findMany({
     where: {
-      roomId,
       bookingStatus: { in: bookingStatusesHoldingRoom },
+      bluejayBookingCode: onlyWithoutBluejayCode ? null : undefined,
+      OR: [{ roomId }, { roomItems: { some: { roomId } } }],
     },
-    select: { checkIn: true, checkOut: true },
+    select: {
+      checkIn: true,
+      checkOut: true,
+      roomId: true,
+      roomItems: { where: { roomId }, select: { quantity: true } },
+    },
   });
-  return bookings.filter((booking) => hasDateOverlap({ checkIn, checkOut }, booking)).length;
+  return bookings
+    .filter((booking) => hasDateOverlap({ checkIn, checkOut }, booking))
+    .reduce((sum, booking) => {
+      if (booking.roomItems.length) {
+        return sum + booking.roomItems.reduce((itemSum, item) => itemSum + Number(item.quantity || 0), 0);
+      }
+      return sum + (booking.roomId === roomId ? 1 : 0);
+    }, 0);
 }
 
 export async function checkBlockedDates(roomId, checkIn, checkOut, db = prisma) {
@@ -39,18 +64,30 @@ export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1, opt
   const db = options.db || prisma;
   const adultGuests = Number(options.adults || guests || 1);
   const childGuests = Number(options.children || 0);
-  const localHoldCount = await countExistingBookings(roomId, checkIn, checkOut, db);
+  const requestedQuantity = Math.max(1, Number(options.requestedQuantity || 1));
   const blockedPeriod = await checkBlockedDates(roomId, checkIn, checkOut, db);
   if (blockedPeriod) return { available: false, reason: blockedPeriod.reason || 'Room is blocked for selected dates' };
   if (options.checkExternal === false) {
     const localInventoryLimit = Number(options.localInventoryLimit || 0);
+    const localHoldCount = await countExistingBookings(roomId, checkIn, checkOut, db, {
+      onlyWithoutBluejayCode: localInventoryLimit > 0,
+    });
     if (localInventoryLimit > 0) {
-      return localHoldCount < localInventoryLimit
-        ? { available: true, reason: '', externalSource: 'local', localHoldCount }
-        : { available: false, reason: 'All PMS inventory is held by existing website bookings', localHoldCount };
+      const availableQuantity = Math.max(0, localInventoryLimit - localHoldCount);
+      return requestedQuantity <= availableQuantity
+        ? { available: true, reason: '', externalSource: 'local', localHoldCount, availableQuantity }
+        : {
+            available: false,
+            reason: `Only ${availableQuantity} room(s) remain for the selected dates`,
+            localHoldCount,
+            availableQuantity,
+          };
     }
-    if (localHoldCount > 0) return { available: false, reason: 'Room already has a booking for selected dates', localHoldCount };
-    return { available: true, reason: '', externalSource: 'local' };
+    const availableQuantity = localHoldCount > 0 ? 0 : 1;
+    if (requestedQuantity > availableQuantity) {
+      return { available: false, reason: 'Room already has a booking for selected dates', localHoldCount, availableQuantity };
+    }
+    return { available: true, reason: '', externalSource: 'local', localHoldCount, availableQuantity };
   }
   const bluejayAvailability = await checkBluejayRoomAvailability({
     roomId,
@@ -67,13 +104,18 @@ export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1, opt
       externalSource: 'bluejay',
     };
   }
+  const localHoldCount = await countExistingBookings(roomId, checkIn, checkOut, db, {
+    onlyWithoutBluejayCode: bluejayAvailability.checked,
+  });
   const bluejayInventory = Number(bluejayAvailability.inventory || 0);
-  if (bluejayAvailability.checked && bluejayInventory > 0 && localHoldCount >= bluejayInventory) {
+  if (bluejayAvailability.checked && localHoldCount + requestedQuantity > bluejayInventory) {
+    const availableQuantity = Math.max(0, bluejayInventory - localHoldCount);
     return {
       available: false,
-      reason: 'All PMS inventory is held by existing website bookings',
+      reason: `Only ${availableQuantity} room(s) remain for the selected dates`,
       externalSource: 'bluejay',
       localHoldCount,
+      availableQuantity,
     };
   }
   if (!bluejayAvailability.checked && localHoldCount > 0) {
@@ -84,13 +126,16 @@ export async function isRoomAvailable(roomId, checkIn, checkOut, guests = 1, opt
     reason: '',
     externalSource: bluejayAvailability.checked ? 'bluejay' : 'local',
     localHoldCount,
+    availableQuantity: bluejayAvailability.checked && bluejayInventory > 0
+      ? Math.max(0, bluejayInventory - localHoldCount)
+      : Math.max(0, 1 - localHoldCount),
   };
 }
 
 export async function getAvailableRooms({ checkIn, checkOut, guests, adults, children = 0 }) {
   const rooms = await prisma.room.findMany({
     where: { status: 'ACTIVE' },
-    include: { bookings: true, blockedDates: true },
+    include: { blockedDates: true },
   });
 
   const childCount = Math.max(0, Number(children || 0));
@@ -108,16 +153,22 @@ export async function getAvailableRooms({ checkIn, checkOut, guests, adults, chi
     })),
   );
 
-  return externalChecks
-    .filter(({ room, check }) => {
-      const localHoldCount = room.bookings.filter(
-        (booking) =>
-          bookingStatusesHoldingRoom.includes(booking.bookingStatus) &&
-          hasDateOverlap({ checkIn, checkOut }, booking),
-      ).length;
-      if (check.checked) return check.available && localHoldCount < Number(check.inventory || 0);
-      return localHoldCount === 0;
-    })
+  const checksWithLocalHolds = await Promise.all(
+    externalChecks.map(async ({ room, check }) => ({
+      room,
+      check,
+      localHoldCount: await countExistingBookings(room.id, checkIn, checkOut, prisma, {
+        onlyWithoutBluejayCode: check.checked,
+      }),
+    })),
+  );
+
+  return checksWithLocalHolds
+    .filter(({ check, localHoldCount }) => (
+      check.checked
+        ? check.available && localHoldCount < Number(check.inventory || 0)
+        : localHoldCount === 0
+    ))
     .map(({ room }) => room);
 }
 
@@ -146,5 +197,10 @@ export async function assertRoomCanBeBooked(room, checkIn, checkOut, guests, opt
   if (!availability.available) {
     return { ok: false, statusCode: 409, message: availability.reason || 'This room is not available' };
   }
-  return { ok: true, nights: range.nights };
+  return {
+    ok: true,
+    nights: range.nights,
+    availableQuantity: availability.availableQuantity,
+    localHoldCount: availability.localHoldCount,
+  };
 }

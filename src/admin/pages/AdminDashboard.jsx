@@ -11,6 +11,12 @@ import { formatCurrency } from '../../utils/booking.js';
 import { readJsonStorage, storageKeys } from '../../constants/storageKeys.js';
 
 function normalizeBooking(booking) {
+  const rooms = booking.rooms?.length
+    ? booking.rooms
+    : booking.roomItems?.map((item) => ({
+        roomName: item.room?.name || '',
+        quantity: Number(item.quantity || 1),
+      })) || [];
   return {
     ...booking,
     guestInfo: booking.guestInfo || {
@@ -18,7 +24,9 @@ function normalizeBooking(booking) {
       email: booking.guest?.email,
       phone: `${booking.guest?.phoneCode || ''} ${booking.guest?.phoneNumber || ''}`.trim(),
     },
-    roomName: booking.roomName || booking.room?.name,
+    roomName: rooms.length
+      ? rooms.map((item) => `${item.roomName} ×${item.quantity}`).join(', ')
+      : booking.roomName || booking.room?.name,
     total: booking.total || booking.totalPrice,
     bookingStatus: String(booking.bookingStatus || 'received').toLowerCase(),
     paymentStatus: String(booking.paymentStatus || 'pending').toLowerCase(),

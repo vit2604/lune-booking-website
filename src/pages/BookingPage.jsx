@@ -1,8 +1,7 @@
-import { ArrowRight, UserRound } from 'lucide-react';
+import { ArrowRight, Minus, Plus, Trash2, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getRoomById } from '../admin/services/adminRoomService.js';
-import { getBookings } from '../admin/services/adminBookingService.js';
 import BookingPolicy from '../components/BookingPolicy.jsx';
 import BookingSummary from '../components/BookingSummary.jsx';
 import DateSelector from '../components/DateSelector.jsx';
@@ -11,12 +10,19 @@ import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { createBookingWithFallback } from '../services/bookingApiService.js';
+import { fetchRoomsWithFallback, fetchRoomWithFallback } from '../services/roomApiService.js';
 import {
   getPhoneVerificationConfig,
   requestPhoneOtp,
   verifyPhoneOtp,
 } from '../services/phoneVerificationApiService.js';
-import { buildBookingDraft, hasPricedBookingDraft, validateStay } from '../utils/booking.js';
+import {
+  buildBookingDraft,
+  formatCurrency,
+  hasPricedBookingDraft,
+  MAX_ROOMS_PER_BOOKING,
+  validateStay,
+} from '../utils/booking.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
 import { loadBookingDraft, saveBookingDraft } from '../utils/storage.js';
 
@@ -72,34 +78,39 @@ function getPhoneKey({ phoneCode, phone }) {
 
 function roomFromBookingDraft(booking) {
   if (!booking?.roomId) return null;
+  const primary = booking.rooms?.[0] || booking;
   const priceSummary =
-    booking.priceSummary ||
+    primary.priceSummary ||
     (hasPricedBookingDraft(booking)
       ? {
           checkIn: booking.checkIn,
           checkOut: booking.checkOut,
-          guests: Number(booking.guests || 1),
+          guests: Number(primary.guests || 1),
+          adults: Number(primary.adults || primary.guests || 1),
+          children: Number(primary.children || 0),
           nights: Number(booking.nights || 0),
-          pricePerNight: Number(booking.pricePerNight || 0),
-          subtotal: Number(booking.roomSubtotal ?? booking.subtotal ?? 0),
-          serviceFee: Number(booking.serviceFee || 0),
-          totalPrice: Number(booking.totalPrice ?? booking.total ?? 0),
-          nightlyRates: booking.nightlyRates || [],
+          pricePerNight: Number(primary.pricePerNight || 0),
+          subtotal: Number(primary.unitSubtotal ?? primary.subtotal ?? 0),
+          serviceFee: Number(primary.unitServiceFee ?? primary.serviceFee ?? 0),
+          taxAmount: Number(primary.unitTaxAmount ?? primary.taxAmount ?? 0),
+          totalPrice: Number(primary.unitTotalPrice ?? primary.totalPrice ?? 0),
+          nightlyRates: primary.nightlyRates || [],
           source: booking.source || 'booking-draft',
         }
       : null);
   return {
-    id: booking.roomId,
-    slug: booking.roomId,
-    name: booking.roomName,
-    price: Number(booking.pricePerNight || 0),
-    basePrice: Number(booking.pricePerNight || 0),
-    maxGuests: Number(booking.maxGuests || booking.guests || 1),
-    image: booking.roomImage || '',
-    gallery: booking.roomImage ? [booking.roomImage] : [],
-    type: booking.roomType || 'Apartment',
-    size: booking.size || '',
-    bed: booking.bed || '',
+    id: primary.roomId || booking.roomId,
+    slug: primary.roomId || booking.roomId,
+    name: primary.roomName || booking.roomName,
+    price: Number(primary.pricePerNight || booking.pricePerNight || 0),
+    basePrice: Number(primary.pricePerNight || booking.pricePerNight || 0),
+    maxGuests: Number(primary.maxGuests || booking.maxGuests || primary.guests || 1),
+    availableQuantity: Number(primary.availableQuantity || 1),
+    image: primary.roomImage || booking.roomImage || '',
+    gallery: primary.roomImage ? [primary.roomImage] : [],
+    type: primary.roomType || booking.roomType || 'Apartment',
+    size: primary.size || booking.size || '',
+    bed: primary.bed || booking.bed || '',
     amenities: [],
     availabilityRules: { minNights: 1, maxNights: 30 },
     priceSummary,
@@ -109,6 +120,9 @@ function roomFromBookingDraft(booking) {
 export default function BookingPage() {
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
+  const [availableRooms, setAvailableRooms] = useState([]);
+  const [roomToAdd, setRoomToAdd] = useState('');
+  const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -135,17 +149,18 @@ export default function BookingPage() {
     message: '',
     error: '',
   });
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslation();
   useDocumentMeta({ title: `${t('booking.completeBooking')} | ${BRAND}`, path: '/booking', noindex: true });
 
   useEffect(() => {
     const draft = loadBookingDraft();
     if (!draft) return;
 
-    const draftRoom = getRoomById(draft.roomId);
-    const upgradedDraft = draftRoom && !hasPricedBookingDraft(draft)
+    const draftRoom = getRoomById(draft.roomId) || roomFromBookingDraft(draft);
+    const upgradedDraft = draftRoom && (!draft.rooms?.length || !hasPricedBookingDraft(draft))
       ? buildBookingDraft({
           room: draftRoom,
+          quantity: draft.quantity || 1,
           checkIn: draft.checkIn,
           checkOut: draft.checkOut,
           guests: draft.guests,
@@ -161,6 +176,73 @@ export default function BookingPage() {
     setBooking(upgradedDraft);
     if (upgradedDraft?.guestInfo) setForm(upgradedDraft.guestInfo);
   }, []);
+
+  const roomOccupancyKey = (booking?.rooms || [])
+    .map((item) => `${item.roomId}:${item.adults}:${item.children}`)
+    .join('|');
+
+  useEffect(() => {
+    if (!booking?.checkIn || !booking?.checkOut || !booking?.rooms?.length) return undefined;
+    let ignore = false;
+    const refreshRooms = async () => {
+      setIsLoadingRooms(true);
+      try {
+        const listPromise = fetchRoomsWithFallback({
+          lang: currentLanguage,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          guests: 1,
+          adults: 1,
+          children: 0,
+        });
+        const detailPromises = booking.rooms.map((item) =>
+          fetchRoomWithFallback(item.roomId, {
+            lang: currentLanguage,
+            checkIn: booking.checkIn,
+            checkOut: booking.checkOut,
+            guests: item.guests,
+            adults: item.adults,
+            children: item.children,
+          }),
+        );
+        const [listResult, ...detailResults] = await Promise.all([listPromise, ...detailPromises]);
+        if (ignore) return;
+        setAvailableRooms(listResult.rooms || []);
+        setBooking((current) => {
+          if (!current || current.checkIn !== booking.checkIn || current.checkOut !== booking.checkOut) return current;
+          const refreshedItems = current.rooms.map((item, index) => {
+            const refreshedRoom = detailResults[index]?.room;
+            return refreshedRoom
+              ? {
+                  room: refreshedRoom,
+                  quantity: item.quantity,
+                  adults: item.adults,
+                  children: item.children,
+                  guests: item.guests,
+                }
+              : item;
+          });
+          return buildBookingDraft({
+            roomItems: refreshedItems,
+            checkIn: current.checkIn,
+            checkOut: current.checkOut,
+            guestInfo: current.guestInfo,
+            paymentMethod: current.paymentMethod,
+            bookingCode: current.bookingCode,
+            bookingStatus: current.bookingStatus,
+          });
+        });
+      } catch (error) {
+        if (!ignore) setErrors((current) => ({ ...current, rooms: error.message || 'Could not refresh room availability.' }));
+      } finally {
+        if (!ignore) setIsLoadingRooms(false);
+      }
+    };
+    refreshRooms();
+    return () => {
+      ignore = true;
+    };
+  }, [booking?.checkIn, booking?.checkOut, currentLanguage, roomOccupancyKey]);
 
   useEffect(() => {
     getPhoneVerificationConfig()
@@ -210,8 +292,18 @@ export default function BookingPage() {
     }
   };
 
+  const rebuildBooking = (current, roomItems, changes = {}) => buildBookingDraft({
+    roomItems,
+    checkIn: changes.checkIn ?? current.checkIn,
+    checkOut: changes.checkOut ?? current.checkOut,
+    guestInfo: current.guestInfo,
+    paymentMethod: current.paymentMethod,
+    bookingCode: current.bookingCode,
+    bookingStatus: current.bookingStatus,
+  });
+
   const updateStay = (changes) => {
-    setBooking((current) => ({ ...current, ...changes }));
+    setBooking((current) => rebuildBooking(current, current.rooms, changes));
     setErrors((current) => ({
       ...current,
       checkIn: undefined,
@@ -220,38 +312,96 @@ export default function BookingPage() {
     }));
   };
 
+  const updateRoomItem = (index, changes) => {
+    setBooking((current) => {
+      const nextItems = current.rooms.map((item, itemIndex) => (itemIndex === index ? { ...item, ...changes } : item));
+      return rebuildBooking(current, nextItems);
+    });
+    setErrors((current) => ({ ...current, rooms: undefined, submit: undefined }));
+  };
+
+  const removeRoomItem = (index) => {
+    setBooking((current) => {
+      if (current.rooms.length <= 1) return current;
+      return rebuildBooking(current, current.rooms.filter((_, itemIndex) => itemIndex !== index));
+    });
+  };
+
+  const addRoomItem = () => {
+    const selectedRoom = availableRooms.find((item) => item.id === roomToAdd);
+    if (!selectedRoom || booking.totalRooms >= MAX_ROOMS_PER_BOOKING) return;
+    setBooking((current) => rebuildBooking(current, [
+      ...current.rooms,
+      {
+        room: selectedRoom,
+        quantity: 1,
+        adults: Math.min(2, Number(selectedRoom.maxGuests || 1)),
+        children: 0,
+      },
+    ]));
+    setRoomToAdd('');
+    setErrors((current) => ({ ...current, rooms: undefined }));
+  };
+
   const validate = () => {
     const nextErrors = validateStay({
       checkIn: booking.checkIn,
       checkOut: booking.checkOut,
-      guests: booking.guests,
-      maxGuests: room.maxGuests,
+      guests: 1,
+      maxGuests: 999,
       messages: {
         checkInRequired: t('errors.checkInRequired'),
         checkOutRequired: t('errors.checkOutRequired'),
         checkoutAfterCheckin: t('errors.checkoutAfterCheckin'),
         guestsRequired: t('errors.guestsRequired'),
-        guestsMax: t('errors.guestsMax', { max: room.maxGuests }),
+        guestsMax: t('errors.guestsMax', { max: 999 }),
         checkInPast: t('errors.checkInPast'),
       },
     });
 
-    const availability = validateBookingDates({
-      checkIn: booking.checkIn,
-      checkOut: booking.checkOut,
-      room,
-      existingBookings: getBookings().filter((item) => item.bookingCode !== booking.bookingCode),
-      messages: {
-        checkInRequired: t('errors.checkInRequired'),
-        checkOutRequired: t('errors.checkOutRequired'),
-        checkInPast: t('errors.checkInPast'),
-        checkoutAfterCheckin: t('errors.checkoutAfterCheckin'),
-        minNights: t('errors.minNights', { n: room.availabilityRules?.minNights || 1 }),
-        maxNights: t('errors.maxNights', { n: room.availabilityRules?.maxNights || 30 }),
-        notAvailable: t('errors.roomUnavailable'),
-      },
+    if (!booking.rooms?.length || booking.totalRooms > MAX_ROOMS_PER_BOOKING) {
+      nextErrors.rooms = `A booking can contain at most ${MAX_ROOMS_PER_BOOKING} rooms.`;
+    }
+    (booking.rooms || []).forEach((item) => {
+      const itemRoom = availableRooms.find((candidate) => candidate.id === item.roomId) || {
+        id: item.roomId,
+        maxGuests: item.maxGuests,
+        status: 'active',
+        availabilityRules: { minNights: 1, maxNights: 30 },
+        blockedDates: [],
+      };
+      const guestErrors = validateStay({
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        guests: item.guests,
+        maxGuests: item.maxGuests,
+        messages: {
+          guestsRequired: t('errors.guestsRequired'),
+          guestsMax: t('errors.guestsMax', { max: item.maxGuests }),
+        },
+      });
+      const availability = validateBookingDates({
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        room: itemRoom,
+        existingBookings: [],
+        messages: {
+          checkInRequired: t('errors.checkInRequired'),
+          checkOutRequired: t('errors.checkOutRequired'),
+          checkInPast: t('errors.checkInPast'),
+          checkoutAfterCheckin: t('errors.checkoutAfterCheckin'),
+          minNights: t('errors.minNights', { n: itemRoom.availabilityRules?.minNights || 1 }),
+          maxNights: t('errors.maxNights', { n: itemRoom.availabilityRules?.maxNights || 30 }),
+          notAvailable: t('errors.roomUnavailable'),
+        },
+      });
+      if (guestErrors.guests || Object.keys(availability.errors).length) {
+        nextErrors.rooms = guestErrors.guests || Object.values(availability.errors)[0];
+      }
+      if (item.quantity > Number(item.availableQuantity ?? MAX_ROOMS_PER_BOOKING)) {
+        nextErrors.rooms = t('errors.notEnoughRooms', { count: item.availableQuantity ?? 0 });
+      }
     });
-    Object.assign(nextErrors, availability.errors);
 
     if (!form.fullName.trim()) nextErrors.fullName = t('errors.fullNameRequired');
     if (!emailPattern.test(form.email)) nextErrors.email = t('errors.emailInvalid');
@@ -342,12 +492,9 @@ export default function BookingPage() {
     if (!validate()) return;
     setIsSubmitting(true);
     const updatedBooking = buildBookingDraft({
-      room,
+      roomItems: booking.rooms,
       checkIn: booking.checkIn,
       checkOut: booking.checkOut,
-      guests: booking.guests,
-      adults: booking.adults,
-      children: booking.children,
       guestInfo: form,
       paymentMethod: booking.paymentMethod || 'payAtProperty',
       bookingCode: booking.bookingCode,
@@ -368,17 +515,16 @@ export default function BookingPage() {
   };
 
   const previewBooking = buildBookingDraft({
-    room,
+    roomItems: booking.rooms,
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
-    guests: booking.guests,
-    adults: booking.adults,
-    children: booking.children,
     guestInfo: form,
     paymentMethod: booking.paymentMethod || 'payAtProperty',
     bookingCode: booking.bookingCode,
     bookingStatus: booking.bookingStatus,
   });
+  const selectedRoomIds = new Set(booking.rooms.map((item) => item.roomId));
+  const availableRoomChoices = availableRooms.filter((item) => !selectedRoomIds.has(item.id));
 
   return (
     <RevealOnScroll as="section" direction="none" duration={450} className="section-space bg-lune-cream">
@@ -408,10 +554,11 @@ export default function BookingPage() {
                 children={booking.children}
                 maxGuests={room.maxGuests}
                 onChange={updateStay}
+                showGuests={false}
               />
-            {errors.checkIn || errors.checkOut || errors.guests ? (
+            {errors.checkIn || errors.checkOut || errors.guests || errors.rooms ? (
                 <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
-                  {[errors.checkIn, errors.checkOut, errors.guests].filter(Boolean).map((message) => (
+                  {[errors.checkIn, errors.checkOut, errors.guests, errors.rooms].filter(Boolean).map((message) => (
                     <p key={message}>{message}</p>
                   ))}
                 </div>
@@ -419,6 +566,125 @@ export default function BookingPage() {
               {errors.submit ? (
                 <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
                   {errors.submit}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="mt-8">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <p className="eyebrow">{t('common.roomsLabel')}</p>
+                  <h2 className="mt-1 font-display text-2xl font-bold text-lune-ink">
+                    {booking.totalRooms} / {MAX_ROOMS_PER_BOOKING}
+                  </h2>
+                </div>
+                {isLoadingRooms ? <span className="text-xs font-medium text-stone-500">{t('common.processing')}</span> : null}
+              </div>
+
+              <div className="mt-4 border-y border-stone-200">
+                {booking.rooms.map((item, index) => {
+                  const otherRooms = booking.totalRooms - item.quantity;
+                  const maxQuantity = Math.max(
+                    1,
+                    Math.min(Number(item.availableQuantity ?? MAX_ROOMS_PER_BOOKING), MAX_ROOMS_PER_BOOKING - otherRooms),
+                  );
+                  const maxChildren = Math.max(0, Number(item.maxGuests || 1) - Number(item.adults || 1));
+                  return (
+                    <div key={item.roomId} className="grid gap-4 border-t border-stone-200 py-4 first:border-t-0 sm:grid-cols-[72px_1fr]">
+                      {item.roomImage ? (
+                        <img className="h-[72px] w-[72px] rounded-md object-cover" src={item.roomImage} alt={item.roomName} />
+                      ) : <div className="h-[72px] w-[72px] rounded-md bg-lune-mist" />}
+                      <div className="min-w-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="text-base font-bold text-lune-ink">{item.roomName}</h3>
+                            <p className="mt-1 text-sm text-stone-500">{formatCurrency(item.pricePerNight)} {t('common.perNight')}</p>
+                          </div>
+                          <button
+                            className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-red-600 hover:bg-red-50 disabled:opacity-40"
+                            type="button"
+                            title={t('common.removeRoom')}
+                            disabled={booking.rooms.length === 1}
+                            onClick={() => removeRoomItem(index)}
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </div>
+
+                        <div className="mt-4 grid gap-3 sm:grid-cols-[132px_1fr_1fr]">
+                          <div>
+                            <span className="label">{t('common.roomsLabel')}</span>
+                            <div className="grid grid-cols-[40px_42px_40px] items-center">
+                              <button
+                                className="grid h-10 w-10 place-items-center rounded-md border border-stone-300 disabled:opacity-40"
+                                type="button"
+                                title={t('common.decreaseRooms')}
+                                disabled={item.quantity <= 1}
+                                onClick={() => updateRoomItem(index, { quantity: item.quantity - 1 })}
+                              >
+                                <Minus className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                              <strong className="text-center">{item.quantity}</strong>
+                              <button
+                                className="grid h-10 w-10 place-items-center rounded-md border border-stone-300 disabled:opacity-40"
+                                type="button"
+                                title={t('common.increaseRooms')}
+                                disabled={item.quantity >= maxQuantity}
+                                onClick={() => updateRoomItem(index, { quantity: item.quantity + 1 })}
+                              >
+                                <Plus className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                            </div>
+                          </div>
+                          <label>
+                            <span className="label">{t('common.adults')}</span>
+                            <select
+                              className="input-field py-2.5"
+                              value={item.adults}
+                              onChange={(event) => {
+                                const nextAdults = Number(event.target.value);
+                                updateRoomItem(index, {
+                                  adults: nextAdults,
+                                  children: Math.min(item.children, Math.max(0, item.maxGuests - nextAdults)),
+                                });
+                              }}
+                            >
+                              {Array.from({ length: Math.max(1, Number(item.maxGuests || 1)) }, (_, option) => option + 1).map((count) => (
+                                <option key={count} value={count}>{count}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
+                            <span className="label">{t('common.children')}</span>
+                            <select
+                              className="input-field py-2.5"
+                              value={item.children}
+                              onChange={(event) => updateRoomItem(index, { children: Number(event.target.value) })}
+                            >
+                              {Array.from({ length: maxChildren + 1 }, (_, count) => (
+                                <option key={count} value={count}>{count}</option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {booking.totalRooms < MAX_ROOMS_PER_BOOKING && availableRoomChoices.length ? (
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <select className="input-field flex-1" value={roomToAdd} onChange={(event) => setRoomToAdd(event.target.value)}>
+                    <option value="">{t('common.addRoomType')}</option>
+                    {availableRoomChoices.map((item) => (
+                      <option key={item.id} value={item.id}>{item.name} · {formatCurrency(item.price)}</option>
+                    ))}
+                  </select>
+                  <button className="btn-secondary shrink-0" type="button" disabled={!roomToAdd} onClick={addRoomItem}>
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                    {t('common.addRoomType')}
+                  </button>
                 </div>
               ) : null}
             </div>

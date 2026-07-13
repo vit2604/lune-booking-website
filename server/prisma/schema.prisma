@@ -105,6 +105,7 @@ model Room {
   blockedDates             RoomBlockedDate[]
   ratePeriods              RoomRatePeriod[]
   bookings                 Booking[]
+  bookingItems             BookingRoom[]
 }
 
 model RoomTranslation {
@@ -229,6 +230,30 @@ model Booking {
   room           Room          @relation(fields: [roomId], references: [id])
   guest          Guest         @relation(fields: [guestId], references: [id])
   payments       Payment[]
+  roomItems      BookingRoom[]
+}
+
+model BookingRoom {
+  id             String   @id @default(cuid())
+  bookingId      String
+  roomId         String
+  quantity       Int      @default(1)
+  guests         Int      @default(1)
+  adults         Int      @default(1)
+  children       Int      @default(0)
+  pricePerNight  Int
+  subtotal       Int
+  discountAmount Int      @default(0)
+  serviceFee     Int      @default(0)
+  taxAmount      Int      @default(0)
+  totalPrice     Int
+  currency       String   @default("VND")
+  createdAt      DateTime @default(now())
+  booking        Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  room           Room     @relation(fields: [roomId], references: [id])
+
+  @@unique([bookingId, roomId])
+  @@index([roomId])
 }
 
 model PhoneOtpChallenge {

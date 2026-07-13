@@ -254,6 +254,7 @@ export default function PaymentPage() {
         const confirmedWithPayos = {
           ...confirmed,
           paymentStatus: paymentResult?.payment?.paymentStatus || confirmed.paymentStatus,
+          bookingStatus: paymentResult?.payment?.bookingStatus || confirmed.bookingStatus,
           payosCheckoutUrl: checkoutUrl,
           payosQrImage: payosQrImageFromResult(paymentResult),
         };
@@ -264,9 +265,14 @@ export default function PaymentPage() {
         return;
       }
 
-      saveConfirmedBooking(confirmed);
-      saveBookingDraft(confirmed);
-      persistBooking(confirmed);
+      const confirmedBooking = {
+        ...confirmed,
+        paymentStatus: paymentResult?.payment?.paymentStatus || confirmed.paymentStatus,
+        bookingStatus: paymentResult?.payment?.bookingStatus || confirmed.bookingStatus,
+      };
+      saveConfirmedBooking(confirmedBooking);
+      saveBookingDraft(confirmedBooking);
+      persistBooking(confirmedBooking);
       navigate('/success');
     } catch (paymentError) {
       setError(paymentError?.message || t('payment.payosNotConfigured'));

@@ -36,6 +36,14 @@ const extraEn = {
     recommended: 'Recommended',
     availableSoon: 'Available soon',
     approx: 'Approx.',
+    roomsLabel: 'Rooms',
+    roomQuantity: 'Number of rooms',
+    roomsAvailable: '{count} available',
+    decreaseRooms: 'Decrease rooms',
+    increaseRooms: 'Increase rooms',
+    guestsPerRoom: 'Guests per room',
+    addRoomType: 'Add another room type',
+    removeRoom: 'Remove room type',
   },
   home: {
     guestInfoItems: [
@@ -119,6 +127,130 @@ const extraEn = {
     roomUnavailable: 'This room is not available for selected dates.',
     minNights: 'Minimum stay is {n} night(s).',
     maxNights: 'Maximum stay is {n} night(s).',
+    notEnoughRooms: 'Only {count} room(s) remain for these dates.',
+  },
+};
+
+const multiRoomPacks = {
+  vi: {
+    common: {
+      roomsLabel: 'Phòng', roomQuantity: 'Số lượng phòng', roomsAvailable: 'Còn {count} phòng',
+      decreaseRooms: 'Giảm số phòng', increaseRooms: 'Tăng số phòng', guestsPerRoom: 'Khách mỗi phòng',
+      addRoomType: 'Thêm loại phòng khác', removeRoom: 'Xóa loại phòng',
+    },
+    errors: { notEnoughRooms: 'Chỉ còn {count} phòng cho ngày đã chọn.' },
+  },
+  zh: {
+    common: {
+      roomsLabel: '客房', roomQuantity: '房间数量', roomsAvailable: '剩余 {count} 间',
+      decreaseRooms: '减少房间', increaseRooms: '增加房间', guestsPerRoom: '每间入住人数',
+      addRoomType: '添加其他房型', removeRoom: '移除房型',
+    },
+    errors: { notEnoughRooms: '所选日期仅剩 {count} 间客房。' },
+  },
+  'zh-TW': {
+    common: {
+      roomsLabel: '客房', roomQuantity: '房間數量', roomsAvailable: '尚有 {count} 間',
+      decreaseRooms: '減少房間', increaseRooms: '增加房間', guestsPerRoom: '每間入住人數',
+      addRoomType: '新增其他房型', removeRoom: '移除房型',
+    },
+    errors: { notEnoughRooms: '所選日期僅剩 {count} 間客房。' },
+  },
+  ko: {
+    common: {
+      roomsLabel: '객실', roomQuantity: '객실 수', roomsAvailable: '{count}개 남음',
+      decreaseRooms: '객실 수 줄이기', increaseRooms: '객실 수 늘리기', guestsPerRoom: '객실당 투숙객',
+      addRoomType: '다른 객실 유형 추가', removeRoom: '객실 유형 삭제',
+    },
+    errors: { notEnoughRooms: '선택한 날짜에는 객실이 {count}개만 남아 있습니다.' },
+  },
+  ja: {
+    common: {
+      roomsLabel: '客室', roomQuantity: '客室数', roomsAvailable: '残り{count}室',
+      decreaseRooms: '客室数を減らす', increaseRooms: '客室数を増やす', guestsPerRoom: '1室あたりの宿泊人数',
+      addRoomType: '別の客室タイプを追加', removeRoom: '客室タイプを削除',
+    },
+    errors: { notEnoughRooms: '選択日程では残り{count}室です。' },
+  },
+  th: {
+    common: {
+      roomsLabel: 'ห้องพัก', roomQuantity: 'จำนวนห้อง', roomsAvailable: 'เหลือ {count} ห้อง',
+      decreaseRooms: 'ลดจำนวนห้อง', increaseRooms: 'เพิ่มจำนวนห้อง', guestsPerRoom: 'ผู้เข้าพักต่อห้อง',
+      addRoomType: 'เพิ่มประเภทห้องอื่น', removeRoom: 'ลบประเภทห้อง',
+    },
+    errors: { notEnoughRooms: 'เหลือเพียง {count} ห้องสำหรับวันที่เลือก' },
+  },
+  ru: {
+    common: {
+      roomsLabel: 'Номера', roomQuantity: 'Количество номеров', roomsAvailable: 'Доступно: {count}',
+      decreaseRooms: 'Уменьшить число номеров', increaseRooms: 'Увеличить число номеров', guestsPerRoom: 'Гостей в номере',
+      addRoomType: 'Добавить другой тип номера', removeRoom: 'Удалить тип номера',
+    },
+    errors: { notEnoughRooms: 'На выбранные даты осталось только {count} номеров.' },
+  },
+  fr: {
+    common: {
+      roomsLabel: 'Chambres', roomQuantity: 'Nombre de chambres', roomsAvailable: '{count} disponible(s)',
+      decreaseRooms: 'Réduire le nombre de chambres', increaseRooms: 'Augmenter le nombre de chambres', guestsPerRoom: 'Voyageurs par chambre',
+      addRoomType: 'Ajouter un autre type de chambre', removeRoom: 'Supprimer le type de chambre',
+    },
+    errors: { notEnoughRooms: 'Il ne reste que {count} chambre(s) pour ces dates.' },
+  },
+  de: {
+    common: {
+      roomsLabel: 'Zimmer', roomQuantity: 'Anzahl der Zimmer', roomsAvailable: '{count} verfügbar',
+      decreaseRooms: 'Zimmeranzahl verringern', increaseRooms: 'Zimmeranzahl erhöhen', guestsPerRoom: 'Gäste pro Zimmer',
+      addRoomType: 'Weiteren Zimmertyp hinzufügen', removeRoom: 'Zimmertyp entfernen',
+    },
+    errors: { notEnoughRooms: 'Für diese Daten sind nur noch {count} Zimmer verfügbar.' },
+  },
+  es: {
+    common: {
+      roomsLabel: 'Habitaciones', roomQuantity: 'Número de habitaciones', roomsAvailable: '{count} disponible(s)',
+      decreaseRooms: 'Reducir habitaciones', increaseRooms: 'Aumentar habitaciones', guestsPerRoom: 'Huéspedes por habitación',
+      addRoomType: 'Añadir otro tipo de habitación', removeRoom: 'Quitar tipo de habitación',
+    },
+    errors: { notEnoughRooms: 'Solo quedan {count} habitaciones para estas fechas.' },
+  },
+  it: {
+    common: {
+      roomsLabel: 'Camere', roomQuantity: 'Numero di camere', roomsAvailable: '{count} disponibili',
+      decreaseRooms: 'Riduci camere', increaseRooms: 'Aumenta camere', guestsPerRoom: 'Ospiti per camera',
+      addRoomType: 'Aggiungi un altro tipo di camera', removeRoom: 'Rimuovi tipo di camera',
+    },
+    errors: { notEnoughRooms: 'Restano solo {count} camere per queste date.' },
+  },
+  id: {
+    common: {
+      roomsLabel: 'Kamar', roomQuantity: 'Jumlah kamar', roomsAvailable: '{count} tersedia',
+      decreaseRooms: 'Kurangi jumlah kamar', increaseRooms: 'Tambah jumlah kamar', guestsPerRoom: 'Tamu per kamar',
+      addRoomType: 'Tambah tipe kamar lain', removeRoom: 'Hapus tipe kamar',
+    },
+    errors: { notEnoughRooms: 'Hanya tersisa {count} kamar untuk tanggal tersebut.' },
+  },
+  ms: {
+    common: {
+      roomsLabel: 'Bilik', roomQuantity: 'Bilangan bilik', roomsAvailable: '{count} tersedia',
+      decreaseRooms: 'Kurangkan bilangan bilik', increaseRooms: 'Tambah bilangan bilik', guestsPerRoom: 'Tetamu setiap bilik',
+      addRoomType: 'Tambah jenis bilik lain', removeRoom: 'Alih keluar jenis bilik',
+    },
+    errors: { notEnoughRooms: 'Hanya tinggal {count} bilik untuk tarikh tersebut.' },
+  },
+  ar: {
+    common: {
+      roomsLabel: 'الغرف', roomQuantity: 'عدد الغرف', roomsAvailable: 'متاح {count}',
+      decreaseRooms: 'تقليل عدد الغرف', increaseRooms: 'زيادة عدد الغرف', guestsPerRoom: 'الضيوف لكل غرفة',
+      addRoomType: 'إضافة نوع غرفة آخر', removeRoom: 'إزالة نوع الغرفة',
+    },
+    errors: { notEnoughRooms: 'لم يتبق لهذه التواريخ سوى {count} غرف.' },
+  },
+  hi: {
+    common: {
+      roomsLabel: 'कमरे', roomQuantity: 'कमरों की संख्या', roomsAvailable: '{count} उपलब्ध',
+      decreaseRooms: 'कमरे घटाएं', increaseRooms: 'कमरे बढ़ाएं', guestsPerRoom: 'प्रति कमरा मेहमान',
+      addRoomType: 'अन्य प्रकार का कमरा जोड़ें', removeRoom: 'कमरे का प्रकार हटाएं',
+    },
+    errors: { notEnoughRooms: 'चुनी गई तारीखों के लिए केवल {count} कमरे बचे हैं।' },
   },
 };
 
@@ -1001,6 +1133,10 @@ export function applyTranslationExtensions(translations, languageOptions, future
   });
 
   Object.entries(productionFixPacks).forEach(([language, pack]) => {
+    translations[language] = mergeDeep(translations[language] || translations.en, pack);
+  });
+
+  Object.entries(multiRoomPacks).forEach(([language, pack]) => {
     translations[language] = mergeDeep(translations[language] || translations.en, pack);
   });
 }

@@ -28,6 +28,18 @@ const guestLabel = (key) =>
   })[key] || key;
 
 function normalizeBooking(booking) {
+  const rooms = booking.rooms?.length
+    ? booking.rooms
+    : booking.roomItems?.map((item) => ({
+        roomId: item.roomId,
+        roomName: item.room?.name || '',
+        quantity: Number(item.quantity || 1),
+        guests: Number(item.guests || 1),
+        adults: Number(item.adults || item.guests || 1),
+        children: Number(item.children || 0),
+        pricePerNight: Number(item.pricePerNight || 0),
+        totalPrice: Number(item.totalPrice || 0),
+      })) || [];
   return {
     ...booking,
     guestInfo: booking.guestInfo || {
@@ -36,7 +48,11 @@ function normalizeBooking(booking) {
       phone: `${booking.guest?.phoneCode || ''} ${booking.guest?.phoneNumber || ''}`.trim(),
       specialRequest: booking.specialRequest,
     },
-    roomName: booking.roomName || booking.room?.name,
+    rooms,
+    totalRooms: rooms.reduce((sum, item) => sum + Number(item.quantity || 1), 0) || 1,
+    roomName: rooms.length
+      ? rooms.map((item) => `${item.roomName} ×${item.quantity}`).join(', ')
+      : booking.roomName || booking.room?.name,
     total: booking.total || booking.totalPrice,
     bookingStatus: String(booking.bookingStatus || 'received').toLowerCase(),
     paymentStatus: String(booking.paymentStatus || 'pending').toLowerCase(),
@@ -204,7 +220,7 @@ export default function AdminBookings() {
                 ['Guest', selected.guestInfo?.fullName],
                 ['Phone', selected.guestInfo?.phone],
                 ['Email', selected.guestInfo?.email],
-                ['Room', selected.roomName],
+                ['Rooms', selected.roomName],
                 ['Check-in', selected.checkIn],
                 ['Check-out', selected.checkOut],
                 ['Guests', formatGuestBreakdown(selected, guestLabel)],

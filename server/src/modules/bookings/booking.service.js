@@ -1,8 +1,20 @@
 import { Prisma } from '@prisma/client';
 import { env } from '../../config/env.js';
 import { prisma } from '../../config/prisma.js';
-import { createBluejayBooking, getBluejayStayAvailability, isBluejayBookingCreateEnabled } from '../bluejay/bluejay.service.js';
+import {
+  confirmBluejayBooking,
+  createBluejayBooking,
+  getBluejayStayAvailability,
+  isBluejayBookingCreateEnabled,
+} from '../bluejay/bluejay.service.js';
 import { assertRoomCanBeBooked } from '../../utils/availabilityUtils.js';
+import {
+  aggregateBookingRoomPrices,
+  getTotalRoomQuantity,
+  MAX_ROOMS_PER_BOOKING,
+  normalizeBookingRoomSelections,
+  scaleRoomPrice,
+} from '../../utils/bookingRoomUtils.js';
 import { createUniqueBookingCode } from '../../utils/bookingCodeUtils.js';
 import { toHotelDate } from '../../utils/dateUtils.js';
 import { calculateTotalPrice } from '../../utils/priceUtils.js';
@@ -12,16 +24,66 @@ import { assertPhoneVerification, consumePhoneVerification } from '../phone-veri
 
 const bookingInclude = {
   room: { include: { images: true, ratePeriods: true } },
+  roomItems: {
+    include: { room: { include: { images: true, ratePeriods: true } } },
+    orderBy: { createdAt: 'asc' },
+  },
   guest: true,
   payments: true,
 };
 
+function bookingRoomItems(booking) {
+  if (booking.roomItems?.length) return booking.roomItems;
+  return [{
+    roomId: booking.roomId,
+    room: booking.room,
+    quantity: 1,
+    guests: booking.guests,
+    adults: booking.adults,
+    children: booking.children,
+    pricePerNight: booking.pricePerNight,
+    subtotal: booking.subtotal,
+    discountAmount: booking.discountAmount,
+    serviceFee: booking.serviceFee,
+    taxAmount: booking.taxAmount,
+    totalPrice: booking.totalPrice,
+    currency: booking.currency,
+  }];
+}
+
+function publicRoomItem(item) {
+  const room = item.room || {};
+  return {
+    roomId: item.roomId,
+    roomName: room.name || '',
+    roomImage: room.images?.find((image) => image.isMain)?.url || room.images?.[0]?.url || '',
+    quantity: Number(item.quantity || 1),
+    guests: Number(item.guests || 1),
+    adults: Number(item.adults || item.guests || 1),
+    children: Number(item.children || 0),
+    pricePerNight: Number(item.pricePerNight || 0),
+    subtotal: Number(item.subtotal || 0),
+    discountAmount: Number(item.discountAmount || 0),
+    serviceFee: Number(item.serviceFee || 0),
+    taxAmount: Number(item.taxAmount || 0),
+    totalPrice: Number(item.totalPrice || 0),
+    currency: item.currency || 'VND',
+  };
+}
+
+function publicRooms(booking) {
+  return bookingRoomItems(booking).map(publicRoomItem);
+}
+
 function publicBookingSummary(booking) {
+  const rooms = publicRooms(booking);
   return {
     bookingCode: booking.bookingCode,
     roomId: booking.roomId,
     roomName: booking.room?.name,
     roomImage: booking.room?.images?.find((image) => image.isMain)?.url || booking.room?.images?.[0]?.url || '',
+    rooms,
+    totalRooms: rooms.reduce((sum, item) => sum + item.quantity, 0),
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     nights: booking.nights,
@@ -57,11 +119,14 @@ function publicBookingSummary(booking) {
 // but this endpoint is unauthenticated, so it must never echo guest PII
 // (name/email/phone/country). Callers only need status + stay/price details.
 function publicBookingLookup(booking) {
+  const rooms = publicRooms(booking);
   return {
     bookingCode: booking.bookingCode,
     roomId: booking.roomId,
     roomName: booking.room?.name,
     roomImage: booking.room?.images?.find((image) => image.isMain)?.url || booking.room?.images?.[0]?.url || '',
+    rooms,
+    totalRooms: rooms.reduce((sum, item) => sum + item.quantity, 0),
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     nights: booking.nights,
@@ -107,10 +172,13 @@ function normalizeGuestBreakdown(input) {
   };
 }
 
-export async function syncBookingToBluejay(booking) {
+export async function syncBookingToBluejay(booking, { forceConfirm = false } = {}) {
   if (!isBluejayBookingCreateEnabled()) return booking;
-  if (booking.bluejaySyncStatus === 'SYNCED') return booking;
-  if (!canSyncBookingToBluejay(booking)) return booking;
+  if (booking?.bookingStatus === 'CANCELLED') return booking;
+  if (!forceConfirm && !canSyncBookingToBluejay(booking)) return booking;
+  if (booking.bluejaySyncStatus === 'SYNCED' && booking.bookingStatus === 'CONFIRMED' && !forceConfirm) {
+    return booking;
+  }
 
   await prisma.booking.update({
     where: { id: booking.id },
@@ -121,16 +189,31 @@ export async function syncBookingToBluejay(booking) {
   });
 
   try {
-    const result = await createBluejayBooking({ booking });
-    if (result.skipped) {
-      return prisma.booking.findUnique({ where: { id: booking.id }, include: bookingInclude });
+    let currentBooking = booking;
+    if (!currentBooking.bluejayBookingCode) {
+      const result = await createBluejayBooking({ booking: currentBooking });
+      if (result.skipped) {
+        return prisma.booking.findUnique({ where: { id: booking.id }, include: bookingInclude });
+      }
+      if (!result.payload.code) {
+        throw createHttpError(502, 'Bluejay created the booking without returning a booking code');
+      }
+      currentBooking = await prisma.booking.update({
+        where: { id: booking.id },
+        data: {
+          bluejayBookingId: result.payload.id,
+          bluejayBookingCode: result.payload.code,
+          bluejaySyncStatus: 'PENDING',
+        },
+        include: bookingInclude,
+      });
     }
 
+    await confirmBluejayBooking({ booking: currentBooking });
     return prisma.booking.update({
       where: { id: booking.id },
       data: {
-        bluejayBookingId: result.payload.id,
-        bluejayBookingCode: result.payload.code,
+        bookingStatus: 'CONFIRMED',
         bluejaySyncStatus: 'SYNCED',
         bluejaySyncError: null,
         bluejaySyncedAt: new Date(),
@@ -159,12 +242,23 @@ export async function syncBookingToBluejay(booking) {
 }
 
 export async function createBooking(input) {
-  const guestBreakdown = normalizeGuestBreakdown(input);
+  const roomSelections = normalizeBookingRoomSelections(input);
+  const totalRoomQuantity = getTotalRoomQuantity(roomSelections);
+  const uniqueRoomIds = [...new Set(roomSelections.map((item) => item.roomId))];
+  if (!roomSelections.length || roomSelections.some((item) => !item.roomId)) {
+    throw createHttpError(400, 'At least one room is required');
+  }
+  if (uniqueRoomIds.length !== roomSelections.length) {
+    throw createHttpError(400, 'Duplicate room types must use quantity');
+  }
+  if (totalRoomQuantity > MAX_ROOMS_PER_BOOKING) {
+    throw createHttpError(400, `A booking can contain at most ${MAX_ROOMS_PER_BOOKING} rooms`);
+  }
+
   input = {
     ...input,
-    guests: guestBreakdown.guests,
-    adults: guestBreakdown.adults,
-    children: guestBreakdown.children,
+    roomId: roomSelections[0].roomId,
+    rooms: roomSelections,
   };
 
   if (input.idempotencyKey) {
@@ -181,22 +275,44 @@ export async function createBooking(input) {
     phoneVerificationToken: input.phoneVerificationToken,
   });
 
-  const room = await prisma.room.findUnique({ where: { id: input.roomId }, include: { ratePeriods: true } });
-  const availability = await assertRoomCanBeBooked(room, input.checkIn, input.checkOut, input.guests, {
-    adults: input.adults,
-    children: input.children,
+  const rooms = await prisma.room.findMany({
+    where: { id: { in: uniqueRoomIds } },
+    include: { ratePeriods: true },
   });
-  if (!availability.ok) throw createHttpError(availability.statusCode, availability.message);
-  const externalStay = await getBluejayStayAvailability({
-    roomIds: [room.id],
-    checkIn: input.checkIn,
-    checkOut: input.checkOut,
-    guests: input.guests,
-    adults: input.adults,
-    children: input.children,
-  });
-  const externalRoomAvailability = externalStay.rooms?.[room.id] || null;
-  const externalPriceSummary = externalRoomAvailability?.priceSummary || null;
+  if (rooms.length !== uniqueRoomIds.length) throw createHttpError(404, 'One or more rooms were not found');
+  const roomById = new Map(rooms.map((room) => [room.id, room]));
+  const externalAvailability = new Map();
+
+  await Promise.all(roomSelections.map(async (selection) => {
+    const room = roomById.get(selection.roomId);
+    const externalStay = await getBluejayStayAvailability({
+      roomIds: [room.id],
+      checkIn: input.checkIn,
+      checkOut: input.checkOut,
+      guests: selection.guests,
+      adults: selection.adults,
+      children: selection.children,
+    });
+    const externalRoom = externalStay.rooms?.[room.id] || null;
+    if (externalRoom?.checked && !externalRoom.available) {
+      throw createHttpError(409, externalRoom.reason || `${room.name} is not available`);
+    }
+    const availability = await assertRoomCanBeBooked(
+      room,
+      input.checkIn,
+      input.checkOut,
+      selection.guests,
+      {
+        checkExternal: false,
+        adults: selection.adults,
+        children: selection.children,
+        requestedQuantity: selection.quantity,
+        localInventoryLimit: externalRoom?.checked ? externalRoom.inventory : undefined,
+      },
+    );
+    if (!availability.ok) throw createHttpError(availability.statusCode, availability.message);
+    externalAvailability.set(room.id, externalRoom);
+  }));
 
   const bookingCode = await createUniqueBookingCode(prisma);
   const paymentStatus =
@@ -205,18 +321,15 @@ export async function createBooking(input) {
       : 'PENDING';
 
   const booking = await prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "Room" WHERE id = ${input.roomId} FOR UPDATE`;
-    const lockedRoom = await tx.room.findUnique({ where: { id: input.roomId }, include: { ratePeriods: true } });
-    const lockedAvailability = await assertRoomCanBeBooked(lockedRoom, input.checkIn, input.checkOut, input.guests, {
-      db: tx,
-      checkExternal: false,
-      adults: input.adults,
-      children: input.children,
-      localInventoryLimit: externalRoomAvailability?.checked ? externalRoomAvailability.inventory : undefined,
+    const sortedRoomIds = [...uniqueRoomIds].sort();
+    await tx.$queryRaw(
+      Prisma.sql`SELECT id FROM "Room" WHERE id IN (${Prisma.join(sortedRoomIds)}) ORDER BY id FOR UPDATE`,
+    );
+    const lockedRooms = await tx.room.findMany({
+      where: { id: { in: sortedRoomIds } },
+      include: { ratePeriods: true },
     });
-    if (!lockedAvailability.ok) {
-      throw createHttpError(lockedAvailability.statusCode, lockedAvailability.message);
-    }
+    const lockedRoomById = new Map(lockedRooms.map((room) => [room.id, room]));
 
     const existingIdempotentBooking = input.idempotencyKey
       ? await tx.booking.findUnique({
@@ -226,14 +339,41 @@ export async function createBooking(input) {
       : null;
     if (existingIdempotentBooking) return existingIdempotentBooking;
 
-    const price =
-      externalPriceSummary ||
-      calculateTotalPrice({
+    const pricedRoomItems = [];
+    for (const selection of roomSelections) {
+      const lockedRoom = lockedRoomById.get(selection.roomId);
+      const externalRoom = externalAvailability.get(selection.roomId);
+      const lockedAvailability = await assertRoomCanBeBooked(
+        lockedRoom,
+        input.checkIn,
+        input.checkOut,
+        selection.guests,
+        {
+          db: tx,
+          checkExternal: false,
+          adults: selection.adults,
+          children: selection.children,
+          requestedQuantity: selection.quantity,
+          localInventoryLimit: externalRoom?.checked ? externalRoom.inventory : undefined,
+        },
+      );
+      if (!lockedAvailability.ok) {
+        throw createHttpError(lockedAvailability.statusCode, lockedAvailability.message);
+      }
+
+      const unitPrice = externalRoom?.priceSummary || calculateTotalPrice({
         room: lockedRoom,
         checkIn: input.checkIn,
         checkOut: input.checkOut,
-        guests: input.guests,
       });
+      pricedRoomItems.push({
+        ...selection,
+        ...scaleRoomPrice(unitPrice, selection.quantity),
+        nights: unitPrice.nights,
+        currency: unitPrice.currency || 'VND',
+      });
+    }
+    const price = aggregateBookingRoomPrices(pricedRoomItems);
 
     const guest = await tx.guest.create({
       data: {
@@ -250,14 +390,14 @@ export async function createBooking(input) {
       data: {
         bookingCode,
         idempotencyKey: input.idempotencyKey || null,
-        roomId: lockedRoom.id,
+        roomId: roomSelections[0].roomId,
         guestId: guest.id,
         checkIn: toHotelDate(input.checkIn),
         checkOut: toHotelDate(input.checkOut),
         nights: price.nights,
-        guests: Number(input.guests),
-        adults: Number(input.adults),
-        children: Number(input.children),
+        guests: price.guests,
+        adults: price.adults,
+        children: price.children,
         pricePerNight: price.pricePerNight,
         subtotal: price.subtotal,
         discountAmount: price.discountAmount,
@@ -272,6 +412,24 @@ export async function createBooking(input) {
         paymentMethod: input.paymentMethod || null,
       },
       include: bookingInclude,
+    });
+
+    await tx.bookingRoom.createMany({
+      data: pricedRoomItems.map((item) => ({
+        bookingId: created.id,
+        roomId: item.roomId,
+        quantity: item.quantity,
+        guests: item.guests,
+        adults: item.adults,
+        children: item.children,
+        pricePerNight: item.pricePerNight,
+        subtotal: item.subtotal,
+        discountAmount: item.discountAmount,
+        serviceFee: item.serviceFee,
+        taxAmount: item.taxAmount,
+        totalPrice: item.totalPrice,
+        currency: item.currency,
+      })),
     });
 
     if (input.paymentMethod) {
@@ -344,6 +502,11 @@ export async function getAdminBooking(bookingCode) {
 }
 
 export async function updateBookingStatus(bookingCode, bookingStatus) {
+  if (bookingStatus === 'CONFIRMED' && isBluejayBookingCreateEnabled()) {
+    const booking = await prisma.booking.findUnique({ where: { bookingCode }, include: bookingInclude });
+    if (!booking) throw createHttpError(404, 'Booking not found');
+    return syncBookingToBluejay(booking, { forceConfirm: true });
+  }
   return prisma.booking.update({ where: { bookingCode }, data: { bookingStatus }, include: bookingInclude });
 }
 

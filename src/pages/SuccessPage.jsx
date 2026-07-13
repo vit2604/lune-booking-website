@@ -30,6 +30,7 @@ export default function SuccessPage() {
             const updated = {
               ...confirmed,
               paymentStatus: result.paymentStatus || confirmed.paymentStatus,
+              bookingStatus: result.bookingStatus || confirmed.bookingStatus,
               depositPaidAmount: result.amountPaid || 0,
               balanceAtProperty: result.balanceAmount ?? confirmed.balanceAtProperty,
             };
@@ -88,6 +89,9 @@ export default function SuccessPage() {
   }[booking?.paymentMethod] || booking?.paymentMethod;
 
   const guestName = booking?.guestInfo?.fullName || booking?.guest?.fullName;
+  const roomLabel = booking?.rooms?.length
+    ? booking.rooms.map((item) => `${item.roomName} ×${item.quantity || 1}`).join(', ')
+    : booking?.roomName;
   const statusLabel = (type, value) => {
     if (!value) return '';
     const normalized = String(value).toLowerCase();
@@ -98,7 +102,7 @@ export default function SuccessPage() {
 
   const detailRows = [
     [t('common.guestName'), guestName],
-    [t('common.room'), booking?.roomName],
+    [t('common.roomsLabel'), roomLabel],
     [t('common.checkIn'), formatDisplayDate(booking?.checkIn, currentLanguage)],
     [t('common.checkOut'), formatDisplayDate(booking?.checkOut, currentLanguage)],
     [t('common.nights'), booking?.nights],

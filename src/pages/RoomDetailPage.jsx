@@ -5,6 +5,8 @@ import {
   BedDouble,
   CalendarDays,
   Maximize2,
+  Minus,
+  Plus,
   Users,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -47,6 +49,7 @@ export default function RoomDetailPage() {
     guests: room ? Math.min(2, room.maxGuests) : 1,
     adults: room ? Math.min(2, room.maxGuests) : 1,
     children: 0,
+    quantity: 1,
   });
   const [errors, setErrors] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -108,16 +111,16 @@ export default function RoomDetailPage() {
     ) {
       return {
         nights: calculatedNights,
-        roomSubtotal: Number(room.priceSummary.subtotal || 0),
-        total: Number(room.priceSummary.totalPrice || room.priceSummary.subtotal || 0),
+        roomSubtotal: Number(room.priceSummary.subtotal || 0) * booking.quantity,
+        total: Number(room.priceSummary.totalPrice || room.priceSummary.subtotal || 0) * booking.quantity,
       };
     }
     return {
       nights: calculatedNights,
-      roomSubtotal: calculateRoomSubtotal(room.price, booking.checkIn, booking.checkOut),
-      total: calculateGrandTotal(room.price, booking.checkIn, booking.checkOut),
+      roomSubtotal: calculateRoomSubtotal(room.price, booking.checkIn, booking.checkOut) * booking.quantity,
+      total: calculateGrandTotal(room.price, booking.checkIn, booking.checkOut) * booking.quantity,
     };
-  }, [booking.checkIn, booking.checkOut, booking.guests, room]);
+  }, [booking.checkIn, booking.checkOut, booking.guests, booking.quantity, room]);
 
   const metaRoom = room ? getLocalizedRoom(room, currentLanguage) : null;
   useDocumentMeta({
@@ -193,6 +196,10 @@ export default function RoomDetailPage() {
     });
 
     const mergedErrors = { ...nextErrors, ...availability.errors };
+    const availableQuantity = Math.max(0, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1));
+    if (booking.quantity > availableQuantity) {
+      mergedErrors.quantity = t('errors.notEnoughRooms', { count: availableQuantity });
+    }
 
     if (Object.keys(mergedErrors).length) {
       setErrors(mergedErrors);
@@ -325,6 +332,36 @@ export default function RoomDetailPage() {
             />
           </div>
 
+          <div className="mt-4 flex items-center justify-between gap-4 rounded-lg border border-stone-200 bg-white p-3">
+            <div>
+              <p className="text-sm font-semibold text-lune-ink">{t('common.roomsLabel')}</p>
+              <p className="text-xs text-stone-500">
+                {t('common.roomsAvailable', { count: Math.max(0, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1)) })}
+              </p>
+            </div>
+            <div className="grid grid-cols-[40px_44px_40px] items-center" aria-label={t('common.roomQuantity')}>
+              <button
+                className="grid h-10 w-10 place-items-center rounded-md border border-stone-300 text-lune-ink disabled:opacity-40"
+                type="button"
+                title={t('common.decreaseRooms')}
+                disabled={booking.quantity <= 1}
+                onClick={() => handleBookingChange({ quantity: booking.quantity - 1 })}
+              >
+                <Minus className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <strong className="text-center text-base text-lune-ink">{booking.quantity}</strong>
+              <button
+                className="grid h-10 w-10 place-items-center rounded-md border border-stone-300 text-lune-ink disabled:opacity-40"
+                type="button"
+                title={t('common.increaseRooms')}
+                disabled={booking.quantity >= Math.min(3, Math.max(1, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1)))}
+                onClick={() => handleBookingChange({ quantity: booking.quantity + 1 })}
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+
           {errorMessages.length ? (
             <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
               {errorMessages.map((message) => (
@@ -337,6 +374,10 @@ export default function RoomDetailPage() {
             <div className="flex justify-between gap-4">
               <span className="text-stone-600">{t('common.nights')}</span>
               <strong>{totals.nights}</strong>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-stone-600">{t('common.roomsLabel')}</span>
+              <strong>{booking.quantity}</strong>
             </div>
             <div className="flex justify-between gap-4">
               <span className="text-stone-600">{t('common.roomSubtotal')}</span>

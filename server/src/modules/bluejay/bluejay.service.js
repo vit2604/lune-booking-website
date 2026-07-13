@@ -515,8 +515,21 @@ export async function getBluejayStayAvailability({ roomIds = [], checkIn, checkO
   }
 }
 
-async function getCreateBookingContext({ booking, room }) {
-  const externalRoomId = getExternalRoomId(room.id);
+function getBookingRoomItems(booking) {
+  if (booking.roomItems?.length) return booking.roomItems;
+  return [{
+    roomId: booking.roomId,
+    room: booking.room,
+    quantity: 1,
+    guests: booking.guests,
+    adults: booking.adults,
+    children: booking.children,
+  }];
+}
+
+async function getCreateBookingContext({ booking, item }) {
+  const room = item.room;
+  const externalRoomId = getExternalRoomId(item.roomId || room.id);
   if (!externalRoomId) {
     throw createHttpError(500, 'Bluejay room mapping is missing');
   }
@@ -524,32 +537,78 @@ async function getCreateBookingContext({ booking, room }) {
   const payload = await searchBluejayRoomTypes({
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
-    guests: booking.guests,
-    adults: booking.adults,
-    children: booking.children,
+    guests: item.guests,
+    adults: item.adults,
+    children: item.children,
   });
   const matchedRoomType = selectMatchedRoomType(getRoomTypeList(payload), externalRoomId);
   const ratePlan = selectRatePlan(matchedRoomType, room.id, externalRoomId);
+  const quantity = Math.max(1, Number(item.quantity || 1));
 
-  if (!matchedRoomType || Number(matchedRoomType.available || 0) <= 0 || !ratePlan) {
-    throw createHttpError(409, 'Bluejay returned no available inventory or no rate plan for this stay');
+  if (!matchedRoomType || Number(matchedRoomType.available || 0) < quantity || !ratePlan) {
+    throw createHttpError(409, `Bluejay does not have ${quantity} ${room.name || 'room'} room(s) available`);
   }
 
-  return { externalRoomId, matchedRoomType, ratePlan };
+  return { item, room, externalRoomId, matchedRoomType, ratePlan };
 }
 
-export function buildBluejayBookingPayload({ booking, room, ratePlan, externalRoomId }) {
+export function buildBluejayBookingPayload({ booking, roomContexts, room, ratePlan, externalRoomId }) {
   const guest = booking.guest || {};
   const checkIn = normalizeDate(booking.checkIn);
   const checkOut = normalizeDate(booking.checkOut);
-  const priceInDay = buildPriceInDay({ ratePlan, room, booking });
   const nights = calculateNights(checkIn, checkOut);
-  const roomTotal = priceInDay.length ? sumPriceInDay(priceInDay) : money(ratePlan.total || 0);
-  const averageAmount = nights > 0 ? money(roomTotal / nights) : roomTotal;
-  const mealPlan = {
-    ...DEFAULT_MEAL_PLAN,
-    ...(ratePlan.mealplan || {}),
-  };
+  const contexts = roomContexts?.length
+    ? roomContexts
+    : [{
+        item: {
+          roomId: room?.id,
+          room,
+          quantity: 1,
+          guests: booking.guests,
+          adults: booking.adults,
+          children: booking.children,
+        },
+        room,
+        ratePlan,
+        externalRoomId,
+      }];
+  const rooms = contexts.map((context, index) => {
+    const quantity = Math.max(1, Number(context.item.quantity || 1));
+    const priceInDay = buildPriceInDay({ ratePlan: context.ratePlan, room: context.room, booking });
+    const unitRoomTotal = priceInDay.length ? sumPriceInDay(priceInDay) : money(context.ratePlan.total || 0);
+    const lineTotal = unitRoomTotal * quantity;
+    const averageAmount = nights > 0 ? money(unitRoomTotal / nights) : unitRoomTotal;
+    const mealPlan = {
+      ...DEFAULT_MEAL_PLAN,
+      ...(context.ratePlan.mealplan || {}),
+    };
+    return {
+      amount: averageAmount,
+      quantity,
+      total: lineTotal,
+      room_type_id: Number(context.externalRoomId),
+      guests: [
+        {
+          guest_name: guest.fullName || 'Website Guest',
+          guest_email: guest.email || '',
+          guest_phone: getPhoneNumber(guest),
+          primary: index === 0,
+        },
+      ],
+      rateplan: {
+        rate_plan_id: Number(context.ratePlan.rateplan_id),
+        occ_adult: Number(context.item.adults || context.item.guests || 1),
+        occ_child: Number(context.item.children || 0),
+        meal_plans: {
+          breakfast: Boolean(mealPlan.breakfast),
+          lunch: Boolean(mealPlan.lunch),
+          dinner: Boolean(mealPlan.dinner),
+        },
+      },
+      price_in_day: priceInDay,
+    };
+  });
+  const roomTotal = rooms.reduce((sum, item) => sum + Number(item.total || 0), 0);
   const { paidAmount, remainingAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
   const paymentNote = paidAmount > 0
     ? `Da coc ${paidAmount.toLocaleString('vi-VN')} VND; con lai ${remainingAmount.toLocaleString('vi-VN')} VND.`
@@ -565,37 +624,11 @@ export function buildBluejayBookingPayload({ booking, room, ratePlan, externalRo
     },
     check_in: checkIn,
     check_out: checkOut,
-    arrival: getArrivalTime(booking, ratePlan),
-    departure: getDepartureTime(ratePlan),
+    arrival: getArrivalTime(booking, contexts[0]?.ratePlan),
+    departure: getDepartureTime(contexts[0]?.ratePlan),
     channel: env.BLUEJAY_CHANNEL_CODE,
     reference_code: booking.bookingCode,
-    rooms: [
-      {
-        amount: averageAmount,
-        quantity: 1,
-        total: roomTotal,
-        room_type_id: Number(externalRoomId),
-        guests: [
-          {
-            guest_name: guest.fullName || 'Website Guest',
-            guest_email: guest.email || '',
-            guest_phone: getPhoneNumber(guest),
-            primary: true,
-          },
-        ],
-        rateplan: {
-          rate_plan_id: Number(ratePlan.rateplan_id),
-          occ_adult: Number(booking.adults || booking.guests || 1),
-          occ_child: Number(booking.children || 0),
-          meal_plans: {
-            breakfast: Boolean(mealPlan.breakfast),
-            lunch: Boolean(mealPlan.lunch),
-            dinner: Boolean(mealPlan.dinner),
-          },
-        },
-        price_in_day: priceInDay,
-      },
-    ],
+    rooms,
     extra_services: null,
     discounts: null,
     services_price: 0,
@@ -609,14 +642,55 @@ export function buildBluejayBookingPayload({ booking, room, ratePlan, externalRo
   };
 }
 
-function normalizeCreatedBooking(payload) {
-  const attributes = getAttributes(payload);
-  const booking = attributes?.booking || attributes || {};
+function formatBluejayDateTime(value) {
+  const date = value ? new Date(value) : new Date();
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  return safeDate.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+function getBluejayPaymentMethod(method) {
+  if (['vnpay'].includes(method)) return 8;
+  if (['creditCard', 'stripe', 'paypal'].includes(method)) return 5;
+  return 2;
+}
+
+export function buildBluejayConfirmationPayload(booking) {
+  const { paidAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
+  const paidPayment = [...(booking.payments || [])]
+    .filter((payment) => payment.status === 'PAID')
+    .sort((a, b) => new Date(b.paidAt || b.updatedAt || b.createdAt || 0) - new Date(a.paidAt || a.updatedAt || a.createdAt || 0))[0];
+  const redirectUrl = env.PAYOS_RETURN_URL || `${String(env.CORS_ORIGIN || 'https://www.luneboutiquedanang.com').split(',')[0].replace(/\/$/, '')}/success`;
+  const reservation = {
+    property_id: Number(env.BLUEJAY_PROPERTY_ID),
+    channel: env.BLUEJAY_CHANNEL_CODE,
+    book_code: booking.bluejayBookingCode,
+    reference_code: booking.bookingCode,
+    url_redirect: redirectUrl,
+    grand_total: money(booking.totalPrice),
+    total_pay: paidAmount,
+    currency: booking.currency || 'VND',
+  };
+  if (paidAmount > 0) {
+    reservation.payment = {
+      amount: paidAmount,
+      pay_time: formatBluejayDateTime(paidPayment?.paidAt || paidPayment?.updatedAt || paidPayment?.createdAt),
+      payment_method: getBluejayPaymentMethod(paidPayment?.method || booking.paymentMethod),
+      payment_for: '1',
+      pay_currency: booking.currency || 'VND',
+      pay_note: `Website payment for ${booking.bookingCode}`,
+    };
+  }
+  return { reservation };
+}
+
+export function normalizeCreatedBooking(payload) {
+  const attributes = getAttributes(payload) || payload?.attributes || payload?.data?.booking || payload?.booking;
+  const booking = attributes?.booking || attributes?.reservation || attributes || {};
   return {
     id: booking.id ? String(booking.id) : null,
     code: booking.code || booking.book_code || booking.bookingCode || null,
     status: booking.status || null,
-    message: payload?.meta?.message || '',
+    message: payload?.meta?.message || payload?.data?.meta?.message || '',
   };
 }
 
@@ -629,13 +703,12 @@ export async function createBluejayBooking({ booking }) {
     throw createHttpError(500, 'Bluejay channel code is not configured');
   }
 
-  const { room } = booking;
-  const context = await getCreateBookingContext({ booking, room });
+  const roomContexts = await Promise.all(
+    getBookingRoomItems(booking).map((item) => getCreateBookingContext({ booking, item })),
+  );
   const body = buildBluejayBookingPayload({
     booking,
-    room,
-    ratePlan: context.ratePlan,
-    externalRoomId: context.externalRoomId,
+    roomContexts,
   });
 
   const payload = await withTimeout(async (signal) =>
@@ -650,4 +723,22 @@ export async function createBluejayBooking({ booking }) {
     skipped: false,
     payload: normalizeCreatedBooking(payload),
   };
+}
+
+export async function confirmBluejayBooking({ booking }) {
+  if (!booking?.bluejayBookingCode) {
+    throw createHttpError(500, 'Bluejay booking code is missing');
+  }
+  const payload = await withTimeout(async (signal) =>
+    bluejayRequest('/booking/modify', {
+      method: 'POST',
+      body: buildBluejayConfirmationPayload(booking),
+      signal,
+    }),
+  );
+  const confirmed = normalizeCreatedBooking(payload);
+  if (String(confirmed.status || '').toLowerCase() !== 'confirm') {
+    throw createHttpError(502, `Bluejay returned booking status ${confirmed.status || 'missing'} instead of confirm`);
+  }
+  return { skipped: false, payload: confirmed };
 }

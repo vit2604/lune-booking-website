@@ -539,14 +539,20 @@ export async function createPaymentRequest({
 
   const updatedBooking = await prisma.booking.findUnique({
     where: { id: booking.id },
-    include: { room: { include: { images: true, ratePeriods: true } }, guest: true, payments: true },
+    include: {
+      room: { include: { images: true, ratePeriods: true } },
+      roomItems: { include: { room: { include: { images: true, ratePeriods: true } } } },
+      guest: true,
+      payments: true,
+    },
   });
-  await syncBookingToBluejay(updatedBooking);
+  const syncedBooking = await syncBookingToBluejay(updatedBooking);
 
   return {
     bookingCode,
     method,
     paymentStatus: statusAfterConfirm,
+    bookingStatus: syncedBooking.bookingStatus,
     amountDueNow: paymentAmount,
     paymentPurpose: normalizedPurpose,
     depositPercent: normalizedDepositPercent,
@@ -591,7 +597,12 @@ export async function createPaymentRequest({
 export async function verifyPaymentStatus(bookingCode) {
   const booking = await prisma.booking.findUnique({
     where: { bookingCode },
-    include: { room: { include: { images: true, ratePeriods: true } }, guest: true, payments: true },
+    include: {
+      room: { include: { images: true, ratePeriods: true } },
+      roomItems: { include: { room: { include: { images: true, ratePeriods: true } } } },
+      guest: true,
+      payments: true,
+    },
   });
   if (!booking) throw createHttpError(404, 'Booking not found');
   const payment = [...booking.payments]
@@ -619,13 +630,19 @@ export async function verifyPaymentStatus(bookingCode) {
     return tx.booking.update({
       where: { id: booking.id },
       data: { paymentStatus: nextStatus },
-      include: { room: { include: { images: true, ratePeriods: true } }, guest: true, payments: true },
+      include: {
+        room: { include: { images: true, ratePeriods: true } },
+        roomItems: { include: { room: { include: { images: true, ratePeriods: true } } } },
+        guest: true,
+        payments: true,
+      },
     });
   });
-  if (nextStatus === 'PAID') await syncBookingToBluejay(updatedBooking);
+  const syncedBooking = nextStatus === 'PAID' ? await syncBookingToBluejay(updatedBooking) : updatedBooking;
   return {
     bookingCode,
     paymentStatus: nextStatus,
+    bookingStatus: syncedBooking.bookingStatus,
     amountPaid,
     paymentPurpose: payment.rawPayloadJson?.paymentPurpose || 'full',
     depositPercent: payment.rawPayloadJson?.depositPercent ?? null,
@@ -681,7 +698,12 @@ export async function handlePayosWebhook(payload) {
     return tx.booking.update({
       where: { id: payment.bookingId },
       data: { paymentStatus: nextStatus },
-      include: { room: { include: { images: true, ratePeriods: true } }, guest: true, payments: true },
+      include: {
+        room: { include: { images: true, ratePeriods: true } },
+        roomItems: { include: { room: { include: { images: true, ratePeriods: true } } } },
+        guest: true,
+        payments: true,
+      },
     });
   });
 
