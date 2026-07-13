@@ -1,4 +1,4 @@
-import { ArrowRight, Minus, Plus, Trash2, UserRound } from 'lucide-react';
+import { ArrowRight, Trash2, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getRoomById } from '../admin/services/adminRoomService.js';
@@ -24,6 +24,7 @@ import {
   validateStay,
 } from '../utils/booking.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
+import { getMaxChildren } from '../utils/occupancy.js';
 import { loadBookingDraft, saveBookingDraft } from '../utils/storage.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -335,7 +336,7 @@ export default function BookingPage() {
       {
         room: selectedRoom,
         quantity: 1,
-        adults: Math.min(2, Number(selectedRoom.maxGuests || 1)),
+        adults: 1,
         children: 0,
       },
     ]));
@@ -523,8 +524,13 @@ export default function BookingPage() {
     bookingCode: booking.bookingCode,
     bookingStatus: booking.bookingStatus,
   });
-  const selectedRoomIds = new Set(booking.rooms.map((item) => item.roomId));
-  const availableRoomChoices = availableRooms.filter((item) => !selectedRoomIds.has(item.id));
+  const selectedRoomCounts = booking.rooms.reduce((counts, item) => {
+    counts.set(item.roomId, (counts.get(item.roomId) || 0) + 1);
+    return counts;
+  }, new Map());
+  const availableRoomChoices = availableRooms.filter(
+    (item) => (selectedRoomCounts.get(item.id) || 0) < Number(item.availableQuantity ?? MAX_ROOMS_PER_BOOKING),
+  );
 
   return (
     <RevealOnScroll as="section" direction="none" duration={450} className="section-space bg-lune-cream">
@@ -583,21 +589,17 @@ export default function BookingPage() {
 
               <div className="mt-4 border-y border-stone-200">
                 {booking.rooms.map((item, index) => {
-                  const otherRooms = booking.totalRooms - item.quantity;
-                  const maxQuantity = Math.max(
-                    1,
-                    Math.min(Number(item.availableQuantity ?? MAX_ROOMS_PER_BOOKING), MAX_ROOMS_PER_BOOKING - otherRooms),
-                  );
-                  const maxChildren = Math.max(0, Number(item.maxGuests || 1) - Number(item.adults || 1));
+                  const maxChildren = getMaxChildren(item.maxGuests, item.adults);
                   return (
-                    <div key={item.roomId} className="grid gap-4 border-t border-stone-200 py-4 first:border-t-0 sm:grid-cols-[72px_1fr]">
+                    <div key={`${item.roomId}-${index}`} className="grid gap-4 border-t border-stone-200 py-4 first:border-t-0 sm:grid-cols-[72px_1fr]">
                       {item.roomImage ? (
                         <img className="h-[72px] w-[72px] rounded-md object-cover" src={item.roomImage} alt={item.roomName} />
                       ) : <div className="h-[72px] w-[72px] rounded-md bg-lune-mist" />}
                       <div className="min-w-0">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <h3 className="text-base font-bold text-lune-ink">{item.roomName}</h3>
+                            <p className="text-xs font-bold uppercase text-stone-500">{t('common.room')} {index + 1}</p>
+                            <h3 className="mt-1 text-base font-bold text-lune-ink">{item.roomName}</h3>
                             <p className="mt-1 text-sm text-stone-500">{formatCurrency(item.pricePerNight)} {t('common.perNight')}</p>
                           </div>
                           <button
@@ -611,31 +613,8 @@ export default function BookingPage() {
                           </button>
                         </div>
 
-                        <div className="mt-4 grid gap-3 sm:grid-cols-[132px_1fr_1fr]">
-                          <div>
-                            <span className="label">{t('common.roomsLabel')}</span>
-                            <div className="grid grid-cols-[40px_42px_40px] items-center">
-                              <button
-                                className="grid h-10 w-10 place-items-center rounded-md border border-stone-300 disabled:opacity-40"
-                                type="button"
-                                title={t('common.decreaseRooms')}
-                                disabled={item.quantity <= 1}
-                                onClick={() => updateRoomItem(index, { quantity: item.quantity - 1 })}
-                              >
-                                <Minus className="h-4 w-4" aria-hidden="true" />
-                              </button>
-                              <strong className="text-center">{item.quantity}</strong>
-                              <button
-                                className="grid h-10 w-10 place-items-center rounded-md border border-stone-300 disabled:opacity-40"
-                                type="button"
-                                title={t('common.increaseRooms')}
-                                disabled={item.quantity >= maxQuantity}
-                                onClick={() => updateRoomItem(index, { quantity: item.quantity + 1 })}
-                              >
-                                <Plus className="h-4 w-4" aria-hidden="true" />
-                              </button>
-                            </div>
-                          </div>
+                        <p className="mt-4 text-xs font-bold uppercase text-stone-500">{t('common.guestsPerRoom')}</p>
+                        <div className="mt-2 grid gap-3 sm:grid-cols-2">
                           <label>
                             <span className="label">{t('common.adults')}</span>
                             <select
@@ -645,7 +624,7 @@ export default function BookingPage() {
                                 const nextAdults = Number(event.target.value);
                                 updateRoomItem(index, {
                                   adults: nextAdults,
-                                  children: Math.min(item.children, Math.max(0, item.maxGuests - nextAdults)),
+                                  children: Math.min(item.children, getMaxChildren(item.maxGuests, nextAdults)),
                                 });
                               }}
                             >

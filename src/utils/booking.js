@@ -177,16 +177,25 @@ export const buildBookingDraft = ({
   bookingCode,
   bookingStatus,
 }) => {
-  const selections = roomItems?.length
+  const groupedSelections = roomItems?.length
     ? roomItems
     : [{ room, quantity, adults, children, guests }];
-  const nights = calculateNights(checkIn, checkOut);
-  const normalizedRoomItems = selections.map((selection) => {
+  const selections = groupedSelections.flatMap((selection) => {
     const sourceRoom = selection.room || selection;
-    const itemQuantity = Math.min(
+    const sourceQuantity = Math.min(
       MAX_ROOMS_PER_BOOKING,
       Math.max(1, Number(selection.quantity || sourceRoom.quantity || 1)),
     );
+    return Array.from({ length: sourceQuantity }, () => ({
+      ...selection,
+      quantity: 1,
+      sourceQuantity,
+    }));
+  }).slice(0, MAX_ROOMS_PER_BOOKING);
+  const nights = calculateNights(checkIn, checkOut);
+  const normalizedRoomItems = selections.map((selection) => {
+    const sourceRoom = selection.room || selection;
+    const itemQuantity = 1;
     const maxGuests = Number(sourceRoom.maxGuests || selection.maxGuests || guests || 1);
     const guestCounts = normalizeGuestCounts({
       adults: selection.adults ?? sourceRoom.adults ?? adults,
@@ -205,7 +214,7 @@ export const buildBookingDraft = ({
       : null;
     const itemNights = Number(priceSummary?.nights || nights);
     const pricePerNight = Number(priceSummary?.pricePerNight || sourceRoom.pricePerNight || sourceRoom.price || sourceRoom.basePrice || 0);
-    const existingQuantity = Math.max(1, Number(sourceRoom.quantity || selection.quantity || 1));
+    const existingQuantity = Math.max(1, Number(selection.sourceQuantity || sourceRoom.quantity || 1));
     const unitSubtotal = Number(
       priceSummary?.subtotal ??
       sourceRoom.unitSubtotal ??

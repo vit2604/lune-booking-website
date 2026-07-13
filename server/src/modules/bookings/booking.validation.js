@@ -43,10 +43,6 @@ export const createBookingSchema = z.object({
       return;
     }
     if (!body.rooms?.length) return;
-    const roomIds = body.rooms.map((item) => item.roomId);
-    if (new Set(roomIds).size !== roomIds.length) {
-      ctx.addIssue({ code: 'custom', path: ['rooms'], message: 'Duplicate room types must use quantity' });
-    }
     const totalQuantity = body.rooms.reduce((sum, item) => sum + item.quantity, 0);
     if (totalQuantity > MAX_ROOMS_PER_BOOKING) {
       ctx.addIssue({

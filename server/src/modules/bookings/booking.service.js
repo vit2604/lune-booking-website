@@ -245,11 +245,12 @@ export async function createBooking(input) {
   const roomSelections = normalizeBookingRoomSelections(input);
   const totalRoomQuantity = getTotalRoomQuantity(roomSelections);
   const uniqueRoomIds = [...new Set(roomSelections.map((item) => item.roomId))];
+  const requestedQuantityByRoomId = roomSelections.reduce((quantities, item) => {
+    quantities.set(item.roomId, (quantities.get(item.roomId) || 0) + item.quantity);
+    return quantities;
+  }, new Map());
   if (!roomSelections.length || roomSelections.some((item) => !item.roomId)) {
     throw createHttpError(400, 'At least one room is required');
-  }
-  if (uniqueRoomIds.length !== roomSelections.length) {
-    throw createHttpError(400, 'Duplicate room types must use quantity');
   }
   if (totalRoomQuantity > MAX_ROOMS_PER_BOOKING) {
     throw createHttpError(400, `A booking can contain at most ${MAX_ROOMS_PER_BOOKING} rooms`);
@@ -306,12 +307,12 @@ export async function createBooking(input) {
         checkExternal: false,
         adults: selection.adults,
         children: selection.children,
-        requestedQuantity: selection.quantity,
+        requestedQuantity: requestedQuantityByRoomId.get(selection.roomId),
         localInventoryLimit: externalRoom?.checked ? externalRoom.inventory : undefined,
       },
     );
     if (!availability.ok) throw createHttpError(availability.statusCode, availability.message);
-    externalAvailability.set(room.id, externalRoom);
+    externalAvailability.set(selection, externalRoom);
   }));
 
   const bookingCode = await createUniqueBookingCode(prisma);
@@ -342,7 +343,7 @@ export async function createBooking(input) {
     const pricedRoomItems = [];
     for (const selection of roomSelections) {
       const lockedRoom = lockedRoomById.get(selection.roomId);
-      const externalRoom = externalAvailability.get(selection.roomId);
+      const externalRoom = externalAvailability.get(selection);
       const lockedAvailability = await assertRoomCanBeBooked(
         lockedRoom,
         input.checkIn,
@@ -353,7 +354,7 @@ export async function createBooking(input) {
           checkExternal: false,
           adults: selection.adults,
           children: selection.children,
-          requestedQuantity: selection.quantity,
+          requestedQuantity: requestedQuantityByRoomId.get(selection.roomId),
           localInventoryLimit: externalRoom?.checked ? externalRoom.inventory : undefined,
         },
       );

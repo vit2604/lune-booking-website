@@ -670,6 +670,19 @@ export async function createBluejayBooking({ booking }) {
   const roomContexts = await Promise.all(
     getBookingRoomItems(booking).map((item) => getCreateBookingContext({ booking, item })),
   );
+  const inventoryByRoomType = roomContexts.reduce((inventory, context) => {
+    const key = String(context.externalRoomId);
+    const current = inventory.get(key) || { requested: 0, available: Number(context.matchedRoomType.available || 0), room: context.room };
+    current.requested += Math.max(1, Number(context.item.quantity || 1));
+    current.available = Math.min(current.available, Number(context.matchedRoomType.available || 0));
+    inventory.set(key, current);
+    return inventory;
+  }, new Map());
+  for (const { requested, available, room: selectedRoom } of inventoryByRoomType.values()) {
+    if (requested > available) {
+      throw createHttpError(409, `Bluejay does not have ${requested} ${selectedRoom.name || 'room'} room(s) available`);
+    }
+  }
   const body = buildBluejayBookingPayload({
     booking,
     roomContexts,
