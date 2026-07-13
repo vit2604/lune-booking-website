@@ -2,6 +2,11 @@ import { env } from '../../config/env.js';
 import { calculateNights, normalizeDate } from '../../utils/dateUtils.js';
 import { getNightlyRates } from '../../utils/priceUtils.js';
 import { createHttpError } from '../../utils/responseUtils.js';
+import {
+  assertBluejayBookingConfirmed,
+  buildBluejayConfirmationPayload as buildConfirmationPayload,
+  normalizeCreatedBooking,
+} from './bluejayConfirmationUtils.js';
 import { getBluejayPaymentSummary } from './bluejayPaymentUtils.js';
 
 const DEFAULT_MEAL_PLAN = { breakfast: false, lunch: false, dinner: false };
@@ -642,57 +647,16 @@ export function buildBluejayBookingPayload({ booking, roomContexts, room, ratePl
   };
 }
 
-function formatBluejayDateTime(value) {
-  const date = value ? new Date(value) : new Date();
-  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
-  return safeDate.toISOString().slice(0, 19).replace('T', ' ');
-}
-
-function getBluejayPaymentMethod(method) {
-  if (['vnpay'].includes(method)) return 8;
-  if (['creditCard', 'stripe', 'paypal'].includes(method)) return 5;
-  return 2;
-}
-
 export function buildBluejayConfirmationPayload(booking) {
-  const { paidAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
-  const paidPayment = [...(booking.payments || [])]
-    .filter((payment) => payment.status === 'PAID')
-    .sort((a, b) => new Date(b.paidAt || b.updatedAt || b.createdAt || 0) - new Date(a.paidAt || a.updatedAt || a.createdAt || 0))[0];
   const redirectUrl = env.PAYOS_RETURN_URL || `${String(env.CORS_ORIGIN || 'https://www.luneboutiquedanang.com').split(',')[0].replace(/\/$/, '')}/success`;
-  const reservation = {
-    property_id: Number(env.BLUEJAY_PROPERTY_ID),
-    channel: env.BLUEJAY_CHANNEL_CODE,
-    book_code: booking.bluejayBookingCode,
-    reference_code: booking.bookingCode,
-    url_redirect: redirectUrl,
-    grand_total: money(booking.totalPrice),
-    total_pay: paidAmount,
-    currency: booking.currency || 'VND',
-  };
-  if (paidAmount > 0) {
-    reservation.payment = {
-      amount: paidAmount,
-      pay_time: formatBluejayDateTime(paidPayment?.paidAt || paidPayment?.updatedAt || paidPayment?.createdAt),
-      payment_method: getBluejayPaymentMethod(paidPayment?.method || booking.paymentMethod),
-      payment_for: '1',
-      pay_currency: booking.currency || 'VND',
-      pay_note: `Website payment for ${booking.bookingCode}`,
-    };
-  }
-  return { reservation };
+  return buildConfirmationPayload(booking, {
+    propertyId: env.BLUEJAY_PROPERTY_ID,
+    channelCode: env.BLUEJAY_CHANNEL_CODE,
+    redirectUrl,
+  });
 }
 
-export function normalizeCreatedBooking(payload) {
-  const attributes = getAttributes(payload) || payload?.attributes || payload?.data?.booking || payload?.booking;
-  const booking = attributes?.booking || attributes?.reservation || attributes || {};
-  return {
-    id: booking.id ? String(booking.id) : null,
-    code: booking.code || booking.book_code || booking.bookingCode || null,
-    status: booking.status || null,
-    message: payload?.meta?.message || payload?.data?.meta?.message || '',
-  };
-}
+export { normalizeCreatedBooking };
 
 export async function createBluejayBooking({ booking }) {
   if (!isBluejayBookingCreateEnabled()) {
@@ -736,9 +700,6 @@ export async function confirmBluejayBooking({ booking }) {
       signal,
     }),
   );
-  const confirmed = normalizeCreatedBooking(payload);
-  if (String(confirmed.status || '').toLowerCase() !== 'confirm') {
-    throw createHttpError(502, `Bluejay returned booking status ${confirmed.status || 'missing'} instead of confirm`);
-  }
+  const confirmed = assertBluejayBookingConfirmed(payload);
   return { skipped: false, payload: confirmed };
 }
