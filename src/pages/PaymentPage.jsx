@@ -10,7 +10,7 @@ import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { useTranslation } from '../i18n/useTranslation.js';
 import { persistBooking } from '../services/bookingService.js';
 import { createPaymentWithFallback, getPaymentMethodsWithFallback } from '../services/paymentApiService.js';
-import { generateTransferContent, getPaymentSettings } from '../services/paymentService.js';
+import { getPaymentSettings } from '../services/paymentService.js';
 import { formatCurrency, getPaymentStatus } from '../utils/booking.js';
 import {
   clampDepositPercent,
@@ -175,7 +175,6 @@ export default function PaymentPage() {
   }
 
   const bankMethod = settings.paymentMethods?.bankTransfer || {};
-  const transferContent = generateTransferContent(booking, bankMethod.transferContentTemplate);
   const bankQrSrc = safePaymentImageSrc(bankMethod.qrImageUrl || settings.qrImageUrl);
   const contacts = [
     { icon: Phone, value: branding.phone, href: branding.phone ? `tel:${branding.phone}` : null },
@@ -417,20 +416,6 @@ export default function PaymentPage() {
                       <div className="rounded-md bg-white p-3">
                         <dt className="text-stone-500">{t('payment.accountHolder')}</dt>
                         <dd className="mt-1 font-semibold text-lune-ink">{bankMethod.accountHolder || 'LUNE BOUTIQUE HOTEL'}</dd>
-                      </div>
-                      <div className="grid gap-2 rounded-md bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                        <div>
-                          <dt className="text-stone-500">{t('payment.transferContent')}</dt>
-                          <dd className="mt-1 break-words font-semibold text-lune-ink">{transferContent}</dd>
-                        </div>
-                        <button
-                          className="btn-secondary min-h-10 px-3 py-2"
-                          type="button"
-                          onClick={() => copyText(t('payment.transferContent'), transferContent)}
-                        >
-                          <Copy className="h-4 w-4" aria-hidden="true" />
-                          {t('payment.copy')}
-                        </button>
                       </div>
                     </dl>
                     <div className="mt-4 grid place-items-center rounded-lg bg-white p-5">

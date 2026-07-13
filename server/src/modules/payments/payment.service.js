@@ -437,8 +437,7 @@ export async function createPaymentRequest({
   }
 
   const statusAfterConfirm = normalizePaymentStatus(selected.statusAfterConfirm);
-  const transferContent =
-    method === 'bankTransfer' || method === 'vietQr' ? generateTransferContent(booking, selected.transferContentTemplate) : null;
+  const transferContent = null;
 
   const reusablePayment = await prisma.payment.findFirst({
     where: {
@@ -586,13 +585,47 @@ export async function createPaymentRequest({
   };
 }
 
-export async function verifyPaymentMock(bookingCode) {
-  const booking = await prisma.booking.findUnique({ where: { bookingCode } });
+export async function verifyPaymentStatus(bookingCode) {
+  const booking = await prisma.booking.findUnique({
+    where: { bookingCode },
+    include: { room: { include: { images: true, ratePeriods: true } }, guest: true, payments: true },
+  });
   if (!booking) throw createHttpError(404, 'Booking not found');
+  const payment = [...booking.payments]
+    .filter((item) => item.method === 'vietQr')
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0];
+  const providerReference = payment?.rawPayloadJson?.paymentLinkId || payment?.rawPayloadJson?.orderCode;
+  if (!payment || !providerReference || !payosIsConfigured()) {
+    return { bookingCode, paymentStatus: booking.paymentStatus, amountPaid: payment?.status === 'PAID' ? payment.amount : 0 };
+  }
+  const providerPayment = await getPayosClient().paymentRequests.get(providerReference);
+  const nextStatus = mapPayosStatus(providerPayment.status);
+  const providerAmountPaid = Math.max(0, Math.round(Number(providerPayment.amountPaid || 0)));
+  const amountPaid = nextStatus === 'PAID' ? Math.max(providerAmountPaid, Number(payment.amount)) : providerAmountPaid;
+  const paidAt = nextStatus === 'PAID' ? payment.paidAt || new Date() : payment.paidAt;
+  const updatedBooking = await prisma.$transaction(async (tx) => {
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: nextStatus,
+        paidAt,
+        rawPayloadJson: { ...(payment.rawPayloadJson || {}), providerVerification: providerPayment },
+      },
+    });
+    return tx.booking.update({
+      where: { id: booking.id },
+      data: { paymentStatus: nextStatus },
+      include: { room: { include: { images: true, ratePeriods: true } }, guest: true, payments: true },
+    });
+  });
+  if (nextStatus === 'PAID') await syncBookingToBluejay(updatedBooking);
   return {
     bookingCode,
-    paymentStatus: booking.paymentStatus,
-    message: 'Payment verification is pending. Production should rely on bank/provider webhooks.',
+    paymentStatus: nextStatus,
+    amountPaid,
+    paymentPurpose: payment.rawPayloadJson?.paymentPurpose || 'full',
+    depositPercent: payment.rawPayloadJson?.depositPercent ?? null,
+    balanceAmount: payment.rawPayloadJson?.balanceAmount ?? null,
   };
 }
 

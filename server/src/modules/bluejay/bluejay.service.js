@@ -549,6 +549,16 @@ function buildBluejayBookingPayload({ booking, room, ratePlan, externalRoomId })
     ...DEFAULT_MEAL_PLAN,
     ...(ratePlan.mealplan || {}),
   };
+  const paidAmount = money(
+    (booking.payments || [])
+      .filter((payment) => payment.status === 'PAID')
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+  );
+  const remainingAmount = Math.max(0, money(booking.totalPrice) - paidAmount);
+  const paymentNote = paidAmount > 0
+    ? `Da coc ${paidAmount.toLocaleString('vi-VN')} VND; con lai ${remainingAmount.toLocaleString('vi-VN')} VND.`
+    : '';
+  const guestNote = booking.specialRequest || `Website booking ${booking.bookingCode}`;
 
   return {
     property_id: Number(env.BLUEJAY_PROPERTY_ID),
@@ -597,7 +607,7 @@ function buildBluejayBookingPayload({ booking, room, ratePlan, externalRoomId })
     grand_total: roomTotal,
     discount: 0,
     currency: 'VND',
-    note: booking.specialRequest || `Website booking ${booking.bookingCode}`,
+    note: [paymentNote, guestNote].filter(Boolean).join(' '),
   };
 }
 

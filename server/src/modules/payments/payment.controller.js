@@ -5,7 +5,7 @@ import {
   getPaymentSettings,
   handlePayosWebhook,
   savePaymentSettings,
-  verifyPaymentMock,
+  verifyPaymentStatus,
 } from './payment.service.js';
 
 export async function publicPaymentMethods(_req, res) {
@@ -25,7 +25,7 @@ export async function createPayment(req, res) {
 }
 
 export async function verifyPayment(req, res) {
-  sendSuccess(res, await verifyPaymentMock(req.body.bookingCode));
+  sendSuccess(res, await verifyPaymentStatus(req.body.bookingCode));
 }
 
 export async function paymentWebhook(req, res) {

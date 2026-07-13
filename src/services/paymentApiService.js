@@ -48,3 +48,11 @@ export async function createPaymentWithFallback(bookingCode, method, details = {
     };
   }
 }
+
+export async function verifyPaymentWithProvider(bookingCode) {
+  return apiRequest('/payments/verify', {
+    method: 'POST',
+    body: { bookingCode },
+    timeoutMs: 15000,
+  });
+}

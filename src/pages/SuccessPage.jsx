@@ -7,7 +7,8 @@ import { useTranslation } from '../i18n/useTranslation.js';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { formatGuestBreakdown } from '../utils/booking.js';
 import { formatDisplayDate } from '../utils/dateFormatUtils.js';
-import { loadConfirmedBooking } from '../utils/storage.js';
+import { loadConfirmedBooking, saveConfirmedBooking } from '../utils/storage.js';
+import { verifyPaymentWithProvider } from '../services/paymentApiService.js';
 
 export default function SuccessPage() {
   const [booking, setBooking] = useState(null);
@@ -20,7 +21,30 @@ export default function SuccessPage() {
     const confirmed = loadConfirmedBooking();
     if (confirmed) {
       setBooking(confirmed);
+      if (confirmed.paymentMethod === 'vietQr' && confirmed.bookingCode) {
+        let cancelled = false;
+        const verify = async (attempt = 0) => {
+          try {
+            const result = await verifyPaymentWithProvider(confirmed.bookingCode);
+            if (cancelled) return;
+            const updated = {
+              ...confirmed,
+              paymentStatus: result.paymentStatus || confirmed.paymentStatus,
+              depositPaidAmount: result.amountPaid || 0,
+              balanceAtProperty: result.balanceAmount ?? confirmed.balanceAtProperty,
+            };
+            setBooking(updated);
+            saveConfirmedBooking(updated);
+            if (result.paymentStatus !== 'PAID' && attempt < 3) window.setTimeout(() => verify(attempt + 1), 2500);
+          } catch {
+            if (!cancelled && attempt < 3) window.setTimeout(() => verify(attempt + 1), 2500);
+          }
+        };
+        verify();
+        return () => { cancelled = true; };
+      }
     }
+    return undefined;
   }, []);
 
   const copyCode = async () => {
