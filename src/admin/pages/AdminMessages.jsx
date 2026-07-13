@@ -71,9 +71,15 @@ export default function AdminMessages() {
 
     const handleSessionUpdate = () => refresh();
     const handleMessage = (message) => {
-      refresh();
-      if (message.sessionCode !== selected?.sessionCode) return;
+      if (message.sessionCode !== selected?.sessionCode) {
+        refresh();
+        return;
+      }
       setMessages((current) => appendUniqueMessage(current, message));
+      setSessions((current) => current.map((session) => (
+        session.sessionCode === message.sessionCode ? { ...session, unreadByAdmin: 0 } : session
+      )));
+      adminMarkChatRead(message.sessionCode).then(() => refresh()).catch(() => refresh());
     };
 
     socket.on('admin:new_session', handleSessionUpdate);
