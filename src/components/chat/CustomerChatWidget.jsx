@@ -36,7 +36,6 @@ export default function CustomerChatWidget() {
     const sessionCode = localStorage.getItem(storageKeys.chatSessionCode);
     if (!sessionCode) return;
     setSession({ sessionCode });
-    getChatMessagesWithFallback(sessionCode).then(({ messages: nextMessages }) => setMessages(nextMessages));
   }, []);
 
   useEffect(() => {
@@ -54,7 +53,7 @@ export default function CustomerChatWidget() {
   }, [currentLanguage, open, session?.sessionCode]);
 
   useEffect(() => {
-    if (!session?.sessionCode) return undefined;
+    if (!session?.sessionCode || !open) return undefined;
     const refreshMessages = () => {
       getChatMessagesWithFallback(session.sessionCode)
         .then(({ messages: nextMessages }) => {
@@ -71,7 +70,7 @@ export default function CustomerChatWidget() {
         .catch(() => {});
     };
     refreshMessages();
-    const interval = window.setInterval(refreshMessages, open ? 4500 : 9000);
+    const interval = window.setInterval(refreshMessages, 15000);
     return () => window.clearInterval(interval);
   }, [open, session?.sessionCode]);
 
