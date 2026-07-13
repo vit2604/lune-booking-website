@@ -10,6 +10,7 @@ import {
 } from '../../services/chatApiService.js';
 import { translateForGuest } from '../../services/aiTranslationService.js';
 import { connectChatSocket } from '../../services/socketChatClient.js';
+import { appendWaitingMessage, mergeChatMessages, receiveChatMessage } from '../../utils/chatMessageUtils.js';
 
 const quickQuestionKeys = [
   'chat.quickBookRoom',
@@ -75,7 +76,7 @@ export default function CustomerChatWidget() {
     const socket = connectChatSocket();
     socket.emit('guest:join', { sessionCode: session.sessionCode, guest: { language: currentLanguage } });
     const handleMessage = (message) => {
-      setMessages((current) => (current.some((item) => item.id === message.id) ? current : [...current, message]));
+      setMessages((current) => receiveChatMessage(current, message));
       if (!open && message.senderType === 'ADMIN') setUnread((count) => count + 1);
     };
     socket.on('chat:message', handleMessage);
@@ -89,15 +90,7 @@ export default function CustomerChatWidget() {
     const refreshMessages = () => {
       getChatMessagesWithFallback(session.sessionCode)
         .then(({ messages: nextMessages }) => {
-          setMessages((current) => {
-            const pendingMessages = current.filter((item) => String(item.id || '').startsWith('pending-'));
-            const systemMessages = current.filter((item) => item.senderType === 'SYSTEM');
-            const merged = [...nextMessages, ...pendingMessages, ...systemMessages];
-            return merged.filter(
-              (message, index, all) =>
-                all.findIndex((item) => (item.id || item.createdAt) === (message.id || message.createdAt)) === index,
-            );
-          });
+          setMessages((current) => mergeChatMessages(nextMessages, current));
         })
         .catch(() => {});
     };
@@ -158,10 +151,10 @@ export default function CustomerChatWidget() {
         message: t('chat.waitMoment'),
         createdAt: new Date().toISOString(),
       };
-      setMessages((current) => [
-        ...current.map((item) => (item.id === optimisticMessage.id ? message : item)),
+      setMessages((current) => appendWaitingMessage(
+        current.map((item) => (item.id === optimisticMessage.id ? message : item)),
         waitMessage,
-      ]);
+      ));
       setDraft('');
     } finally {
       setSending(false);
