@@ -10,7 +10,7 @@ import {
 } from '../../services/chatApiService.js';
 import { translateForGuest } from '../../services/aiTranslationService.js';
 import { connectChatSocket } from '../../services/socketChatClient.js';
-import { appendWaitingMessage, mergeChatMessages, receiveChatMessage } from '../../utils/chatMessageUtils.js';
+import { mergeChatMessages, receiveChatMessage } from '../../utils/chatMessageUtils.js';
 
 const quickQuestionKeys = [
   'chat.quickBookRoom',
@@ -144,17 +144,7 @@ export default function CustomerChatWidget() {
       const { message } = await sendGuestMessageWithFallback(currentSession.sessionCode, clean, {
         language: currentLanguage,
       });
-      const waitMessage = {
-        id: `system-wait-${now}`,
-        sessionCode: currentSession.sessionCode,
-        senderType: 'SYSTEM',
-        message: t('chat.waitMoment'),
-        createdAt: new Date().toISOString(),
-      };
-      setMessages((current) => appendWaitingMessage(
-        current.map((item) => (item.id === optimisticMessage.id ? message : item)),
-        waitMessage,
-      ));
+      setMessages((current) => current.map((item) => (item.id === optimisticMessage.id ? message : item)));
       setDraft('');
     } finally {
       setSending(false);
@@ -181,9 +171,8 @@ export default function CustomerChatWidget() {
                 {t('chat.startConversation')}
               </div>
             ) : null}
-            {messages.map((message) => {
+            {messages.filter((message) => message.senderType !== 'SYSTEM').map((message) => {
               const isGuest = message.senderType === 'GUEST' || message.sender === 'guest';
-              const isSystem = message.senderType === 'SYSTEM';
               const isAdmin = message.senderType === 'ADMIN' || message.sender === 'admin';
               const translation = translatedMessages[message.id || message.createdAt];
               const needsTranslation = isAdmin && currentLanguage !== 'vi';
@@ -198,15 +187,11 @@ export default function CustomerChatWidget() {
               return (
                 <div
                   key={message.id || message.createdAt}
-                  className={`flex ${isSystem ? 'justify-center' : isGuest ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${isGuest ? 'justify-end' : 'justify-start'}`}
                 >
                   <p
                     className={`max-w-[82%] rounded-lg px-3 py-2 text-sm leading-6 ${
-                      isSystem
-                        ? 'bg-white/70 text-center text-xs font-semibold text-stone-600'
-                        : isGuest
-                          ? 'bg-lune-ink text-white'
-                          : 'bg-white text-stone-700'
+                      isGuest ? 'bg-lune-ink text-white' : 'bg-white text-stone-700'
                     }`}
                   >
                     {displayText}
