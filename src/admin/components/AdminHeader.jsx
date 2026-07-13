@@ -10,6 +10,7 @@ export default function AdminHeader({ onMenu }) {
     '/admin/rooms': 'Rooms',
     '/admin/rates': 'Rate Calendar',
     '/admin/bookings': 'Bookings',
+    '/admin/messages': 'Messages',
     '/admin/media': 'Media',
     '/admin/branding': 'Branding',
     '/admin/payment-settings': 'Payment Settings',

@@ -33,7 +33,7 @@ export const apiConfig = {
   baseUrl: import.meta.env.VITE_API_BASE_URL || getDefaultApiBaseUrl(),
   socketUrl: import.meta.env.VITE_SOCKET_URL || getDefaultSocketUrl(),
   useMockFallback: String(import.meta.env.VITE_USE_MOCK_FALLBACK ?? getMockFallbackDefault()) === 'true',
-  timeoutMs: 3000,
+  timeoutMs: isPublicFrontendHost() ? 60000 : 10000,
 };
 
 export function shouldUseMockOnly() {
