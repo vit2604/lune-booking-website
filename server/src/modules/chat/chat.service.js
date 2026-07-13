@@ -144,6 +144,27 @@ export async function reopenChatSession(sessionCode) {
   return prisma.chatSession.update({ where: { sessionCode }, data: { status: 'OPEN' } });
 }
 
+export async function deleteChatSession(sessionCode) {
+  await getSessionByCode(sessionCode);
+  return prisma.chatSession.delete({ where: { sessionCode } });
+}
+
+export async function cleanupStaleChatSessions({ inactiveHours = 24, retentionDays = 30 } = {}) {
+  const now = Date.now();
+  const inactiveBefore = new Date(now - inactiveHours * 60 * 60 * 1000);
+  const deleteBefore = new Date(now - retentionDays * 24 * 60 * 60 * 1000);
+  const [closed, deleted] = await prisma.$transaction([
+    prisma.chatSession.updateMany({
+      where: { status: { in: ['OPEN', 'PENDING'] }, updatedAt: { lt: inactiveBefore } },
+      data: { status: 'CLOSED' },
+    }),
+    prisma.chatSession.deleteMany({
+      where: { status: 'CLOSED', updatedAt: { lt: deleteBefore } },
+    }),
+  ]);
+  return { closed: closed.count, deleted: deleted.count };
+}
+
 export async function getUnreadCountForAdmin() {
   const result = await prisma.chatSession.aggregate({ _sum: { unreadByAdmin: true } });
   return result._sum.unreadByAdmin || 0;

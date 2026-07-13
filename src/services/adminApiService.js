@@ -141,3 +141,19 @@ export function adminSendChatMessage(sessionCode, message) {
     timeoutMs: 15000,
   });
 }
+
+export function adminMarkChatRead(sessionCode) {
+  return apiRequest(`/admin/chat/sessions/${sessionCode}/read`, { method: 'PATCH' });
+}
+
+export function adminCloseChatSession(sessionCode) {
+  return apiRequest(`/admin/chat/sessions/${sessionCode}/close`, { method: 'PATCH' });
+}
+
+export function adminReopenChatSession(sessionCode) {
+  return apiRequest(`/admin/chat/sessions/${sessionCode}/reopen`, { method: 'PATCH' });
+}
+
+export function adminDeleteChatSession(sessionCode) {
+  return apiRequest(`/admin/chat/sessions/${sessionCode}`, { method: 'DELETE' });
+}

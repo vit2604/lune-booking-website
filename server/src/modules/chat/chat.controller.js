@@ -2,6 +2,7 @@ import { sendSuccess } from '../../utils/responseUtils.js';
 import {
   closeChatSession,
   createChatSession,
+  deleteChatSession,
   getMessages,
   getOpenConversationCount,
   getSessionByCode,
@@ -66,7 +67,9 @@ export async function adminSendMessage(req, res) {
 }
 
 export async function adminRead(req, res) {
-  sendSuccess(res, await markAsRead(req.params.sessionCode, 'admin'));
+  const session = await markAsRead(req.params.sessionCode, 'admin');
+  emitSessionUpdate(req, 'admin:unread_count', { sessionCode: req.params.sessionCode, unreadByAdmin: 0 });
+  sendSuccess(res, session);
 }
 
 export async function adminClose(req, res) {
@@ -75,6 +78,12 @@ export async function adminClose(req, res) {
 
 export async function adminReopen(req, res) {
   sendSuccess(res, await reopenChatSession(req.params.sessionCode));
+}
+
+export async function adminDelete(req, res) {
+  const session = await deleteChatSession(req.params.sessionCode);
+  emitSessionUpdate(req, 'admin:session_deleted', { sessionCode: req.params.sessionCode });
+  sendSuccess(res, session, 'Chat session deleted');
 }
 
 export async function adminChatStats(_req, res) {

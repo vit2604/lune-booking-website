@@ -5,6 +5,7 @@ import { validate } from '../../middlewares/validateMiddleware.js';
 import {
   adminChatStats,
   adminClose,
+  adminDelete,
   adminRead,
   adminReopen,
   adminSendMessage,
@@ -34,3 +35,4 @@ adminChatRouter.post('/sessions/:sessionCode/messages', validate(adminMessageSch
 adminChatRouter.patch('/sessions/:sessionCode/read', adminRead);
 adminChatRouter.patch('/sessions/:sessionCode/close', adminClose);
 adminChatRouter.patch('/sessions/:sessionCode/reopen', adminReopen);
+adminChatRouter.delete('/sessions/:sessionCode', adminDelete);

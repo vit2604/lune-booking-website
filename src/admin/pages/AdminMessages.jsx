@@ -1,11 +1,20 @@
-import { MessageCircle, Send } from 'lucide-react';
+import { Archive, MessageCircle, RotateCcw, Send, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { readJsonStorage, storageKeys } from '../../constants/storageKeys.js';
 import { canUseMockFallback } from '../../config/apiConfig.js';
 import { getAdminToken } from '../../services/apiClient.js';
-import { adminGetChatSession, adminListChatSessions, adminSendChatMessage } from '../../services/adminApiService.js';
+import {
+  adminCloseChatSession,
+  adminDeleteChatSession,
+  adminGetChatSession,
+  adminListChatSessions,
+  adminMarkChatRead,
+  adminReopenChatSession,
+  adminSendChatMessage,
+} from '../../services/adminApiService.js';
 import { translateForAdmin } from '../../services/aiTranslationService.js';
 import { connectChatSocket } from '../../services/socketChatClient.js';
+import ConfirmModal from '../components/ConfirmModal.jsx';
 
 function getLocalSessions() {
   return readJsonStorage(storageKeys.chatSessions, []);
@@ -30,6 +39,7 @@ export default function AdminMessages() {
   const [translatedMessages, setTranslatedMessages] = useState({});
   const [translationNotice, setTranslationNotice] = useState('');
   const [sendError, setSendError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const refresh = async () => {
     try {
@@ -69,21 +79,28 @@ export default function AdminMessages() {
     socket.on('admin:new_session', handleSessionUpdate);
     socket.on('admin:unread_count', handleSessionUpdate);
     socket.on('chat:message', handleMessage);
+    socket.on('admin:session_deleted', handleSessionUpdate);
 
     return () => {
       socket.off('admin:new_session', handleSessionUpdate);
       socket.off('admin:unread_count', handleSessionUpdate);
       socket.off('chat:message', handleMessage);
+      socket.off('admin:session_deleted', handleSessionUpdate);
     };
   }, [filter, selected?.sessionCode]);
 
   useEffect(() => {
     if (!selected?.sessionCode) return;
-    setMessages(getLocalMessages(selected.sessionCode));
-    adminGetChatSession(selected.sessionCode)
-      .then((session) => setMessages(session.messages || []))
-      .catch(() => {});
-  }, [selected]);
+    const sessionCode = selected.sessionCode;
+    setSessions((current) => current.map((session) => (
+      session.sessionCode === sessionCode ? { ...session, unreadByAdmin: 0 } : session
+    )));
+    setSelected((current) => current?.sessionCode === sessionCode ? { ...current, unreadByAdmin: 0 } : current);
+    setMessages(getLocalMessages(sessionCode));
+    Promise.all([adminGetChatSession(sessionCode), adminMarkChatRead(sessionCode)])
+      .then(([session]) => setMessages(session.messages || []))
+      .catch((error) => setSendError(error.message || 'Could not mark this conversation as read.'));
+  }, [selected?.sessionCode]);
 
   useEffect(() => {
     messages.forEach((message) => {
@@ -130,6 +147,37 @@ export default function AdminMessages() {
       setTranslationNotice(`Reply saved in Vietnamese. The guest chat translates it to ${(selected.language || 'en').toUpperCase()}.`);
     }
     setReply('');
+  };
+
+  const updateSessionStatus = async (status) => {
+    if (!selected) return;
+    setSendError('');
+    try {
+      const updated = status === 'CLOSED'
+        ? await adminCloseChatSession(selected.sessionCode)
+        : await adminReopenChatSession(selected.sessionCode);
+      setSelected(updated);
+      await refresh();
+    } catch (error) {
+      setSendError(error.message || 'Could not update this conversation.');
+    }
+  };
+
+  const deleteSession = async () => {
+    if (!deleteTarget) return;
+    setSendError('');
+    try {
+      await adminDeleteChatSession(deleteTarget.sessionCode);
+      if (selected?.sessionCode === deleteTarget.sessionCode) {
+        setSelected(null);
+        setMessages([]);
+      }
+      setDeleteTarget(null);
+      await refresh();
+    } catch (error) {
+      setSendError(error.message || 'Could not delete this conversation.');
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -190,11 +238,27 @@ export default function AdminMessages() {
         <section className="flex min-h-[520px] flex-col">
           {selected ? (
             <>
-              <header className="border-b border-stone-200 p-4">
-                <p className="font-semibold text-lune-ink">{selected.guestName || 'Guest'}</p>
-                <p className="mt-1 text-xs text-stone-500">
-                  {selected.guestPhone || 'No phone'} · {selected.guestEmail || 'No email'} · Guest language: {selected.language || 'en'}
-                </p>
+              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 p-4">
+                <div>
+                  <p className="font-semibold text-lune-ink">{selected.guestName || 'Guest'}</p>
+                  <p className="mt-1 text-xs text-stone-500">
+                    {selected.guestPhone || 'No phone'} · {selected.guestEmail || 'No email'} · Guest language: {selected.language || 'en'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {(selected.status || '').toUpperCase() === 'CLOSED' ? (
+                    <button className="btn-secondary" type="button" onClick={() => updateSessionStatus('OPEN')}>
+                      <RotateCcw className="h-4 w-4" aria-hidden="true" /> Reopen
+                    </button>
+                  ) : (
+                    <button className="btn-secondary" type="button" onClick={() => updateSessionStatus('CLOSED')}>
+                      <Archive className="h-4 w-4" aria-hidden="true" /> Close
+                    </button>
+                  )}
+                  <button className="btn-secondary min-h-10 px-3 text-red-700" type="button" title="Delete conversation" aria-label="Delete conversation" onClick={() => setDeleteTarget(selected)}>
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
               </header>
 
               <div className="flex-1 space-y-3 overflow-y-auto bg-lune-cream p-4">
@@ -245,6 +309,14 @@ export default function AdminMessages() {
           )}
         </section>
       </div>
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Delete conversation"
+        message="Delete this conversation and all of its messages permanently? This cannot be undone."
+        confirmText="Delete"
+        onConfirm={deleteSession}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
