@@ -296,6 +296,11 @@ export default function AdminMessages() {
                     className="input-field"
                     value={reply}
                     onChange={(event) => setReply(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' || event.nativeEvent?.isComposing) return;
+                      event.preventDefault();
+                      sendReply();
+                    }}
                     placeholder="Type a reply in Vietnamese. AI will translate it to the guest language."
                   />
                 </div>
