@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import AdminHeader from './AdminHeader.jsx';
 import AdminSidebar from './AdminSidebar.jsx';
@@ -6,12 +6,20 @@ import { isAdminLoggedIn, logout } from '../services/adminAuthService.js';
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
+  const [authenticated, setAuthenticated] = useState(isAdminLoggedIn());
   const navigate = useNavigate();
 
-  if (!isAdminLoggedIn()) return <Navigate to="/admin/login" replace />;
+  useEffect(() => {
+    const handleExpiredSession = () => setAuthenticated(false);
+    window.addEventListener('lune:admin-session-expired', handleExpiredSession);
+    return () => window.removeEventListener('lune:admin-session-expired', handleExpiredSession);
+  }, []);
+
+  if (!authenticated) return <Navigate to="/admin/login" replace />;
 
   const handleLogout = () => {
     logout();
+    setAuthenticated(false);
     navigate('/admin/login', { replace: true });
   };
 

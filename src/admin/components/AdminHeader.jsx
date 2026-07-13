@@ -47,7 +47,7 @@ export default function AdminHeader({ onMenu }) {
 
         <div className="hidden text-right sm:block">
           <p className="text-sm font-semibold text-lune-ink">{user?.username || 'admin'}</p>
-          <p className="text-xs text-stone-500">Mock admin session</p>
+          <p className="text-xs text-stone-500">Secure admin session</p>
         </div>
       </div>
     </header>

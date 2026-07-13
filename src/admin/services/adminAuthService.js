@@ -42,7 +42,9 @@ export function logout() {
 }
 
 export function isAdminLoggedIn() {
-  return Boolean(localStorage.getItem(ADMIN_TOKEN_KEY)) || localStorage.getItem(ADMIN_SESSION_KEY) === 'true';
+  const hasBackendToken = Boolean(localStorage.getItem(ADMIN_TOKEN_KEY));
+  if (!canUseMockFallback()) return hasBackendToken;
+  return hasBackendToken || localStorage.getItem(ADMIN_SESSION_KEY) === 'true';
 }
 
 export function getAdminUser() {

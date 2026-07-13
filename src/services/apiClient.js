@@ -14,6 +14,13 @@ export function getAdminToken() {
   return localStorage.getItem(storageKeys.adminToken);
 }
 
+function expireAdminSession() {
+  localStorage.removeItem(storageKeys.adminToken);
+  localStorage.removeItem(storageKeys.adminLoggedIn);
+  localStorage.removeItem(storageKeys.adminUser);
+  window.dispatchEvent(new Event('lune:admin-session-expired'));
+}
+
 export async function apiRequest(path, options = {}) {
   if (shouldUseMockOnly() && !options.ignoreMockOnly) {
     throw new ApiError('Backend API is not configured for this deployment.', 0, {
@@ -39,6 +46,7 @@ export async function apiRequest(path, options = {}) {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || payload.success === false) {
+      if (response.status === 401 && token) expireAdminSession();
       throw new ApiError(payload.message || 'API request failed', response.status, payload);
     }
     return payload.data;
