@@ -2,6 +2,7 @@ import { env } from '../../config/env.js';
 import { calculateNights, normalizeDate } from '../../utils/dateUtils.js';
 import { getNightlyRates } from '../../utils/priceUtils.js';
 import { createHttpError } from '../../utils/responseUtils.js';
+import { getBluejayPaymentSummary } from './bluejayPaymentUtils.js';
 
 const DEFAULT_MEAL_PLAN = { breakfast: false, lunch: false, dinner: false };
 
@@ -537,7 +538,7 @@ async function getCreateBookingContext({ booking, room }) {
   return { externalRoomId, matchedRoomType, ratePlan };
 }
 
-function buildBluejayBookingPayload({ booking, room, ratePlan, externalRoomId }) {
+export function buildBluejayBookingPayload({ booking, room, ratePlan, externalRoomId }) {
   const guest = booking.guest || {};
   const checkIn = normalizeDate(booking.checkIn);
   const checkOut = normalizeDate(booking.checkOut);
@@ -549,12 +550,7 @@ function buildBluejayBookingPayload({ booking, room, ratePlan, externalRoomId })
     ...DEFAULT_MEAL_PLAN,
     ...(ratePlan.mealplan || {}),
   };
-  const paidAmount = money(
-    (booking.payments || [])
-      .filter((payment) => payment.status === 'PAID')
-      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
-  );
-  const remainingAmount = Math.max(0, money(booking.totalPrice) - paidAmount);
+  const { paidAmount, remainingAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
   const paymentNote = paidAmount > 0
     ? `Da coc ${paidAmount.toLocaleString('vi-VN')} VND; con lai ${remainingAmount.toLocaleString('vi-VN')} VND.`
     : '';
@@ -605,6 +601,8 @@ function buildBluejayBookingPayload({ booking, room, ratePlan, externalRoomId })
     services_price: 0,
     total: roomTotal,
     grand_total: roomTotal,
+    paid: paidAmount,
+    deposit: paidAmount,
     discount: 0,
     currency: 'VND',
     note: [paymentNote, guestNote].filter(Boolean).join(' '),

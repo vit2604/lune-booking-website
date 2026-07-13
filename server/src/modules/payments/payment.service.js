@@ -449,6 +449,9 @@ export async function createPaymentRequest({
   });
 
   if (method === 'vietQr' && reusablePayment?.rawPayloadJson?.configured && Number(reusablePayment.amount) === paymentAmount) {
+    if (reusablePayment.transferContent) {
+      await prisma.payment.update({ where: { id: reusablePayment.id }, data: { transferContent: null } });
+    }
     const providerPayload = reusablePayment.rawPayloadJson;
     return {
       bookingCode,
@@ -465,7 +468,7 @@ export async function createPaymentRequest({
         amount: reusablePayment.amount,
         currency: reusablePayment.currency,
         status: reusablePayment.status,
-        transferContent: reusablePayment.transferContent,
+        transferContent: null,
         provider: reusablePayment.provider,
         transactionRef: reusablePayment.transactionRef,
         checkoutUrl: providerPayload.checkoutUrl,
@@ -609,6 +612,7 @@ export async function verifyPaymentStatus(bookingCode) {
       data: {
         status: nextStatus,
         paidAt,
+        transferContent: null,
         rawPayloadJson: { ...(payment.rawPayloadJson || {}), providerVerification: providerPayment },
       },
     });
@@ -669,6 +673,7 @@ export async function handlePayosWebhook(payload) {
       data: {
         status: nextStatus,
         paidAt,
+        transferContent: null,
         rawPayloadJson: { ...(payment.rawPayloadJson || {}), lastWebhook: verified },
       },
     });
