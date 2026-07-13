@@ -1,5 +1,24 @@
 import { apiRequest } from './apiClient.js';
 
+const languageAliases = {
+  'zh-TW': 'zh-TW',
+  zh: 'zh-CN',
+  ko: 'ko',
+  ja: 'ja',
+  vi: 'vi',
+  en: 'en',
+  th: 'th',
+  ru: 'ru',
+  fr: 'fr',
+  de: 'de',
+  es: 'es',
+  it: 'it',
+  id: 'id',
+  ms: 'ms',
+  ar: 'ar',
+  hi: 'hi',
+};
+
 const sameText = (text, targetLanguage, sourceLanguage = 'auto') => ({
   originalText: text,
   translatedText: text,
@@ -55,6 +74,10 @@ const knownPhrases = {
   },
 };
 
+function normalizeLanguage(language) {
+  return languageAliases[language] || language || 'auto';
+}
+
 export function detectMessageLanguage(text = '') {
   if (/[\uac00-\ud7af]/.test(text)) return 'ko';
   if (/[\u3040-\u30ff]/.test(text)) return 'ja';
@@ -66,6 +89,41 @@ export function detectMessageLanguage(text = '') {
     return 'vi';
   }
   return 'en';
+}
+
+function parseGooglePayload(payload) {
+  const translatedText = Array.isArray(payload?.[0])
+    ? payload[0].map((part) => part?.[0] || '').join('')
+    : '';
+  return {
+    translatedText,
+    detectedLanguage: payload?.[2] || '',
+  };
+}
+
+async function translateWithPublicProvider(text, targetLanguage, sourceLanguage = 'auto') {
+  const normalizedTarget = normalizeLanguage(targetLanguage);
+  const normalizedSource = sourceLanguage === 'auto' ? 'auto' : normalizeLanguage(sourceLanguage);
+  const params = new URLSearchParams({
+    client: 'gtx',
+    sl: normalizedSource,
+    tl: normalizedTarget,
+    dt: 't',
+    q: text,
+  });
+  const response = await fetch(`https://translate.googleapis.com/translate_a/single?${params.toString()}`);
+  if (!response.ok) throw new Error(`Translation provider failed: ${response.status}`);
+  const payload = await response.json();
+  const result = parseGooglePayload(payload);
+  if (!result.translatedText) throw new Error('Translation provider returned empty text');
+  return {
+    originalText: text,
+    translatedText: result.translatedText,
+    sourceLanguage: result.detectedLanguage || (sourceLanguage === 'auto' ? detectMessageLanguage(text) : sourceLanguage),
+    targetLanguage: normalizedTarget,
+    provider: 'google-public-client',
+    translated: result.translatedText !== text,
+  };
 }
 
 function localPhraseTranslate(text, targetLanguage, sourceLanguage = 'auto') {
@@ -84,19 +142,31 @@ function localPhraseTranslate(text, targetLanguage, sourceLanguage = 'auto') {
 
 export async function translateText(text, targetLanguage, sourceLanguage = 'auto') {
   const cleanText = String(text || '').trim();
-  if (!cleanText) return sameText('', targetLanguage, sourceLanguage);
-  if (sourceLanguage !== 'auto' && sourceLanguage === targetLanguage) {
-    return sameText(cleanText, targetLanguage, sourceLanguage);
+  const normalizedTarget = normalizeLanguage(targetLanguage);
+  const normalizedSource = sourceLanguage === 'auto' ? 'auto' : normalizeLanguage(sourceLanguage);
+  if (!cleanText) return sameText('', normalizedTarget, normalizedSource);
+  if (normalizedSource !== 'auto' && normalizedSource === normalizedTarget) {
+    return sameText(cleanText, normalizedTarget, normalizedSource);
   }
 
   try {
     return await apiRequest('/ai/translate', {
       method: 'POST',
-      body: { text: cleanText, sourceLanguage, targetLanguage },
+      body: { text: cleanText, sourceLanguage: normalizedSource, targetLanguage: normalizedTarget },
       timeoutMs: 7000,
     });
-  } catch (_error) {
-    return localPhraseTranslate(cleanText, targetLanguage, sourceLanguage);
+  } catch (apiError) {
+    try {
+      return await translateWithPublicProvider(cleanText, normalizedTarget, normalizedSource);
+    } catch (_providerError) {
+      const fallback = localPhraseTranslate(cleanText, normalizedTarget, normalizedSource);
+      return fallback.translated
+        ? fallback
+        : {
+            ...fallback,
+            warning: apiError.message || 'Translation provider unavailable.',
+          };
+    }
   }
 }
 

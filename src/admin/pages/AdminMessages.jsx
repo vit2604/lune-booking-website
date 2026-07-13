@@ -1,6 +1,7 @@
 import { MessageCircle, Send } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { readJsonStorage, storageKeys } from '../../constants/storageKeys.js';
+import { canUseMockFallback } from '../../config/apiConfig.js';
 import { getAdminToken } from '../../services/apiClient.js';
 import { adminGetChatSession, adminListChatSessions, adminSendChatMessage } from '../../services/adminApiService.js';
 import { translateForAdmin } from '../../services/aiTranslationService.js';
@@ -28,13 +29,19 @@ export default function AdminMessages() {
   const [filter, setFilter] = useState('all');
   const [translatedMessages, setTranslatedMessages] = useState({});
   const [translationNotice, setTranslationNotice] = useState('');
+  const [sendError, setSendError] = useState('');
 
   const refresh = async () => {
     try {
       const data = await adminListChatSessions(filter === 'all' ? {} : { status: filter.toUpperCase() });
+      setSendError('');
       setSessions(data.items || data);
-    } catch {
-      setSessions(getLocalSessions());
+    } catch (error) {
+      if (canUseMockFallback()) {
+        setSessions(getLocalSessions());
+        return;
+      }
+      setSendError(error.message || 'Could not load live conversations. Please log in again.');
     }
   };
 
@@ -96,11 +103,16 @@ export default function AdminMessages() {
     if (!clean || !selected) return;
 
     setTranslationNotice('');
+    setSendError('');
 
     try {
       const created = await adminSendChatMessage(selected.sessionCode, clean);
       setMessages((current) => appendUniqueMessage(current, created));
-    } catch {
+    } catch (error) {
+      if (!canUseMockFallback()) {
+        setSendError(error.message || 'Could not send this reply. Please log in again and try once more.');
+        return;
+      }
       const localMessages = readJsonStorage(storageKeys.chatMessages, []);
       const created = {
         id: crypto.randomUUID(),
@@ -208,6 +220,7 @@ export default function AdminMessages() {
 
               <footer className="flex gap-2 border-t border-stone-200 p-4">
                 <div className="flex-1">
+                  {sendError ? <p className="mb-2 text-xs font-semibold text-red-700">{sendError}</p> : null}
                   {translationNotice ? <p className="mb-2 text-xs font-medium text-green-700">{translationNotice}</p> : null}
                   <input
                     className="input-field"

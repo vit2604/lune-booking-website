@@ -1,4 +1,5 @@
 import { storageKeys, readJsonStorage, writeJsonStorage } from '../constants/storageKeys.js';
+import { canUseMockFallback } from '../config/apiConfig.js';
 import { apiRequest } from './apiClient.js';
 
 function localSessions() {
@@ -39,7 +40,8 @@ function createLocalSession(input = {}) {
 export async function createChatSessionWithFallback(input = {}) {
   try {
     return { source: 'api', session: await apiRequest('/chat/sessions', { method: 'POST', body: input, timeoutMs: 15000 }) };
-  } catch (_error) {
+  } catch (error) {
+    if (!canUseMockFallback()) throw error;
     return { source: 'local', session: createLocalSession(input) };
   }
 }
@@ -47,7 +49,8 @@ export async function createChatSessionWithFallback(input = {}) {
 export async function getChatMessagesWithFallback(sessionCode) {
   try {
     return { source: 'api', messages: await apiRequest(`/chat/sessions/${sessionCode}/messages`) };
-  } catch (_error) {
+  } catch (error) {
+    if (!canUseMockFallback()) throw error;
     return { source: 'local', messages: localMessages().filter((message) => message.sessionCode === sessionCode) };
   }
 }
@@ -62,7 +65,8 @@ export async function sendGuestMessageWithFallback(sessionCode, message, meta = 
         timeoutMs: 15000,
       }),
     };
-  } catch (_error) {
+  } catch (error) {
+    if (!canUseMockFallback()) throw error;
     // Continue with local demo storage if the backend or socket is unavailable.
   }
 

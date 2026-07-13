@@ -54,7 +54,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'sha256-W9OHFvWB1wjGYNYoqhYgkaNrLDykxAGSVBR2PSbWzfE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://lune-booking-api.onrender.com https://api.luneboutiquedanang.com https://api.luneboutiquedanang.id.vn https://api.luneboutique.vn wss://lune-booking-api.onrender.com wss://api.luneboutiquedanang.com wss://api.luneboutiquedanang.id.vn wss://api.luneboutique.vn; frame-src https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; script-src 'self' 'sha256-W9OHFvWB1wjGYNYoqhYgkaNrLDykxAGSVBR2PSbWzfE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://lune-booking-api.onrender.com https://api.luneboutiquedanang.com https://api.luneboutiquedanang.id.vn https://api.luneboutique.vn https://translate.googleapis.com wss://lune-booking-api.onrender.com wss://api.luneboutiquedanang.com wss://api.luneboutiquedanang.id.vn wss://api.luneboutique.vn; frame-src https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
         },
         {
           "key": "X-Content-Type-Options",

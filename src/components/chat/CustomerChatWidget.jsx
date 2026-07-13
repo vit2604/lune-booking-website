@@ -19,6 +19,38 @@ const quickQuestionKeys = [
   'chat.quickBookingHelp',
 ];
 
+const translationPendingText = {
+  en: 'Translating staff reply...',
+  vi: 'Đang dịch phản hồi...',
+  ko: '직원 답변을 번역하는 중입니다...',
+  zh: '正在翻译工作人员回复...',
+  'zh-TW': '正在翻譯工作人員回覆...',
+  ja: 'スタッフの返信を翻訳しています...',
+  th: 'กำลังแปลคำตอบจากพนักงาน...',
+  ru: 'Переводим ответ сотрудника...',
+  fr: 'Traduction de la réponse...',
+  de: 'Antwort wird ubersetzt...',
+  es: 'Traduciendo la respuesta...',
+};
+
+const translationUnavailableText = {
+  en: 'Staff sent a reply. Translation is temporarily unavailable.',
+  vi: 'Nhân viên đã gửi phản hồi. Hiện chưa dịch được nội dung này.',
+  ko: '직원이 답변을 보냈습니다. 현재 번역을 사용할 수 없습니다.',
+  zh: '工作人员已回复。当前暂时无法翻译。',
+  'zh-TW': '工作人員已回覆。目前暫時無法翻譯。',
+  ja: 'スタッフが返信しました。現在翻訳を利用できません。',
+  th: 'พนักงานตอบกลับแล้ว ขณะนี้ยังไม่สามารถแปลได้',
+  ru: 'Сотрудник ответил. Перевод временно недоступен.',
+  fr: 'Le personnel a repondu. La traduction est temporairement indisponible.',
+  de: 'Das Team hat geantwortet. Die Ubersetzung ist vorubergehend nicht verfugbar.',
+  es: 'El equipo respondio. La traduccion no esta disponible temporalmente.',
+};
+
+function getTranslationStatusText(map, language) {
+  return map[language] || map.en;
+}
+
 export default function CustomerChatWidget() {
   const { t, currentLanguage } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -159,8 +191,17 @@ export default function CustomerChatWidget() {
             {messages.map((message) => {
               const isGuest = message.senderType === 'GUEST' || message.sender === 'guest';
               const isSystem = message.senderType === 'SYSTEM';
+              const isAdmin = message.senderType === 'ADMIN' || message.sender === 'admin';
               const translation = translatedMessages[message.id || message.createdAt];
-              const displayText = translation?.translated ? translation.translatedText : message.message || message.text;
+              const needsTranslation = isAdmin && currentLanguage !== 'vi';
+              const originalText = message.message || message.text;
+              const displayText = needsTranslation
+                ? translation?.translated
+                  ? translation.translatedText
+                  : translation
+                    ? getTranslationStatusText(translationUnavailableText, currentLanguage)
+                    : getTranslationStatusText(translationPendingText, currentLanguage)
+                : originalText;
               return (
                 <div
                   key={message.id || message.createdAt}
