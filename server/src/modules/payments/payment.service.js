@@ -5,6 +5,7 @@ import { env } from '../../config/env.js';
 import { isAllowedPaymentMethod } from '../../constants/paymentMethods.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 import { syncBookingToBluejay } from '../bookings/booking.service.js';
+import { buildPayosDescription } from './paymentDescription.js';
 
 const DEFAULT_TRANSFER_CONTENT = 'Dang Trung Vuong chuyen tien';
 
@@ -220,10 +221,6 @@ function buildPayosOrderCode(bookingCode, amount) {
   return Date.now();
 }
 
-function buildPayosDescription() {
-  return DEFAULT_TRANSFER_CONTENT;
-}
-
 function getFrontendUrl(path = '/') {
   const firstOrigin = String(env.CORS_ORIGIN || '')
     .split(',')
@@ -244,7 +241,7 @@ async function createPayosPaymentLink(booking, paymentContext = {}) {
 
   const paymentAmount = Math.max(1, Math.round(Number(paymentContext.amount || booking.totalPrice || 0)));
   const orderCode = buildPayosOrderCode(booking.bookingCode, paymentAmount);
-  const description = buildPayosDescription();
+  const description = buildPayosDescription(booking);
   const returnUrl = env.PAYOS_RETURN_URL || getFrontendUrl(`/success?bookingCode=${encodeURIComponent(booking.bookingCode)}`);
   const cancelUrl = env.PAYOS_CANCEL_URL || getFrontendUrl('/payment');
 
@@ -456,7 +453,7 @@ export async function createPaymentRequest({
     method === 'vietQr' &&
     reusablePayment?.rawPayloadJson?.configured &&
     Number(reusablePayment.amount) === paymentAmount &&
-    reusablePayment.rawPayloadJson.description === buildPayosDescription()
+    reusablePayment.rawPayloadJson.description === buildPayosDescription(booking)
   ) {
     if (reusablePayment.transferContent) {
       await prisma.payment.update({ where: { id: reusablePayment.id }, data: { transferContent: null } });
