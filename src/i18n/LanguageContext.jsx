@@ -1,7 +1,7 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
 import { getLanguageSettings } from '../admin/services/adminSettingsService.js';
 import { legacyStorageKeys, storageKeys } from '../constants/storageKeys.js';
-import { translations } from './translations.js';
+import { enTranslations, localeLoaders } from './translations.js';
 
 const LANGUAGE_KEY = storageKeys.language;
 
@@ -18,6 +18,8 @@ function getStoredLanguage(settings) {
 export function LanguageProvider({ children }) {
   const [settings, setSettings] = useState(getLanguageSettings());
   const [currentLanguage, setCurrentLanguage] = useState(() => getStoredLanguage(getLanguageSettings()));
+  // Chi tieng Anh bundle san; locale khac duoc import() khi can va cache lai day.
+  const [translationsByLanguage, setTranslationsByLanguage] = useState({ en: enTranslations });
 
   useEffect(() => {
     document.documentElement.lang = currentLanguage;
@@ -25,6 +27,23 @@ export function LanguageProvider({ children }) {
     localStorage.setItem(LANGUAGE_KEY, currentLanguage);
     localStorage.setItem('lune_guest_language', currentLanguage);
   }, [currentLanguage]);
+
+  useEffect(() => {
+    if (translationsByLanguage[currentLanguage] || !localeLoaders[currentLanguage]) return;
+    let ignore = false;
+    localeLoaders[currentLanguage]()
+      .then((module) => {
+        if (!ignore) {
+          setTranslationsByLanguage((current) => ({ ...current, [currentLanguage]: module.default }));
+        }
+      })
+      .catch(() => {
+        // Loi mang khi tai locale: giu fallback tieng Anh.
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [currentLanguage, translationsByLanguage]);
 
   useEffect(() => {
     const refresh = () => {
@@ -47,13 +66,14 @@ export function LanguageProvider({ children }) {
       currentLanguage,
       enabledLanguages: settings.enabledLanguages,
       languageSettings: settings,
+      translationsByLanguage,
       changeLanguage: (language) => {
-        if (translations[language] && settings.enabledLanguages.includes(language)) {
+        if (localeLoaders[language] && settings.enabledLanguages.includes(language)) {
           setCurrentLanguage(language);
         }
       },
     }),
-    [currentLanguage, settings],
+    [currentLanguage, settings, translationsByLanguage],
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
