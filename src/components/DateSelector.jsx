@@ -14,6 +14,7 @@ export default function DateSelector({
   onChange,
   compact = false,
   showGuests = true,
+  readOnlyGuests = false,
 }) {
   const defaults = getDefaultDates();
   const today = toDateInputValue(new Date());
@@ -52,14 +53,33 @@ export default function DateSelector({
       </label>
       <label>
         <span className="label">{t('common.guests')}</span>
-        <GuestSelector
-          className={inputClass}
-          adults={adults || guests || 1}
-          children={children || 0}
-          maxGuests={maxGuests}
-          onChange={onChange}
-          t={t}
-        />
+        {readOnlyGuests ? (
+          <div className={`${inputClass} flex min-h-0 items-center gap-3 py-2`}>
+            <div className="grid flex-1 gap-2 sm:grid-cols-2">
+              <div className="grid gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-stone-500">{t('common.adults')}</span>
+                <strong className="min-h-10 py-2 text-base font-semibold text-lune-ink sm:text-sm">
+                  {Number(adults || guests || 1)}
+                </strong>
+              </div>
+              <div className="grid gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-stone-500">{t('common.children')}</span>
+                <strong className="min-h-10 py-2 text-base font-semibold text-lune-ink sm:text-sm">
+                  {Number(children || 0)}
+                </strong>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <GuestSelector
+            className={inputClass}
+            adults={adults || guests || 1}
+            children={children || 0}
+            maxGuests={maxGuests}
+            onChange={onChange}
+            t={t}
+          />
+        )}
       </label>
     </div>
   );

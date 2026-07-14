@@ -1,4 +1,4 @@
-import { ArrowRight, Plus, Trash2, UserRound } from 'lucide-react';
+import { ArrowRight, Trash2, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getRoomById } from '../admin/services/adminRoomService.js';
@@ -20,7 +20,6 @@ import {
   buildBookingDraft,
   formatCurrency,
   hasPricedBookingDraft,
-  MAX_ROOMS_PER_BOOKING,
   validateStay,
 } from '../utils/booking.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
@@ -106,7 +105,7 @@ function roomFromBookingDraft(booking) {
     price: Number(primary.pricePerNight || booking.pricePerNight || 0),
     basePrice: Number(primary.pricePerNight || booking.pricePerNight || 0),
     maxGuests: Number(primary.maxGuests || booking.maxGuests || primary.guests || 1),
-    availableQuantity: Number(primary.availableQuantity || 1),
+    availableQuantity: Number(primary.availableQuantity ?? 1),
     image: primary.roomImage || booking.roomImage || '',
     gallery: primary.roomImage ? [primary.roomImage] : [],
     type: primary.roomType || booking.roomType || 'Apartment',
@@ -118,11 +117,15 @@ function roomFromBookingDraft(booking) {
   };
 }
 
+function getAvailableRoomQuantity(roomLike, fallback = 1) {
+  const quantity = Number(roomLike?.availableQuantity ?? roomLike?.bluejay?.inventory ?? fallback);
+  return Number.isFinite(quantity) ? Math.max(0, Math.floor(quantity)) : fallback;
+}
+
 export default function BookingPage() {
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
   const [availableRooms, setAvailableRooms] = useState([]);
-  const [roomToAdd, setRoomToAdd] = useState('');
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [form, setForm] = useState({
     fullName: '',
@@ -158,9 +161,10 @@ export default function BookingPage() {
     if (!draft) return;
 
     const draftRoom = getRoomById(draft.roomId) || roomFromBookingDraft(draft);
-    const upgradedDraft = draftRoom && (!draft.rooms?.length || !hasPricedBookingDraft(draft))
+    const upgradedDraft = draftRoom || draft.rooms?.length
       ? buildBookingDraft({
           room: draftRoom,
+          roomItems: draft.rooms?.length ? draft.rooms : undefined,
           quantity: draft.quantity || 1,
           checkIn: draft.checkIn,
           checkOut: draft.checkOut,
@@ -179,7 +183,7 @@ export default function BookingPage() {
   }, []);
 
   const roomOccupancyKey = (booking?.rooms || [])
-    .map((item) => `${item.roomId}:${item.adults}:${item.children}`)
+    .map((item) => `${item.roomId}:${item.quantity}:${item.adults}:${item.children}`)
     .join('|');
 
   useEffect(() => {
@@ -204,6 +208,7 @@ export default function BookingPage() {
             guests: item.guests,
             adults: item.adults,
             children: item.children,
+            quantity: item.quantity,
           }),
         );
         const [listResult, ...detailResults] = await Promise.all([listPromise, ...detailPromises]);
@@ -216,7 +221,10 @@ export default function BookingPage() {
             return refreshedRoom
               ? {
                   room: refreshedRoom,
-                  quantity: item.quantity,
+                  quantity: Math.min(
+                    item.quantity,
+                    Math.max(1, getAvailableRoomQuantity(refreshedRoom, item.quantity) || 1),
+                  ),
                   adults: item.adults,
                   children: item.children,
                   guests: item.guests,
@@ -315,7 +323,18 @@ export default function BookingPage() {
 
   const updateRoomItem = (index, changes) => {
     setBooking((current) => {
-      const nextItems = current.rooms.map((item, itemIndex) => (itemIndex === index ? { ...item, ...changes } : item));
+      const nextItems = current.rooms.map((item, itemIndex) => {
+        if (itemIndex !== index) return item;
+        const updatedItem = { ...item, ...changes };
+        if (Object.prototype.hasOwnProperty.call(changes, 'quantity')) {
+          const availableQuantity = getAvailableRoomQuantity(updatedItem, item.quantity);
+          updatedItem.quantity = Math.min(
+            Math.max(1, Number(changes.quantity || 1)),
+            Math.max(1, availableQuantity || 1),
+          );
+        }
+        return updatedItem;
+      });
       return rebuildBooking(current, nextItems);
     });
     setErrors((current) => ({ ...current, rooms: undefined, submit: undefined }));
@@ -328,9 +347,9 @@ export default function BookingPage() {
     });
   };
 
-  const addRoomItem = () => {
-    const selectedRoom = availableRooms.find((item) => item.id === roomToAdd);
-    if (!selectedRoom || booking.totalRooms >= MAX_ROOMS_PER_BOOKING) return;
+  const addRoomItem = (roomId) => {
+    const selectedRoom = availableRooms.find((item) => item.id === roomId);
+    if (!selectedRoom || getAvailableRoomQuantity(selectedRoom, 0) < 1) return;
     setBooking((current) => rebuildBooking(current, [
       ...current.rooms,
       {
@@ -340,7 +359,6 @@ export default function BookingPage() {
         children: 0,
       },
     ]));
-    setRoomToAdd('');
     setErrors((current) => ({ ...current, rooms: undefined }));
   };
 
@@ -360,8 +378,8 @@ export default function BookingPage() {
       },
     });
 
-    if (!booking.rooms?.length || booking.totalRooms > MAX_ROOMS_PER_BOOKING) {
-      nextErrors.rooms = `A booking can contain at most ${MAX_ROOMS_PER_BOOKING} rooms.`;
+    if (!booking.rooms?.length) {
+      nextErrors.rooms = 'At least one room is required.';
     }
     (booking.rooms || []).forEach((item) => {
       const itemRoom = availableRooms.find((candidate) => candidate.id === item.roomId) || {
@@ -399,8 +417,9 @@ export default function BookingPage() {
       if (guestErrors.guests || Object.keys(availability.errors).length) {
         nextErrors.rooms = guestErrors.guests || Object.values(availability.errors)[0];
       }
-      if (item.quantity > Number(item.availableQuantity ?? MAX_ROOMS_PER_BOOKING)) {
-        nextErrors.rooms = t('errors.notEnoughRooms', { count: item.availableQuantity ?? 0 });
+      const availableQuantity = getAvailableRoomQuantity(item, item.quantity);
+      if (item.quantity > availableQuantity) {
+        nextErrors.rooms = t('errors.notEnoughRooms', { count: availableQuantity });
       }
     });
 
@@ -524,12 +543,9 @@ export default function BookingPage() {
     bookingCode: booking.bookingCode,
     bookingStatus: booking.bookingStatus,
   });
-  const selectedRoomCounts = booking.rooms.reduce((counts, item) => {
-    counts.set(item.roomId, (counts.get(item.roomId) || 0) + 1);
-    return counts;
-  }, new Map());
+  const selectedRoomIds = new Set(booking.rooms.map((item) => item.roomId));
   const availableRoomChoices = availableRooms.filter(
-    (item) => (selectedRoomCounts.get(item.id) || 0) < Number(item.availableQuantity ?? MAX_ROOMS_PER_BOOKING),
+    (item) => !selectedRoomIds.has(item.id) && getAvailableRoomQuantity(item, 0) > 0,
   );
 
   return (
@@ -558,9 +574,10 @@ export default function BookingPage() {
                 guests={booking.guests}
                 adults={booking.adults}
                 children={booking.children}
-                maxGuests={room.maxGuests}
+                maxGuests={Math.max(room.maxGuests, booking.guests || 1)}
                 onChange={updateStay}
                 showGuests={false}
+                readOnlyGuests
               />
             {errors.checkIn || errors.checkOut || errors.guests || errors.rooms ? (
                 <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
@@ -581,7 +598,7 @@ export default function BookingPage() {
                 <div>
                   <p className="eyebrow">{t('common.roomsLabel')}</p>
                   <h2 className="mt-1 font-display text-2xl font-bold text-lune-ink">
-                    {booking.totalRooms} / {MAX_ROOMS_PER_BOOKING}
+                    {booking.totalRooms} {t('common.roomsLabel')}
                   </h2>
                 </div>
                 {isLoadingRooms ? <span className="text-xs font-medium text-stone-500">{t('common.processing')}</span> : null}
@@ -590,6 +607,8 @@ export default function BookingPage() {
               <div className="mt-4 border-y border-stone-200">
                 {booking.rooms.map((item, index) => {
                   const maxChildren = getMaxChildren(item.maxGuests, item.adults);
+                  const availableQuantity = getAvailableRoomQuantity(item, item.quantity);
+                  const quantityOptionCount = Math.max(1, availableQuantity, Number(item.quantity || 1));
                   return (
                     <div key={`${item.roomId}-${index}`} className="grid gap-4 border-t border-stone-200 py-4 first:border-t-0 sm:grid-cols-[72px_1fr]">
                       {item.roomImage ? (
@@ -614,7 +633,7 @@ export default function BookingPage() {
                         </div>
 
                         <p className="mt-4 text-xs font-bold uppercase text-stone-500">{t('common.guestsPerRoom')}</p>
-                        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                        <div className="mt-2 grid gap-3 sm:grid-cols-3">
                           <label>
                             <span className="label">{t('common.adults')}</span>
                             <select
@@ -645,6 +664,24 @@ export default function BookingPage() {
                               ))}
                             </select>
                           </label>
+                          <label>
+                            <span className="label">{t('common.roomQuantity')}</span>
+                            <select
+                              className="input-field py-2.5"
+                              value={item.quantity}
+                              disabled={availableQuantity < 1}
+                              onChange={(event) => updateRoomItem(index, { quantity: Number(event.target.value) })}
+                            >
+                              {Array.from({ length: quantityOptionCount }, (_, option) => option + 1).map((count) => (
+                                <option key={count} value={count} disabled={count > availableQuantity}>
+                                  {count}
+                                </option>
+                              ))}
+                            </select>
+                            <p className="mt-1 text-xs font-medium text-stone-500">
+                              {t('common.roomsAvailable', { count: availableQuantity })}
+                            </p>
+                          </label>
                         </div>
                       </div>
                     </div>
@@ -652,18 +689,18 @@ export default function BookingPage() {
                 })}
               </div>
 
-              {booking.totalRooms < MAX_ROOMS_PER_BOOKING && availableRoomChoices.length ? (
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                  <select className="input-field flex-1" value={roomToAdd} onChange={(event) => setRoomToAdd(event.target.value)}>
+              {availableRoomChoices.length ? (
+                <div className="mt-4">
+                  <select
+                    className="input-field w-full"
+                    value=""
+                    onChange={(event) => addRoomItem(event.target.value)}
+                  >
                     <option value="">{t('common.addRoomType')}</option>
                     {availableRoomChoices.map((item) => (
                       <option key={item.id} value={item.id}>{item.name} · {formatCurrency(item.price)}</option>
                     ))}
                   </select>
-                  <button className="btn-secondary shrink-0" type="button" disabled={!roomToAdd} onClick={addRoomItem}>
-                    <Plus className="h-4 w-4" aria-hidden="true" />
-                    {t('common.addRoomType')}
-                  </button>
                 </div>
               ) : null}
             </div>

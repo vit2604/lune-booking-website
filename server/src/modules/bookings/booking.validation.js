@@ -1,10 +1,9 @@
 import { z } from 'zod';
 import { paymentMethodKeys } from '../../constants/paymentMethods.js';
-import { MAX_ROOMS_PER_BOOKING } from '../../utils/bookingRoomUtils.js';
 
 const bookingRoomSchema = z.object({
   roomId: z.string().min(1),
-  quantity: z.coerce.number().int().min(1).max(MAX_ROOMS_PER_BOOKING).default(1),
+  quantity: z.coerce.number().int().min(1).default(1),
   guests: z.coerce.number().int().positive().optional(),
   adults: z.coerce.number().int().positive().optional(),
   children: z.coerce.number().int().nonnegative().optional(),
@@ -13,7 +12,7 @@ const bookingRoomSchema = z.object({
 export const createBookingSchema = z.object({
   body: z.object({
     roomId: z.string().min(1).optional(),
-    rooms: z.array(bookingRoomSchema).min(1).max(MAX_ROOMS_PER_BOOKING).optional(),
+    rooms: z.array(bookingRoomSchema).min(1).optional(),
     idempotencyKey: z.string().regex(/^[A-Za-z0-9._:-]{8,100}$/).optional(),
     checkIn: z.string().min(1),
     checkOut: z.string().min(1),
@@ -40,16 +39,6 @@ export const createBookingSchema = z.object({
   }).superRefine((body, ctx) => {
     if (!body.roomId && !body.rooms?.length) {
       ctx.addIssue({ code: 'custom', path: ['rooms'], message: 'At least one room is required' });
-      return;
-    }
-    if (!body.rooms?.length) return;
-    const totalQuantity = body.rooms.reduce((sum, item) => sum + item.quantity, 0);
-    if (totalQuantity > MAX_ROOMS_PER_BOOKING) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['rooms'],
-        message: `A booking can contain at most ${MAX_ROOMS_PER_BOOKING} rooms`,
-      });
     }
   }),
   query: z.object({}).passthrough(),

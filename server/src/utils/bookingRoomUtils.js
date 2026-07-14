@@ -1,5 +1,3 @@
-export const MAX_ROOMS_PER_BOOKING = 3;
-
 export function normalizeBookingRoomSelections(input = {}) {
   const source = Array.isArray(input.rooms) && input.rooms.length
     ? input.rooms

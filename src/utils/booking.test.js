@@ -89,7 +89,7 @@ describe('booking draft pricing', () => {
       checkOut: '2026-12-03',
     });
 
-    expect(draft.rooms).toHaveLength(3);
+    expect(draft.rooms).toHaveLength(2);
     expect(draft.totalRooms).toBe(3);
     expect(draft.adults).toBe(5);
     expect(draft.children).toBe(1);
@@ -97,9 +97,10 @@ describe('booking draft pricing', () => {
     expect(draft.pricePerNight).toBe(2205000);
     expect(draft.roomSubtotal).toBe(4410000);
     expect(draft.totalPrice).toBe(4410000);
-    expect(draft.rooms[0].totalPrice).toBe(1705000);
-    expect(draft.rooms[1].totalPrice).toBe(1705000);
-    expect(draft.rooms[2].totalPrice).toBe(1000000);
+    expect(draft.rooms[0].quantity).toBe(2);
+    expect(draft.rooms[0].totalPrice).toBe(3410000);
+    expect(draft.rooms[1].quantity).toBe(1);
+    expect(draft.rooms[1].totalPrice).toBe(1000000);
   });
 
   it('keeps occupancy independent for two rooms of the same type', () => {

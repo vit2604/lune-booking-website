@@ -70,8 +70,8 @@ export default function BookingSummary({ booking, room, className = '' }) {
 
         {roomItems ? (
           <div className="border-y border-stone-200">
-            {roomItems.map((item) => (
-              <div key={item.roomId} className="flex items-center justify-between gap-3 border-t border-stone-200 py-3 first:border-t-0">
+            {roomItems.map((item, index) => (
+              <div key={`${item.roomId}-${index}`} className="flex items-center justify-between gap-3 border-t border-stone-200 py-3 first:border-t-0">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-lune-ink">{item.roomName}</p>
                   <p className="mt-1 flex items-center gap-1.5 text-xs text-stone-500">

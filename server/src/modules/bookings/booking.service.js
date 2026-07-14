@@ -10,8 +10,6 @@ import {
 import { assertRoomCanBeBooked } from '../../utils/availabilityUtils.js';
 import {
   aggregateBookingRoomPrices,
-  getTotalRoomQuantity,
-  MAX_ROOMS_PER_BOOKING,
   normalizeBookingRoomSelections,
   scaleRoomPrice,
 } from '../../utils/bookingRoomUtils.js';
@@ -243,7 +241,6 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
 
 export async function createBooking(input) {
   const roomSelections = normalizeBookingRoomSelections(input);
-  const totalRoomQuantity = getTotalRoomQuantity(roomSelections);
   const uniqueRoomIds = [...new Set(roomSelections.map((item) => item.roomId))];
   const requestedQuantityByRoomId = roomSelections.reduce((quantities, item) => {
     quantities.set(item.roomId, (quantities.get(item.roomId) || 0) + item.quantity);
@@ -252,10 +249,6 @@ export async function createBooking(input) {
   if (!roomSelections.length || roomSelections.some((item) => !item.roomId)) {
     throw createHttpError(400, 'At least one room is required');
   }
-  if (totalRoomQuantity > MAX_ROOMS_PER_BOOKING) {
-    throw createHttpError(400, `A booking can contain at most ${MAX_ROOMS_PER_BOOKING} rooms`);
-  }
-
   input = {
     ...input,
     roomId: roomSelections[0].roomId,

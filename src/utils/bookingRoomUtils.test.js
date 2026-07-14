@@ -65,6 +65,32 @@ describe('server multi-room booking helpers', () => {
     expect(result.success).toBe(true);
   });
 
+  it('lets availability decide room quantity instead of using a fixed booking cap', () => {
+    const result = createBookingSchema.safeParse({
+      body: {
+        rooms: [
+          { roomId: 'room-a', quantity: 5, guests: 2, adults: 2, children: 0 },
+        ],
+        checkIn: '2026-12-01',
+        checkOut: '2026-12-03',
+        guests: 10,
+        adults: 10,
+        children: 0,
+        guest: {
+          fullName: 'Test Guest',
+          email: 'test@example.com',
+          phoneCode: '+84',
+          phoneNumber: '0900000000',
+          country: 'Vietnam',
+        },
+      },
+      query: {},
+      params: {},
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it('scales each room line and aggregates booking totals', () => {
     const first = {
       ...scaleRoomPrice({

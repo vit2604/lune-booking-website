@@ -69,6 +69,7 @@ export default function RoomDetailPage() {
           guests: booking.guests,
           adults: booking.adults,
           children: booking.children,
+          quantity: booking.quantity,
         });
         if (ignore || !apiRoom) return;
         setRooms((current) => {
@@ -97,7 +98,7 @@ export default function RoomDetailPage() {
       window.removeEventListener('lune:bookings-updated', refresh);
       window.removeEventListener('focus', refresh);
     };
-  }, [slug, currentLanguage, booking.checkIn, booking.checkOut, booking.guests, booking.adults, booking.children]);
+  }, [slug, currentLanguage, booking.checkIn, booking.checkOut, booking.guests, booking.adults, booking.children, booking.quantity]);
 
   const totals = useMemo(() => {
     if (!room) return { nights: 0, roomSubtotal: 0, total: 0 };
@@ -151,6 +152,7 @@ export default function RoomDetailPage() {
   const localizedRoom = getLocalizedRoom(room, currentLanguage);
   const approxNight = getApproxPriceText(room.price, currentCurrency, currentLanguage);
   const approxTotal = getApproxPriceText(totals.total, currentCurrency, currentLanguage);
+  const availableRoomQuantity = Math.max(0, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1));
 
   const handleBookingChange = (changes) => {
     setBooking((current) => ({
@@ -196,7 +198,7 @@ export default function RoomDetailPage() {
     });
 
     const mergedErrors = { ...nextErrors, ...availability.errors };
-    const availableQuantity = Math.max(0, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1));
+    const availableQuantity = availableRoomQuantity;
     if (booking.quantity > availableQuantity) {
       mergedErrors.quantity = t('errors.notEnoughRooms', { count: availableQuantity });
     }
@@ -336,7 +338,7 @@ export default function RoomDetailPage() {
             <div>
               <p className="text-sm font-semibold text-lune-ink">{t('common.roomsLabel')}</p>
               <p className="text-xs text-stone-500">
-                {t('common.roomsAvailable', { count: Math.max(0, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1)) })}
+                {t('common.roomsAvailable', { count: availableRoomQuantity })}
               </p>
             </div>
             <div className="grid grid-cols-[40px_44px_40px] items-center" aria-label={t('common.roomQuantity')}>
@@ -354,7 +356,7 @@ export default function RoomDetailPage() {
                 className="grid h-10 w-10 place-items-center rounded-md border border-stone-300 text-lune-ink disabled:opacity-40"
                 type="button"
                 title={t('common.increaseRooms')}
-                disabled={booking.quantity >= Math.min(3, Math.max(1, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1)))}
+                disabled={booking.quantity >= Math.max(1, availableRoomQuantity)}
                 onClick={() => handleBookingChange({ quantity: booking.quantity + 1 })}
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />

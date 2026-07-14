@@ -1,7 +1,6 @@
 import { getMaxChildren, getRoomCapacity } from './occupancy.js';
 
 export const SERVICE_FEE_PLACEHOLDER = 0;
-export const MAX_ROOMS_PER_BOOKING = 3;
 
 export const formatCurrency = (value) =>
   `${new Intl.NumberFormat('en-US', {
@@ -111,6 +110,55 @@ export const normalizeGuestCounts = ({ adults, children, guests, maxGuests } = {
   };
 };
 
+const normalizeRoomQuantity = (value) => {
+  const quantity = Number(value);
+  return Number.isFinite(quantity) ? Math.max(1, Math.floor(quantity)) : 1;
+};
+
+const getKnownAvailableQuantity = (room, fallback = 1) => {
+  const available = Number(room?.availableQuantity ?? room?.bluejay?.inventory ?? room?.quantity ?? fallback);
+  return Number.isFinite(available) ? Math.max(0, Math.floor(available)) : fallback;
+};
+
+const mergeMatchingRoomItems = (items) => {
+  const grouped = [];
+  const indexByKey = new Map();
+
+  items.forEach((item) => {
+    const key = [
+      item.roomId,
+      item.adults,
+      item.children,
+      item.pricePerNight,
+      item.unitSubtotal,
+      item.unitDiscountAmount,
+      item.unitServiceFee,
+      item.unitTaxAmount,
+      item.unitTotalPrice,
+    ].join('|');
+    const existingIndex = indexByKey.get(key);
+    if (existingIndex === undefined) {
+      indexByKey.set(key, grouped.length);
+      grouped.push(item);
+      return;
+    }
+
+    const existing = grouped[existingIndex];
+    grouped[existingIndex] = {
+      ...existing,
+      quantity: existing.quantity + item.quantity,
+      availableQuantity: Math.min(existing.availableQuantity, item.availableQuantity),
+      subtotal: existing.subtotal + item.subtotal,
+      discountAmount: existing.discountAmount + item.discountAmount,
+      serviceFee: existing.serviceFee + item.serviceFee,
+      taxAmount: existing.taxAmount + item.taxAmount,
+      totalPrice: existing.totalPrice + item.totalPrice,
+    };
+  });
+
+  return grouped;
+};
+
 export const formatGuestBreakdown = (booking, t = (key) => key) => {
   const counts = booking?.rooms?.length
     ? booking.rooms.reduce(
@@ -177,25 +225,20 @@ export const buildBookingDraft = ({
   bookingCode,
   bookingStatus,
 }) => {
-  const groupedSelections = roomItems?.length
+  const selections = (roomItems?.length
     ? roomItems
-    : [{ room, quantity, adults, children, guests }];
-  const selections = groupedSelections.flatMap((selection) => {
+    : [{ room, quantity, adults, children, guests }]
+  ).map((selection) => {
     const sourceRoom = selection.room || selection;
-    const sourceQuantity = Math.min(
-      MAX_ROOMS_PER_BOOKING,
-      Math.max(1, Number(selection.quantity || sourceRoom.quantity || 1)),
-    );
-    return Array.from({ length: sourceQuantity }, () => ({
+    return {
       ...selection,
-      quantity: 1,
-      sourceQuantity,
-    }));
-  }).slice(0, MAX_ROOMS_PER_BOOKING);
+      quantity: normalizeRoomQuantity(selection.quantity ?? sourceRoom.quantity ?? 1),
+    };
+  });
   const nights = calculateNights(checkIn, checkOut);
-  const normalizedRoomItems = selections.map((selection) => {
+  const normalizedRoomItems = mergeMatchingRoomItems(selections.map((selection) => {
     const sourceRoom = selection.room || selection;
-    const itemQuantity = 1;
+    const itemQuantity = normalizeRoomQuantity(selection.quantity ?? sourceRoom.quantity ?? 1);
     const maxGuests = Number(sourceRoom.maxGuests || selection.maxGuests || guests || 1);
     const guestCounts = normalizeGuestCounts({
       adults: selection.adults ?? sourceRoom.adults ?? adults,
@@ -214,7 +257,7 @@ export const buildBookingDraft = ({
       : null;
     const itemNights = Number(priceSummary?.nights || nights);
     const pricePerNight = Number(priceSummary?.pricePerNight || sourceRoom.pricePerNight || sourceRoom.price || sourceRoom.basePrice || 0);
-    const existingQuantity = Math.max(1, Number(selection.sourceQuantity || sourceRoom.quantity || 1));
+    const existingQuantity = normalizeRoomQuantity(sourceRoom.quantity || selection.sourceQuantity || itemQuantity || 1);
     const unitSubtotal = Number(
       priceSummary?.subtotal ??
       sourceRoom.unitSubtotal ??
@@ -249,7 +292,7 @@ export const buildBookingDraft = ({
       roomName,
       roomImage: sourceRoom.image || sourceRoom.roomImage || sourceRoom.mainImage || '',
       maxGuests,
-      availableQuantity: Number(sourceRoom.availableQuantity ?? sourceRoom.bluejay?.inventory ?? MAX_ROOMS_PER_BOOKING),
+      availableQuantity: getKnownAvailableQuantity(sourceRoom, itemQuantity),
       roomType: sourceRoom.type || sourceRoom.roomType || 'Apartment',
       size: sourceRoom.size || '',
       bed: sourceRoom.bed || sourceRoom.bedType || sourceRoom.beds || '',
@@ -272,7 +315,7 @@ export const buildBookingDraft = ({
       nightlyRates: priceSummary?.nightlyRates || sourceRoom.nightlyRates || [],
       priceSummary,
     };
-  });
+  }));
   const primaryRoom = normalizedRoomItems[0];
   const roomSubtotal = normalizedRoomItems.reduce((sum, item) => sum + item.subtotal, 0);
   const discountAmount = normalizedRoomItems.reduce((sum, item) => sum + item.discountAmount, 0);
