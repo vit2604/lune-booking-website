@@ -710,6 +710,7 @@ export default function BookingPage() {
                 <input
                   className="input-field"
                   type="text"
+                  autoComplete="name"
                   value={form.fullName}
                   onChange={(event) => updateForm('fullName', event.target.value)}
                   placeholder="Nguyen Van A"
@@ -722,6 +723,7 @@ export default function BookingPage() {
                   className="input-field"
                   type="text"
                   inputMode="email"
+                  autoComplete="email"
                   value={form.email}
                   onChange={(event) => updateForm('email', event.target.value)}
                   placeholder="you@example.com"
@@ -737,6 +739,8 @@ export default function BookingPage() {
                   <input
                     className="input-field"
                     type="tel"
+                    inputMode="tel"
+                    autoComplete="tel-national"
                     value={form.phone}
                     onChange={(event) => updateForm('phone', event.target.value)}
                     placeholder="901234567"

@@ -173,11 +173,11 @@ export default function ContactPage() {
               <div className="mt-6 grid gap-5">
                 <label>
                   <span className="label">{t('contact.name')}</span>
-                  <input className="input-field" name="name" type="text" required />
+                  <input className="input-field" name="name" type="text" autoComplete="name" required />
                 </label>
                 <label>
                   <span className="label">{t('contact.email')}</span>
-                  <input className="input-field" name="email" type="text" inputMode="email" required />
+                  <input className="input-field" name="email" type="text" inputMode="email" autoComplete="email" required />
                 </label>
                 <label>
                   <span className="label">{t('contact.message')}</span>
