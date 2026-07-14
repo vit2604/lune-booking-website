@@ -24,6 +24,7 @@ import {
 } from '../utils/booking.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
 import { getMaxChildren } from '../utils/occupancy.js';
+import { validatePhoneNumber } from '../utils/phoneValidation.js';
 import { loadBookingDraft, saveBookingDraft } from '../utils/storage.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -426,8 +427,12 @@ export default function BookingPage() {
     if (!emailPattern.test(form.email)) nextErrors.email = t('errors.emailInvalid');
     if (!form.phoneCode) nextErrors.phone = t('errors.phoneCodeRequired');
     if (!form.phone.trim()) nextErrors.phone = t('errors.phoneRequired');
-    if (form.phone.trim() && /^[\p{L}\s]+$/u.test(form.phone.trim())) {
-      nextErrors.phone = t('errors.phoneInvalid');
+    if (form.phone.trim() && !validatePhoneNumber({
+      phoneCode: form.phoneCode,
+      phoneNumber: form.phone,
+      country: form.country,
+    })) {
+      nextErrors.phone = t('errors.phoneCountryInvalid');
     }
     if (
       phoneVerificationConfig.required &&
@@ -442,6 +447,10 @@ export default function BookingPage() {
   const requestOtp = async () => {
     if (!form.phoneCode || !form.phone.trim()) {
       setErrors((current) => ({ ...current, phone: t('errors.phoneRequired') }));
+      return;
+    }
+    if (!validatePhoneNumber({ phoneCode: form.phoneCode, phoneNumber: form.phone, country: form.country })) {
+      setErrors((current) => ({ ...current, phone: t('errors.phoneCountryInvalid') }));
       return;
     }
     setPhoneVerification((current) => ({ ...current, status: 'sending', error: '', message: '' }));

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { paymentMethodKeys } from '../../constants/paymentMethods.js';
+import { isValidPhoneNumber } from '../../utils/phoneValidation.js';
 
 const bookingRoomSchema = z.object({
   roomId: z.string().min(1),
@@ -31,6 +32,18 @@ export const createBookingSchema = z.object({
         .regex(/^[0-9+\-().\s]+$/, 'Phone number contains invalid characters'),
       country: z.string().trim().min(1).max(80),
       nationality: z.string().trim().max(80).optional(),
+    }).superRefine((guest, ctx) => {
+      if (!isValidPhoneNumber({
+        phoneCode: guest.phoneCode,
+        phoneNumber: guest.phoneNumber,
+        country: guest.country,
+      })) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['phoneNumber'],
+          message: 'Phone number is invalid for the selected country code',
+        });
+      }
     }),
     specialRequest: z.string().trim().max(1000).optional(),
     arrivalTime: z.string().trim().max(40).optional(),

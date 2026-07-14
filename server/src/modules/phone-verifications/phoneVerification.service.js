@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { env } from '../../config/env.js';
 import { prisma } from '../../config/prisma.js';
 import { createHttpError } from '../../utils/responseUtils.js';
+import { parseValidPhoneNumber } from '../../utils/phoneValidation.js';
 
 const OTP_DIGITS = 6;
 
@@ -16,16 +17,11 @@ function safeCompare(left, right) {
 }
 
 export function normalizePhone({ phoneCode = '', phoneNumber = '' } = {}) {
-  const codeMatch = String(phoneCode).match(/\+\d+/);
-  const code = codeMatch?.[0] || '';
-  const cleanNumber = String(phoneNumber).replace(/[^\d+]/g, '');
-  const phone = cleanNumber.startsWith('+') ? cleanNumber : `${code}${cleanNumber.replace(/^0+/, '')}`;
-
-  if (!/^\+\d{8,16}$/.test(phone)) {
+  const parsed = parseValidPhoneNumber({ phoneCode, phoneNumber });
+  if (!parsed) {
     throw createHttpError(400, 'Please enter a valid phone number before requesting OTP.');
   }
-
-  return phone;
+  return parsed.number;
 }
 
 export function getPhoneVerificationConfig() {

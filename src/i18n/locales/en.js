@@ -329,6 +329,7 @@ export default {
     "guestsRequired": "Please select at least 1 guest.",
     "guestsMax": "This room allows up to {max} guests.",
     "phoneInvalid": "Phone number cannot contain only letters.",
+    "phoneCountryInvalid": "Enter a valid phone number for the selected country code.",
     "phoneCodeRequired": "Country code is required.",
     "checkInPast": "Check-in date cannot be in the past.",
     "roomUnavailable": "This room is not available for selected dates.",

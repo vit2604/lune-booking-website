@@ -329,6 +329,7 @@ export default {
     "guestsRequired": "Vui lòng chọn ít nhất 1 khách.",
     "guestsMax": "Phòng này tối đa {max} khách.",
     "phoneInvalid": "Số điện thoại không được chỉ gồm chữ.",
+    "phoneCountryInvalid": "Vui lòng nhập số điện thoại hợp lệ theo mã quốc gia đã chọn.",
     "phoneCodeRequired": "Vui lòng chọn mã quốc gia.",
     "checkInPast": "Check-in date cannot be in the past.",
     "roomUnavailable": "This room is not available for selected dates.",
