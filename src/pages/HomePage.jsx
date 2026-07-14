@@ -24,11 +24,13 @@ import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import { defaultBrandingSettings, getBrandingSettings } from '../admin/services/adminSettingsService.js';
 import DateInput from '../components/DateInput.jsx';
 import GuestSelector from '../components/GuestSelector.jsx';
+import LuneImage from '../components/LuneImage.jsx';
 import RoomCard from '../components/RoomCard.jsx';
 import BookingPolicy from '../components/BookingPolicy.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
+import useMediaQuery from '../hooks/useMediaQuery.js';
 import { fetchRoomsWithFallback } from '../services/roomApiService.js';
 import { addDays, buildBookingDraft, getDefaultDates, toDateInputValue } from '../utils/booking.js';
 import { saveBookingDraft } from '../utils/storage.js';
@@ -53,6 +55,7 @@ export default function HomePage() {
   const [branding, setBranding] = useState(getBrandingSettings());
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
+  const isDesktopViewport = useMediaQuery('(min-width: 1024px)');
 
   const setCheckIn = (value) => {
     const checkIn = value && value < today ? today : value;
@@ -224,7 +227,7 @@ export default function HomePage() {
     <>
       <RevealOnScroll as="section" direction="none" duration={500} className="lune-hero-section relative isolate overflow-hidden bg-lune-ink text-white">
         {heroSlides.map((slide, index) => (
-          <img
+          <LuneImage
             key={slide.src}
             src={slide.src}
             alt={index === activeHeroIndex ? slide.alt : ''}
@@ -238,12 +241,15 @@ export default function HomePage() {
           />
         ))}
         <div className="lune-hero-overlay absolute inset-0 z-[1] bg-[radial-gradient(circle_at_62%_32%,rgba(255,255,255,0.18),transparent_30%),linear-gradient(90deg,rgba(21,16,11,0.82),rgba(60,43,26,0.44)_42%,rgba(23,18,13,0.12)_78%)]" />
-        <img
-          src={heroSlides[activeHeroIndex]?.src || branding.heroImage}
-          alt=""
-          aria-hidden="true"
-          className="lune-hero-depth-layer pointer-events-none absolute inset-0 z-[12] hidden h-full w-full object-cover lg:block"
-        />
+        {isDesktopViewport ? (
+          <img
+            src={heroSlides[activeHeroIndex]?.src || branding.heroImage}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            className="lune-hero-depth-layer pointer-events-none absolute inset-0 z-[12] hidden h-full w-full object-cover lg:block"
+          />
+        ) : null}
         <div className="absolute inset-x-0 bottom-0 z-[2] h-40 bg-gradient-to-t from-black/45 to-transparent" />
 
         <div className="page-shell relative z-20 flex min-h-[560px] flex-col justify-end pb-0 pt-24 sm:min-h-[820px] sm:pt-32 lg:min-h-screen">
@@ -406,7 +412,7 @@ export default function HomePage() {
       <RevealOnScroll as="section" variant="curve-right" className="section-space bg-white">
         <div className="page-shell grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div className="relative overflow-hidden rounded-2xl bg-white shadow-[0_22px_60px_rgba(23,20,18,0.08)]">
-            <img src={branding.introImage} alt="Lune Boutique Apartment exterior near My Khe Beach" className="h-full min-h-[520px] w-full object-cover" />
+            <LuneImage src={branding.introImage} alt="Lune Boutique Apartment exterior near My Khe Beach" className="h-full min-h-[520px] w-full object-cover" loading="lazy" decoding="async" />
             <div className="relative m-4 rounded-2xl bg-white p-4 shadow-soft sm:absolute sm:inset-x-5 sm:bottom-5 sm:m-0 sm:bg-white/92 sm:p-5 sm:backdrop-blur">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-lune-goldDark">{t('home.locationSnapshot')}</p>
               <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
@@ -502,7 +508,7 @@ export default function HomePage() {
           </div>
           <div className="mt-10 grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
             <RevealOnScroll variant="curve-left" className="relative overflow-hidden rounded-3xl shadow-[0_26px_70px_rgba(23,20,18,0.16)]">
-              <img src={galleryImages[0].src} alt={galleryImages[0].alt} className="h-[420px] w-full object-cover sm:h-[560px]" loading="lazy" />
+              <LuneImage src={galleryImages[0].src} alt={galleryImages[0].alt} className="h-[420px] w-full object-cover sm:h-[560px]" loading="lazy" decoding="async" />
               <div className="absolute inset-x-5 bottom-5 rounded-2xl border border-white bg-white p-5 shadow-[0_18px_50px_rgba(23,20,18,0.2)]">
                 <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-lune-goldDark">92-94 Thạch Lam</p>
                 <p className="mt-2 text-sm font-semibold leading-6 text-lune-ink">{t('home.galleryLocationNote')}</p>
@@ -511,7 +517,7 @@ export default function HomePage() {
             <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
               {galleryImages.slice(1).map((image, index) => (
                 <RevealOnScroll key={image.src} variant={index % 2 === 0 ? 'curve-right' : 'zoom'} delay={index * 80} className="overflow-hidden rounded-3xl shadow-[0_18px_50px_rgba(23,20,18,0.1)]">
-                  <img src={image.src} alt={image.alt} className="h-56 w-full object-cover transition duration-500 hover:scale-105 lg:h-[176px]" loading="lazy" />
+                  <LuneImage src={image.src} alt={image.alt} className="h-56 w-full object-cover transition duration-500 hover:scale-105 lg:h-[176px]" loading="lazy" decoding="async" />
                 </RevealOnScroll>
               ))}
             </div>
@@ -604,7 +610,7 @@ export default function HomePage() {
               <h2 className="section-title mt-3">{t('home.amenitiesTitle')}</h2>
               <p className="mt-5 text-sm leading-7 text-stone-600">{t('home.amenitiesBody')}</p>
               <div className="mt-6 overflow-hidden rounded-2xl">
-                <img src="/images/lune/type-3-standard/type-3-standard-1.webp" alt="Bright apartment room with practical amenities" className="h-72 w-full object-cover" loading="lazy" />
+                <LuneImage src="/images/lune/type-3-standard/type-3-standard-1.webp" alt="Bright apartment room with practical amenities" className="h-72 w-full object-cover" loading="lazy" decoding="async" />
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">

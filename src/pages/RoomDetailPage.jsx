@@ -16,6 +16,7 @@ import { getBookings } from '../admin/services/adminBookingService.js';
 import AmenityList from '../components/AmenityList.jsx';
 import BookingPolicy from '../components/BookingPolicy.jsx';
 import DateSelector from '../components/DateSelector.jsx';
+import LuneImage from '../components/LuneImage.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useCurrency } from '../i18n/useCurrency.js';
 import { getLocalizedRoom } from '../i18n/roomTranslations.js';
@@ -233,10 +234,12 @@ export default function RoomDetailPage() {
         <div className="space-y-10">
           <RevealOnScroll variant="zoom" className="flex snap-x gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0">
             {room.gallery.map((image, index) => (
-              <img
+              <LuneImage
                 key={image}
                 src={image}
                 alt={`${localizedRoom.name} gallery ${index + 1}`}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                decoding="async"
                 className={`h-72 min-w-[86%] snap-center rounded-lg object-cover sm:h-96 sm:min-w-[70%] lg:min-w-0 ${
                   index === 0 ? 'lg:col-span-2 lg:h-[520px]' : 'lg:h-64'
                 }`}

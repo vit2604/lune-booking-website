@@ -6,6 +6,7 @@ import { useTranslation } from '../i18n/useTranslation.js';
 import { formatCurrency as formatVnd } from '../utils/booking.js';
 import { getApproxPriceText } from '../utils/currencyUtils.js';
 import AmenityList from './AmenityList.jsx';
+import LuneImage from './LuneImage.jsx';
 
 export default function RoomCard({ room, onBook, isBooking = false }) {
   const { t, currentLanguage } = useTranslation();
@@ -16,7 +17,7 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-softLg">
       <Link to={`/rooms/${room.slug}`} className="relative block overflow-hidden">
-        <img
+        <LuneImage
           src={room.image}
           alt={localizedRoom.name}
           className="h-72 w-full object-cover transition duration-700 group-hover:scale-105"
