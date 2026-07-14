@@ -61,7 +61,7 @@ export const defaultPaymentSettings = {
   bankName: 'PLACEHOLDER_BANK_NAME',
   bankAccountNumber: 'PLACEHOLDER_ACCOUNT_NUMBER',
   bankAccountName: 'LUNE BOUTIQUE HOTEL',
-  transferContentTemplate: 'LUNE-[BOOKING_CODE]-[GUEST_NAME]',
+  transferContentTemplate: 'Dang Trung Vuong chuyen tien',
   qrImageUrl: '',
   enablePayAtProperty: true,
   payAtPropertyNote: 'Pay directly when you arrive at Lune Boutique Hotel & Apartment.',

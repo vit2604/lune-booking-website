@@ -34,7 +34,7 @@ export const defaultPaymentConfig = {
       bankName: 'PLACEHOLDER_BANK_NAME',
       accountNumber: 'PLACEHOLDER_ACCOUNT_NUMBER',
       accountHolder: 'LUNE BOUTIQUE HOTEL',
-      transferContentTemplate: 'LUNE-{bookingCode}-{guestName}',
+      transferContentTemplate: 'Dang Trung Vuong chuyen tien',
       qrImageUrl: '',
       bankApiProvider: '',
       bankApiBaseUrl: '',

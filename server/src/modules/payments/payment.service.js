@@ -6,6 +6,8 @@ import { isAllowedPaymentMethod } from '../../constants/paymentMethods.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 import { syncBookingToBluejay } from '../bookings/booking.service.js';
 
+const DEFAULT_TRANSFER_CONTENT = 'Dang Trung Vuong chuyen tien';
+
 const defaultPaymentMethods = {
   payAtProperty: {
     enabled: true,
@@ -33,7 +35,7 @@ const defaultPaymentMethods = {
     bankName: 'PLACEHOLDER_BANK_NAME',
     accountNumber: 'PLACEHOLDER_ACCOUNT_NUMBER',
     accountHolder: 'LUNE BOUTIQUE HOTEL',
-    transferContentTemplate: 'LUNE-{bookingCode}-{guestName}',
+    transferContentTemplate: DEFAULT_TRANSFER_CONTENT,
     qrImageUrl: '',
   },
   vietQr: {
@@ -212,14 +214,14 @@ function getPayosClient() {
 function buildPayosOrderCode(bookingCode, amount) {
   const digits = String(bookingCode || '').replace(/\D/g, '');
   const amountSuffix = String(Math.max(0, Math.round(Number(amount) || 0)) % 10000).padStart(4, '0');
-  const value = Number(`${digits.slice(-8)}${amountSuffix}`);
+  const timeSuffix = String(Date.now() % 1000).padStart(3, '0');
+  const value = Number(`${digits.slice(-6)}${amountSuffix}${timeSuffix}`);
   if (Number.isSafeInteger(value) && value > 0) return value;
   return Date.now();
 }
 
-function buildPayosDescription(booking, paymentContext = {}) {
-  const prefix = paymentContext.paymentPurpose === 'deposit' ? 'LUNE COC' : 'LUNE';
-  return `${prefix} ${String(booking.bookingCode || '').replace(/\D/g, '').slice(-10)}`.slice(0, 25);
+function buildPayosDescription() {
+  return DEFAULT_TRANSFER_CONTENT.slice(0, 25);
 }
 
 function getFrontendUrl(path = '/') {
@@ -242,6 +244,7 @@ async function createPayosPaymentLink(booking, paymentContext = {}) {
 
   const paymentAmount = Math.max(1, Math.round(Number(paymentContext.amount || booking.totalPrice || 0)));
   const orderCode = buildPayosOrderCode(booking.bookingCode, paymentAmount);
+  const description = buildPayosDescription();
   const returnUrl = env.PAYOS_RETURN_URL || getFrontendUrl(`/success?bookingCode=${encodeURIComponent(booking.bookingCode)}`);
   const cancelUrl = env.PAYOS_CANCEL_URL || getFrontendUrl('/payment');
 
@@ -250,7 +253,7 @@ async function createPayosPaymentLink(booking, paymentContext = {}) {
     paymentLink = await payos.paymentRequests.create({
       orderCode,
       amount: paymentAmount,
-      description: buildPayosDescription(booking, paymentContext),
+      description,
       returnUrl,
       cancelUrl,
       buyerName: booking.guest?.fullName || undefined,
@@ -281,6 +284,7 @@ async function createPayosPaymentLink(booking, paymentContext = {}) {
     configured: true,
     orderCode,
     amount: paymentAmount,
+    description,
     paymentPurpose: paymentContext.paymentPurpose || 'full',
     depositPercent: paymentContext.depositPercent ?? null,
     balanceAmount: paymentContext.balanceAmount ?? null,
@@ -380,7 +384,7 @@ export async function savePaymentSettings(input) {
 }
 
 export function generateTransferContent(booking, template) {
-  return (template || 'LUNE-{bookingCode}-{guestName}')
+  return (template || DEFAULT_TRANSFER_CONTENT)
     .replace('{bookingCode}', booking.bookingCode)
     .replace('{guestName}', booking.guest?.fullName || 'GUEST')
     .normalize('NFD')
@@ -448,7 +452,12 @@ export async function createPaymentRequest({
     orderBy: { createdAt: 'desc' },
   });
 
-  if (method === 'vietQr' && reusablePayment?.rawPayloadJson?.configured && Number(reusablePayment.amount) === paymentAmount) {
+  if (
+    method === 'vietQr' &&
+    reusablePayment?.rawPayloadJson?.configured &&
+    Number(reusablePayment.amount) === paymentAmount &&
+    reusablePayment.rawPayloadJson.description === buildPayosDescription()
+  ) {
     if (reusablePayment.transferContent) {
       await prisma.payment.update({ where: { id: reusablePayment.id }, data: { transferContent: null } });
     }

@@ -39,7 +39,7 @@ export function getEnabledPaymentMethods() {
     .sort((a, b) => (a.sortOrder || 999) - (b.sortOrder || 999));
 }
 
-export function generateTransferContent(booking, template = 'LUNE-{bookingCode}-{guestName}') {
+export function generateTransferContent(booking, template = 'Dang Trung Vuong chuyen tien') {
   const guestName = booking?.guestInfo?.fullName || booking?.guestName || 'GUEST';
   return template
     .replaceAll('{bookingCode}', booking?.bookingCode || 'BOOKING')

@@ -222,7 +222,7 @@ const paymentMethods = {
     bankName: 'PLACEHOLDER_BANK_NAME',
     accountNumber: 'PLACEHOLDER_ACCOUNT_NUMBER',
     accountHolder: 'LUNE BOUTIQUE HOTEL',
-    transferContentTemplate: 'LUNE-{bookingCode}-{guestName}',
+    transferContentTemplate: 'Dang Trung Vuong chuyen tien',
     qrImageUrl: '',
   },
   vietQr: { enabled: false, visibleForGuests: true, displayName: 'VietQR', sortOrder: 4, statusAfterConfirm: 'PENDING' },
