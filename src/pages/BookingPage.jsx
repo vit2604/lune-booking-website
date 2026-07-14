@@ -208,7 +208,6 @@ export default function BookingPage() {
             guests: item.guests,
             adults: item.adults,
             children: item.children,
-            quantity: item.quantity,
           }),
         );
         const [listResult, ...detailResults] = await Promise.all([listPromise, ...detailPromises]);

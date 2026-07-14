@@ -10,6 +10,24 @@ class ApiError extends Error {
   }
 }
 
+function firstValidationMessage(payload) {
+  const fieldErrors = payload?.errors?.fieldErrors;
+  if (!fieldErrors || typeof fieldErrors !== 'object') return '';
+  return Object.values(fieldErrors)
+    .flatMap((messages) => (Array.isArray(messages) ? messages : []))
+    .find(Boolean) || '';
+}
+
+export function getApiErrorMessage(payload) {
+  if (payload?.message !== 'Validation error') return payload?.message || 'API request failed';
+
+  const detail = firstValidationMessage(payload);
+  if (/expected number to be <=\s*3/i.test(detail)) {
+    return 'Số lượng phòng đã chọn vượt quá giới hạn của máy chủ. Vui lòng tải lại trang và thử lại.';
+  }
+  return detail || 'Thông tin đặt phòng chưa hợp lệ. Vui lòng kiểm tra lại.';
+}
+
 export function getAdminToken() {
   return localStorage.getItem(storageKeys.adminToken);
 }
@@ -47,7 +65,7 @@ export async function apiRequest(path, options = {}) {
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || payload.success === false) {
       if (response.status === 401 && token) expireAdminSession();
-      throw new ApiError(payload.message || 'API request failed', response.status, payload);
+      throw new ApiError(getApiErrorMessage(payload), response.status, payload);
     }
     return payload.data;
   } catch (error) {

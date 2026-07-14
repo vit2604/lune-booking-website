@@ -14,7 +14,7 @@ globalThis.localStorage = {
 };
 globalThis.window = new EventTarget();
 
-const { apiRequest } = await import('./apiClient.js');
+const { apiRequest, getApiErrorMessage } = await import('./apiClient.js');
 
 describe('admin API client', () => {
   beforeEach(() => {
@@ -51,5 +51,23 @@ describe('admin API client', () => {
     expect(localStorage.getItem('lune_admin_token')).toBeNull();
     expect(localStorage.getItem('lune_admin_logged_in')).toBeNull();
     expect(expired).toHaveBeenCalledOnce();
+  });
+
+  it('turns the legacy room quantity validation into an actionable message', () => {
+    expect(getApiErrorMessage({
+      message: 'Validation error',
+      errors: {
+        fieldErrors: {
+          query: ['Too big: expected number to be <=3'],
+        },
+      },
+    })).toBe('Số lượng phòng đã chọn vượt quá giới hạn của máy chủ. Vui lòng tải lại trang và thử lại.');
+  });
+
+  it('keeps a specific validation detail when available', () => {
+    expect(getApiErrorMessage({
+      message: 'Validation error',
+      errors: { fieldErrors: { body: ['Email is invalid'] } },
+    })).toBe('Email is invalid');
   });
 });
