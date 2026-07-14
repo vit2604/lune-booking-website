@@ -6,6 +6,7 @@ import { isAllowedPaymentMethod } from '../../constants/paymentMethods.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 import { syncBookingToBluejay } from '../bookings/booking.service.js';
 import { buildPayosDescription } from './paymentDescription.js';
+import { bookingStatusAfterPayment } from './paymentStatusUtils.js';
 
 const DEFAULT_TRANSFER_CONTENT = 'Dang Trung Vuong chuyen tien';
 
@@ -635,7 +636,10 @@ export async function verifyPaymentStatus(bookingCode) {
     });
     return tx.booking.update({
       where: { id: booking.id },
-      data: { paymentStatus: nextStatus },
+      data: {
+        paymentStatus: nextStatus,
+        bookingStatus: bookingStatusAfterPayment(booking.bookingStatus, nextStatus),
+      },
       include: {
         room: { include: { images: true, ratePeriods: true } },
         roomItems: { include: { room: { include: { images: true, ratePeriods: true } } } },
@@ -703,7 +707,10 @@ export async function handlePayosWebhook(payload) {
 
     return tx.booking.update({
       where: { id: payment.bookingId },
-      data: { paymentStatus: nextStatus },
+      data: {
+        paymentStatus: nextStatus,
+        bookingStatus: bookingStatusAfterPayment(payment.booking.bookingStatus, nextStatus),
+      },
       include: {
         room: { include: { images: true, ratePeriods: true } },
         roomItems: { include: { room: { include: { images: true, ratePeriods: true } } } },

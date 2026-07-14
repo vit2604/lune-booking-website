@@ -163,6 +163,7 @@ export const translations = {
         'Transfer the deposit to the account below and use the transfer content so we can match your booking.',
       cancelTitle: 'Need to change or cancel?',
       cancelNote: 'To change or cancel your booking, please contact Lune directly:',
+      paymentCancelled: 'Payment cancelled. The rooms have been released for other guests.',
       safetyNote:
         'Please only make payment using the official bank information shown on this website. After payment, our team will contact you to confirm your booking.',
       securityNotice:
@@ -369,6 +370,7 @@ export const translations = {
         'Chuyển khoản tiền cọc vào tài khoản bên dưới và ghi đúng nội dung chuyển khoản để chúng tôi đối soát.',
       cancelTitle: 'Cần đổi hoặc hủy phòng?',
       cancelNote: 'Để đổi hoặc hủy phòng, vui lòng liên hệ trực tiếp với Lune:',
+      paymentCancelled: 'Đã hủy thanh toán. Phòng đã được trả lại để khách khác có thể đặt.',
       safetyNote:
         'Vui lòng chỉ thanh toán theo thông tin ngân hàng chính thức hiển thị trên website này. Sau khi thanh toán, đội ngũ Lune sẽ liên hệ xác nhận đặt phòng.',
     },

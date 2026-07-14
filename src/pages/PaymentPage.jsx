@@ -9,7 +9,11 @@ import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { useTranslation } from '../i18n/useTranslation.js';
 import { persistBooking } from '../services/bookingService.js';
-import { createPaymentWithFallback, getPaymentMethodsWithFallback } from '../services/paymentApiService.js';
+import {
+  createPaymentWithFallback,
+  getPaymentMethodsWithFallback,
+  verifyPaymentWithProvider,
+} from '../services/paymentApiService.js';
 import { getPaymentSettings } from '../services/paymentService.js';
 import { formatCurrency, getPaymentStatus } from '../utils/booking.js';
 import {
@@ -84,8 +88,11 @@ export default function PaymentPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState('');
   const [confirming, setConfirming] = useState(false);
+  const [cancellationNotice, setCancellationNotice] = useState('');
   const { t } = useTranslation();
   useDocumentMeta({ title: `${t('payment.reviewConfirm')} | ${BRAND}`, path: '/payment', noindex: true });
+  const paymentCancelledMessage = t('payment.paymentCancelled');
+  const payosErrorMessage = t('payment.payosNotConfigured');
 
   useEffect(() => {
     setBooking(loadBookingDraft());
@@ -112,6 +119,43 @@ export default function PaymentPage() {
       window.removeEventListener('storage', refresh);
     };
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const returnedFromCancellation =
+      params.get('cancel') === 'true' || String(params.get('status') || '').toUpperCase() === 'CANCELLED';
+    if (!returnedFromCancellation || !booking?.bookingCode) return undefined;
+
+    let active = true;
+    setConfirming(true);
+    setError('');
+    verifyPaymentWithProvider(booking.bookingCode)
+      .then((result) => {
+        if (!active) return;
+        const cancelledBooking = {
+          ...booking,
+          paymentStatus: result.paymentStatus || 'failed',
+          bookingStatus: result.bookingStatus || 'cancelled',
+          updatedAt: new Date().toISOString(),
+        };
+        setBooking(cancelledBooking);
+        saveBookingDraft(cancelledBooking);
+        persistBooking(cancelledBooking);
+        setPaymentRequest(null);
+        setCancellationNotice(paymentCancelledMessage);
+        window.history.replaceState({}, '', window.location.pathname);
+      })
+      .catch((paymentError) => {
+        if (active) setError(paymentError?.message || payosErrorMessage);
+      })
+      .finally(() => {
+        if (active) setConfirming(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [booking?.bookingCode, paymentCancelledMessage, payosErrorMessage]);
 
   const room = useMemo(() => getRoomById(booking?.roomId) || roomFromBookingDraft(booking), [booking]);
   const baseTotal = Number(booking?.total ?? booking?.totalPrice ?? 0);
@@ -492,6 +536,7 @@ export default function PaymentPage() {
             </div>
 
             {copied ? <p className="mt-4 text-sm font-medium text-green-700">{copied}</p> : null}
+            {cancellationNotice ? <p className="mt-4 text-sm font-medium text-green-700">{cancellationNotice}</p> : null}
             {error ? <p className="mt-4 text-sm font-medium text-red-600">{error}</p> : null}
 
             <button className="btn-gold mt-8 w-full sm:w-auto" type="button" disabled={confirming} onClick={handleConfirm}>

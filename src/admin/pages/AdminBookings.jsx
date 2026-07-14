@@ -18,6 +18,7 @@ import {
   updatePaymentStatus,
 } from '../services/adminBookingService.js';
 import { formatCurrency, formatGuestBreakdown, getPaymentMethodLabel } from '../../utils/booking.js';
+import { verifyPaymentWithProvider } from '../../services/paymentApiService.js';
 
 const guestLabel = (key) =>
   ({
@@ -74,8 +75,21 @@ export default function AdminBookings() {
   const loadBookings = async (message = '') => {
     setLoading(true);
     try {
-      const data = await adminListBookings();
-      const items = Array.isArray(data) ? data : data.items || [];
+      let data = await adminListBookings();
+      let items = Array.isArray(data) ? data : data.items || [];
+      const pendingPayosBookings = items.filter(
+        (booking) =>
+          booking.paymentMethod === 'vietQr' &&
+          booking.paymentStatus === 'PENDING' &&
+          booking.bookingStatus === 'RECEIVED',
+      );
+      if (pendingPayosBookings.length) {
+        await Promise.allSettled(
+          pendingPayosBookings.map((booking) => verifyPaymentWithProvider(booking.bookingCode)),
+        );
+        data = await adminListBookings();
+        items = Array.isArray(data) ? data : data.items || [];
+      }
       setBookings(items.map(normalizeBooking));
       setSource('api');
       if (message) setToast(message);
