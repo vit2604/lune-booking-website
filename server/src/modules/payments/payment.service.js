@@ -221,7 +221,7 @@ function buildPayosOrderCode(bookingCode, amount) {
 }
 
 function buildPayosDescription() {
-  return DEFAULT_TRANSFER_CONTENT.slice(0, 25);
+  return DEFAULT_TRANSFER_CONTENT;
 }
 
 function getFrontendUrl(path = '/') {
