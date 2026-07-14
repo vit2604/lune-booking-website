@@ -2,7 +2,6 @@ import { SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
-import { getBookings } from '../admin/services/adminBookingService.js';
 import DateInput from '../components/DateInput.jsx';
 import GuestSelector from '../components/GuestSelector.jsx';
 import RoomCard from '../components/RoomCard.jsx';
@@ -11,7 +10,6 @@ import { useTranslation } from '../i18n/useTranslation.js';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
 import { fetchRoomsWithFallback } from '../services/roomApiService.js';
 import { addDays, buildBookingDraft, getDefaultDates, toDateInputValue, validateStay } from '../utils/booking.js';
-import { isRoomAvailable } from '../utils/bookingAvailabilityUtils.js';
 import { fitsRoomCapacity, getRoomCapacity } from '../utils/occupancy.js';
 import { saveBookingDraft } from '../utils/storage.js';
 
@@ -32,7 +30,6 @@ export default function RoomsPage() {
       ? urlCheckOut
       : toDateInputValue(addDays(new Date(`${initialCheckIn}T12:00:00`), 1));
   const [rooms, setRooms] = useState(getVisibleRooms());
-  const [bookings, setBookings] = useState(getBookings());
   const [filters, setFilters] = useState({
     guests: initialGuests,
     adults: urlAdults,
@@ -85,17 +82,14 @@ export default function RoomsPage() {
           setBookingError(t('errors.apiUnavailable'));
         }
       }
-      if (!ignore) setBookings(getBookings());
     };
 
     refresh();
     window.addEventListener('lune:rooms-updated', refresh);
-    window.addEventListener('lune:bookings-updated', refresh);
     window.addEventListener('focus', refresh);
     return () => {
       ignore = true;
       window.removeEventListener('lune:rooms-updated', refresh);
-      window.removeEventListener('lune:bookings-updated', refresh);
       window.removeEventListener('focus', refresh);
     };
   }, [currentLanguage, filters.checkIn, filters.checkOut, filters.guests, filters.adults, filters.children, t]);
@@ -104,9 +98,8 @@ export default function RoomsPage() {
     return rooms
       .filter((room) => fitsRoomCapacity(room.maxGuests, filters.adults, filters.children))
       .filter((room) => filters.type === 'all' || room.id === filters.type)
-      .filter((room) => isRoomAvailable(room.id, filters.checkIn, filters.checkOut, bookings, room))
       .sort((a, b) => a.price - b.price);
-  }, [bookings, filters, rooms]);
+  }, [filters, rooms]);
 
   const updateFilter = (key, value) => {
     setFilters((current) => {
@@ -155,11 +148,6 @@ export default function RoomsPage() {
 
     if (Object.keys(errors).length) {
       setBookingError(Object.values(errors)[0]);
-      return;
-    }
-
-    if (!isRoomAvailable(room.id, filters.checkIn, filters.checkOut, bookings, room)) {
-      setBookingError(t('errors.roomUnavailable'));
       return;
     }
 

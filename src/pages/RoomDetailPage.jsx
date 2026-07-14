@@ -12,7 +12,6 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
-import { getBookings } from '../admin/services/adminBookingService.js';
 import AmenityList from '../components/AmenityList.jsx';
 import BookingPolicy from '../components/BookingPolicy.jsx';
 import DateSelector from '../components/DateSelector.jsx';
@@ -41,7 +40,6 @@ export default function RoomDetailPage() {
   const navigate = useNavigate();
   const bookingBoxRef = useRef(null);
   const [rooms, setRooms] = useState(getVisibleRooms());
-  const [bookings, setBookings] = useState(getBookings());
   const room = rooms.find((item) => item.slug === slug || item.id === slug);
   const defaults = getDefaultDates();
   const [booking, setBooking] = useState({
@@ -83,7 +81,6 @@ export default function RoomDetailPage() {
         if (!ignore) setRooms(getVisibleRooms());
       } finally {
         if (!ignore) {
-          setBookings(getBookings());
           setIsLoadingRoom(false);
         }
       }
@@ -91,12 +88,10 @@ export default function RoomDetailPage() {
 
     refresh();
     window.addEventListener('lune:rooms-updated', refresh);
-    window.addEventListener('lune:bookings-updated', refresh);
     window.addEventListener('focus', refresh);
     return () => {
       ignore = true;
       window.removeEventListener('lune:rooms-updated', refresh);
-      window.removeEventListener('lune:bookings-updated', refresh);
       window.removeEventListener('focus', refresh);
     };
   }, [slug, currentLanguage, booking.checkIn, booking.checkOut, booking.guests, booking.adults, booking.children, booking.quantity]);
@@ -186,7 +181,7 @@ export default function RoomDetailPage() {
       checkIn: booking.checkIn,
       checkOut: booking.checkOut,
       room,
-      existingBookings: bookings,
+      existingBookings: [],
       messages: {
         checkInRequired: t('errors.checkInRequired'),
         checkOutRequired: t('errors.checkOutRequired'),
