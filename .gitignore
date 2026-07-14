@@ -9,5 +9,6 @@ server/.env.local
 server/.env.*.local
 .DS_Store
 .claude/
+outputs/
 
 .vercel
