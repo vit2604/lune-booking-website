@@ -30,9 +30,15 @@ const SuccessPage = lazy(() => import('./pages/SuccessPage.jsx'));
 
 function RouteLoader() {
   return (
-    <div className="grid min-h-[55vh] place-items-center bg-lune-cream px-4">
-      <div className="rounded-lg border border-stone-200 bg-white px-5 py-4 text-sm font-semibold text-lune-ink shadow-soft">
-        Loading Lune...
+    <div aria-busy="true" aria-label="Loading" className="min-h-[55vh] animate-pulse bg-lune-cream px-4 py-10">
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="h-8 w-2/3 rounded bg-stone-200" />
+        <div className="h-4 w-1/2 rounded bg-stone-200" />
+        <div className="h-64 rounded-xl bg-stone-200" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="h-40 rounded-xl bg-stone-200" />
+          <div className="h-40 rounded-xl bg-stone-200" />
+        </div>
       </div>
     </div>
   );
