@@ -5,9 +5,11 @@ import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { CurrencyProvider } from './i18n/CurrencyContext.jsx';
 import { LanguageProvider } from './i18n/LanguageContext.jsx';
+import { loadFonts } from './utils/loadFonts.js';
 import { preloadHomeHeroImage } from './utils/preloadHero.js';
 import './index.css';
 
+loadFonts();
 preloadHomeHeroImage();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
