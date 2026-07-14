@@ -532,5 +532,14 @@ export async function deleteBooking(bookingCode) {
       `Cancel Bluejay booking ${booking.bluejayBookingCode} in Bluejay PMS first. The connected Bluejay API does not provide a cancellation endpoint.`,
     );
   }
-  return prisma.booking.update({ where: { bookingCode }, data: { bookingStatus: 'CANCELLED' }, include: bookingInclude });
+
+  await prisma.$transaction(async (tx) => {
+    await tx.booking.delete({ where: { bookingCode } });
+    const remainingGuestBookings = await tx.booking.count({ where: { guestId: booking.guestId } });
+    if (remainingGuestBookings === 0) {
+      await tx.guest.delete({ where: { id: booking.guestId } });
+    }
+  });
+
+  return { bookingCode, deleted: true };
 }

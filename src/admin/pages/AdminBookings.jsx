@@ -128,11 +128,17 @@ export default function AdminBookings() {
   };
 
   const confirmDelete = async () => {
-    if (source === 'api') await adminDeleteBooking(deleteTarget.bookingCode);
-    else deleteBooking(deleteTarget.bookingCode);
-    setDeleteTarget(null);
-    setSelected(null);
-    await refresh(source === 'api' ? 'Booking cancelled.' : 'Booking deleted.');
+    const bookingCode = deleteTarget.bookingCode;
+    try {
+      if (source === 'api') await adminDeleteBooking(bookingCode);
+      else deleteBooking(bookingCode);
+      setBookings((current) => current.filter((booking) => booking.bookingCode !== bookingCode));
+      setDeleteTarget(null);
+      setSelected(null);
+      await refresh('Booking deleted.');
+    } catch (error) {
+      setToast(error.message || 'Could not delete booking.');
+    }
   };
 
   return (
@@ -258,7 +264,7 @@ export default function AdminBookings() {
       <ConfirmModal
         open={Boolean(deleteTarget)}
         title="Delete booking?"
-        message={`This will remove ${deleteTarget?.bookingCode || 'this booking'} from mock booking records.`}
+        message={`This will permanently remove ${deleteTarget?.bookingCode || 'this booking'} and its payment records.`}
         confirmText="Delete booking"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}

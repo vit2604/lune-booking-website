@@ -84,7 +84,7 @@ export async function adminUpdateInternalNote(req, res, next) {
 
 export async function adminDeleteBooking(req, res, next) {
   try {
-    return sendSuccess(res, await deleteBooking(req.validated.params.bookingCode), 'Booking cancelled');
+    return sendSuccess(res, await deleteBooking(req.validated.params.bookingCode), 'Booking deleted');
   } catch (error) {
     return next(error);
   }
