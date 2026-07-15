@@ -561,7 +561,6 @@ export function buildBluejayBookingPayload({ booking, roomContexts, room, ratePl
   const guest = booking.guest || {};
   const checkIn = normalizeDate(booking.checkIn);
   const checkOut = normalizeDate(booking.checkOut);
-  const nights = calculateNights(checkIn, checkOut);
   const contexts = roomContexts?.length
     ? roomContexts
     : [{
@@ -582,13 +581,12 @@ export function buildBluejayBookingPayload({ booking, roomContexts, room, ratePl
     const priceInDay = buildPriceInDay({ ratePlan: context.ratePlan, room: context.room, booking });
     const unitRoomTotal = priceInDay.length ? sumPriceInDay(priceInDay) : money(context.ratePlan.total || 0);
     const lineTotal = unitRoomTotal * quantity;
-    const averageAmount = nights > 0 ? money(unitRoomTotal / nights) : unitRoomTotal;
     const mealPlan = {
       ...DEFAULT_MEAL_PLAN,
       ...(context.ratePlan.mealplan || {}),
     };
     return {
-      amount: averageAmount,
+      amount: unitRoomTotal,
       quantity,
       total: lineTotal,
       room_type_id: Number(context.externalRoomId),

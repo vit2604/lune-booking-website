@@ -29,7 +29,7 @@ describe('Bluejay confirmation payload', () => {
       ],
     }, confirmationConfig);
 
-    expect(payload.reservation).toMatchObject({
+    expect(payload).toMatchObject({
       property_id: 6439,
       channel: 'WEB',
       book_code: '003287',
@@ -56,8 +56,8 @@ describe('Bluejay confirmation payload', () => {
       payments: [],
     }, confirmationConfig);
 
-    expect(payload.reservation.total_pay).toBe(0);
-    expect(payload.reservation).not.toHaveProperty('payment');
+    expect(payload.total_pay).toBe(0);
+    expect(payload).not.toHaveProperty('payment');
   });
 
   it('normalizes both wrapped and direct Bluejay booking responses', () => {
