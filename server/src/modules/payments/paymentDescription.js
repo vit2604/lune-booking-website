@@ -1,3 +1,5 @@
+const PAYOS_DESCRIPTION_SUFFIX = ' chuyen tien';
+
 function normalizeGuestName(value) {
   return String(value || '')
     .replace(/Đ/g, 'D')
@@ -11,5 +13,5 @@ function normalizeGuestName(value) {
 
 export function buildPayosDescription(booking) {
   const guestName = normalizeGuestName(booking?.guest?.fullName) || 'Khach';
-  return `${guestName} chuyen tien`;
+  return `${guestName}${PAYOS_DESCRIPTION_SUFFIX}`;
 }
