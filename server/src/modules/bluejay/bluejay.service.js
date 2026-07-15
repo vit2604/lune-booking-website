@@ -637,8 +637,6 @@ export function buildBluejayBookingPayload({ booking, roomContexts, room, ratePl
     services_price: 0,
     total: roomTotal,
     grand_total: roomTotal,
-    paid: paidAmount,
-    deposit: paidAmount,
     discount: 0,
     currency: 'VND',
     note: [paymentNote, guestNote].filter(Boolean).join(' '),
