@@ -11,6 +11,5 @@ function normalizeGuestName(value) {
 
 export function buildPayosDescription(booking) {
   const guestName = normalizeGuestName(booking?.guest?.fullName) || 'Khach';
-  const finalName = guestName.split(' ').filter(Boolean).at(-1) || 'Khach';
-  return `${finalName} chuyen tien`;
+  return `${guestName} chuyen tien`;
 }
