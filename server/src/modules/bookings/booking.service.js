@@ -188,6 +188,7 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
 
   try {
     let currentBooking = booking;
+    let createdBluejayBooking = null;
     if (!currentBooking.bluejayBookingCode) {
       const result = await createBluejayBooking({ booking: currentBooking });
       if (result.skipped) {
@@ -205,9 +206,12 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
         },
         include: bookingInclude,
       });
+      createdBluejayBooking = result.payload;
     }
 
-    await confirmBluejayBooking({ booking: currentBooking });
+    if (String(createdBluejayBooking?.status || '').toLowerCase() !== 'confirm') {
+      await confirmBluejayBooking({ booking: currentBooking });
+    }
     return prisma.booking.update({
       where: { id: booking.id },
       data: {
