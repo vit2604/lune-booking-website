@@ -5,6 +5,8 @@ import { createHttpError } from '../../utils/responseUtils.js';
 import {
   assertBluejayBookingConfirmed,
   buildBluejayConfirmationPayload as buildConfirmationPayload,
+  buildBluejayPaymentPayload,
+  getLatestPaidPayment,
   normalizeCreatedBooking,
 } from './bluejayConfirmationUtils.js';
 import { getBluejayPaymentSummary } from './bluejayPaymentUtils.js';
@@ -613,6 +615,7 @@ export function buildBluejayBookingPayload({ booking, roomContexts, room, ratePl
   });
   const roomTotal = rooms.reduce((sum, item) => sum + Number(item.total || 0), 0);
   const { paidAmount, remainingAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
+  const paidPayment = getLatestPaidPayment(booking.payments);
   const paymentNote = paidAmount > 0
     ? `Da coc ${paidAmount.toLocaleString('vi-VN')} VND; con lai ${remainingAmount.toLocaleString('vi-VN')} VND.`
     : '';
@@ -637,6 +640,10 @@ export function buildBluejayBookingPayload({ booking, roomContexts, room, ratePl
     services_price: 0,
     total: roomTotal,
     grand_total: roomTotal,
+    ...(paidAmount > 0 ? {
+      total_pay: paidAmount,
+      payment: buildBluejayPaymentPayload({ booking, amount: paidAmount, payment: paidPayment }),
+    } : {}),
     discount: 0,
     currency: 'VND',
     note: [paymentNote, guestNote].filter(Boolean).join(' '),

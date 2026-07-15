@@ -10,21 +10,36 @@ function formatBluejayDateTime(value) {
   return safeDate.toISOString().slice(0, 19).replace('T', ' ');
 }
 
-function getBluejayPaymentMethod(method) {
+export function getBluejayPaymentMethod(method) {
   if (['vietQr', 'payos', 'vnpay'].includes(method)) return 8;
   if (['creditCard', 'stripe', 'paypal'].includes(method)) return 5;
   return 2;
 }
 
-export function buildBluejayConfirmationPayload(booking, { propertyId, channelCode, redirectUrl }) {
-  const { paidAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
-  const paidPayment = [...(booking.payments || [])]
+export function getLatestPaidPayment(payments = []) {
+  return [...payments]
     .filter((payment) => payment.status === 'PAID')
     .sort((a, b) => (
       new Date(b.paidAt || b.updatedAt || b.createdAt || 0) -
       new Date(a.paidAt || a.updatedAt || a.createdAt || 0)
     ))[0];
-  const reservation = {
+}
+
+export function buildBluejayPaymentPayload({ booking, amount, payment }) {
+  return {
+    amount,
+    pay_time: formatBluejayDateTime(payment?.paidAt || payment?.updatedAt || payment?.createdAt),
+    payment_method: getBluejayPaymentMethod(payment?.method || booking.paymentMethod),
+    payment_for: '1',
+    pay_currency: booking.currency || 'VND',
+    pay_note: `Website payment for ${booking.bookingCode}`,
+  };
+}
+
+export function buildBluejayConfirmationPayload(booking, { propertyId, channelCode, redirectUrl }) {
+  const { paidAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
+  const paidPayment = getLatestPaidPayment(booking.payments);
+  const payload = {
     property_id: Number(propertyId),
     channel: channelCode,
     book_code: booking.bluejayBookingCode,
@@ -35,16 +50,9 @@ export function buildBluejayConfirmationPayload(booking, { propertyId, channelCo
     currency: booking.currency || 'VND',
   };
   if (paidAmount > 0) {
-    reservation.payment = {
-      amount: paidAmount,
-      pay_time: formatBluejayDateTime(paidPayment?.paidAt || paidPayment?.updatedAt || paidPayment?.createdAt),
-      payment_method: getBluejayPaymentMethod(paidPayment?.method || booking.paymentMethod),
-      payment_for: '1',
-      pay_currency: booking.currency || 'VND',
-      pay_note: `Website payment for ${booking.bookingCode}`,
-    };
+    payload.payment = buildBluejayPaymentPayload({ booking, amount: paidAmount, payment: paidPayment });
   }
-  return { reservation };
+  return payload;
 }
 
 export function normalizeCreatedBooking(payload) {

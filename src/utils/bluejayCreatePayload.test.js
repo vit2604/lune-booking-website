@@ -16,7 +16,7 @@ function configureBluejayEnv() {
 }
 
 describe('Bluejay create booking payload', () => {
-  it('keeps deposit payment fields out of booking/create', async () => {
+  it('sends paid deposit fields when booking/create is the first Bluejay sync', async () => {
     vi.resetModules();
     configureBluejayEnv();
     const { buildBluejayBookingPayload } = await import('../../server/src/modules/bluejay/bluejay.service.js');
@@ -66,8 +66,13 @@ describe('Bluejay create booking payload', () => {
       ],
     });
 
-    expect(payload).not.toHaveProperty('paid');
-    expect(payload).not.toHaveProperty('deposit');
+    expect(payload.total_pay).toBe(120000);
+    expect(payload.payment).toMatchObject({
+      amount: 120000,
+      payment_method: 8,
+      payment_for: '1',
+      pay_currency: 'VND',
+    });
     expect(payload.note).toContain('Da coc 120.000 VND');
     expect(payload.rooms[0].rateplan.rate_plan_id).toBe(20914);
     expect(payload.grand_total).toBe(1200000);
