@@ -2,17 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { buildPayosDescription } from './paymentDescription.js';
 
 describe('buildPayosDescription', () => {
-  it('uses an ASCII guest name and short transfer suffix', () => {
+  it('uses the full guest name followed by chuyen tien', () => {
     expect(buildPayosDescription({ guest: { fullName: 'Nguyễn Đăng Vương' } }))
-      .toBe('Nguyen Dang Vuong ck');
+      .toBe('Nguyen Dang Vuong chuyen tien');
   });
 
-  it('keeps PayOS descriptions within the 25-character limit', () => {
+  it('removes unsupported punctuation without truncating the guest name', () => {
     expect(buildPayosDescription({ guest: { fullName: '  An @ Lune  ' } }))
-      .toBe('An Lune ck');
+      .toBe('An Lune chuyen tien');
     expect(buildPayosDescription({ guest: { fullName: 'Nguyen AlexanderLongName' } }))
-      .toBe('Nguyen AlexanderLongNa ck');
-    expect(buildPayosDescription({})).toBe('Khach ck');
-    expect(buildPayosDescription({ guest: { fullName: 'Nguyen AlexanderLongName' } })).toHaveLength(25);
+      .toBe('Nguyen AlexanderLongName chuyen tien');
+    expect(buildPayosDescription({})).toBe('Khach chuyen tien');
   });
 });

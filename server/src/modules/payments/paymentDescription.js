@@ -11,7 +11,5 @@ function normalizeGuestName(value) {
 
 export function buildPayosDescription(booking) {
   const guestName = normalizeGuestName(booking?.guest?.fullName) || 'Khach';
-  const suffix = ' ck';
-  const maxGuestNameLength = 25 - suffix.length;
-  return `${guestName.slice(0, maxGuestNameLength).trim() || 'Khach'}${suffix}`;
+  return `${guestName} chuyen tien`;
 }
