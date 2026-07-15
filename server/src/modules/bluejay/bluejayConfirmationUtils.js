@@ -11,7 +11,7 @@ function formatBluejayDateTime(value) {
 }
 
 function getBluejayPaymentMethod(method) {
-  if (method === 'vnpay') return 8;
+  if (['vietQr', 'payos', 'vnpay'].includes(method)) return 8;
   if (['creditCard', 'stripe', 'paypal'].includes(method)) return 5;
   return 2;
 }

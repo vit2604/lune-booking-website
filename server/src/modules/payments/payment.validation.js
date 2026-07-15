@@ -28,6 +28,7 @@ export const verifyPaymentSchema = {
       .object({
         body: z.object({
           bookingCode: z.string().regex(bookingCodePattern),
+          forceBluejaySync: z.boolean().optional(),
         }),
         params: z.object({}).passthrough(),
         query: z.object({}).passthrough(),

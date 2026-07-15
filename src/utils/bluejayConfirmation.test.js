@@ -40,7 +40,7 @@ describe('Bluejay confirmation payload', () => {
         currency: 'VND',
         payment: {
           amount: 150000,
-          payment_method: 2,
+          payment_method: 8,
           payment_for: '1',
           pay_currency: 'VND',
         },

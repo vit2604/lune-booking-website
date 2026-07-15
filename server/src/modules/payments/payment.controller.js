@@ -25,7 +25,9 @@ export async function createPayment(req, res) {
 }
 
 export async function verifyPayment(req, res) {
-  sendSuccess(res, await verifyPaymentStatus(req.body.bookingCode));
+  sendSuccess(res, await verifyPaymentStatus(req.body.bookingCode, {
+    forceBluejaySync: Boolean(req.body.forceBluejaySync),
+  }));
 }
 
 export async function paymentWebhook(req, res) {

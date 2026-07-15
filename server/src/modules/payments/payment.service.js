@@ -601,7 +601,7 @@ export async function createPaymentRequest({
   };
 }
 
-export async function verifyPaymentStatus(bookingCode) {
+export async function verifyPaymentStatus(bookingCode, { forceBluejaySync = false } = {}) {
   const booking = await prisma.booking.findUnique({
     where: { bookingCode },
     include: {
@@ -648,11 +648,16 @@ export async function verifyPaymentStatus(bookingCode) {
       },
     });
   });
-  const syncedBooking = nextStatus === 'PAID' ? await syncBookingToBluejay(updatedBooking) : updatedBooking;
+  const syncedBooking = nextStatus === 'PAID'
+    ? await syncBookingToBluejay(updatedBooking, { forceConfirm: forceBluejaySync })
+    : updatedBooking;
   return {
     bookingCode,
     paymentStatus: nextStatus,
     bookingStatus: syncedBooking.bookingStatus,
+    bluejaySyncStatus: syncedBooking.bluejaySyncStatus,
+    bluejayBookingCode: syncedBooking.bluejayBookingCode || null,
+    bluejaySyncError: syncedBooking.bluejaySyncError || null,
     amountPaid,
     paymentPurpose: payment.rawPayloadJson?.paymentPurpose || 'full',
     depositPercent: payment.rawPayloadJson?.depositPercent ?? null,
