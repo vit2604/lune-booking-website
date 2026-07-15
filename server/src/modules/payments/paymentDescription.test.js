@@ -7,11 +7,11 @@ describe('buildPayosDescription', () => {
       .toBe('Vuong chuyen tien');
   });
 
-  it('removes unsupported punctuation and stays within 25 characters', () => {
+  it('removes unsupported punctuation without truncating the final name', () => {
     expect(buildPayosDescription({ guest: { fullName: '  An @ Lune  ' } }))
       .toBe('Lune chuyen tien');
     expect(buildPayosDescription({ guest: { fullName: 'Nguyen AlexanderLongName' } }))
-      .toBe('AlexanderLong chuyen tien');
+      .toBe('AlexanderLongName chuyen tien');
     expect(buildPayosDescription({})).toBe('Khach chuyen tien');
   });
 });
