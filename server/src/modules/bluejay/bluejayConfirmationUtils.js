@@ -44,7 +44,7 @@ export function buildBluejayConfirmationPayload(booking, { propertyId, channelCo
       pay_note: `Website payment for ${booking.bookingCode}`,
     };
   }
-  return reservation;
+  return { reservation };
 }
 
 export function normalizeCreatedBooking(payload) {
