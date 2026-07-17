@@ -48,7 +48,7 @@ export default function HomePage() {
   const navigate = useNavigate();
   const defaults = getDefaultDates();
   const today = toDateInputValue(new Date());
-  const nextDay = (date) => toDateInputValue(addDays(new Date(`${date}T12:00:00`), 1));
+  const nextDay = (date) => (date ? toDateInputValue(addDays(new Date(`${date}T12:00:00`), 1)) : '');
   const [heroDates, setHeroDates] = useState({ checkIn: defaults.checkIn, checkOut: defaults.checkOut });
   const [heroGuests, setHeroGuests] = useState({ adults: 2, children: 0, guests: 2 });
   const [rooms, setRooms] = useState(getVisibleRooms());
@@ -60,8 +60,9 @@ export default function HomePage() {
   const setCheckIn = (value) => {
     const checkIn = value && value < today ? today : value;
     setHeroDates((current) => ({
+      ...current,
       checkIn,
-      checkOut: !current.checkOut || current.checkOut <= checkIn ? nextDay(checkIn) : current.checkOut,
+      checkOut: nextDay(checkIn),
     }));
   };
 

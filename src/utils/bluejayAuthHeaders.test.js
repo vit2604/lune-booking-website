@@ -11,25 +11,27 @@ function configureBluejayEnv({ headerName = 'ApiKey', prefix = 'none' } = {}) {
 }
 
 describe('Bluejay auth headers', () => {
-  it('sends both documented API key casing variants for every Bluejay endpoint', async () => {
+  it('sends only the configured API key header casing', async () => {
     vi.resetModules();
     configureBluejayEnv();
     const { buildAuthHeaders } = await import('../../server/src/modules/bluejay/bluejay.service.js');
 
-    expect(buildAuthHeaders()).toMatchObject({
-      ApiKey: 'test-token',
-      apikey: 'test-token',
-    });
+    expect(buildAuthHeaders()).toEqual({ ApiKey: 'test-token' });
   });
 
-  it('preserves configured auth prefixes on both API key casing variants', async () => {
+  it('supports lowercase API key casing when configured', async () => {
+    vi.resetModules();
+    configureBluejayEnv({ headerName: 'apikey' });
+    const { buildAuthHeaders } = await import('../../server/src/modules/bluejay/bluejay.service.js');
+
+    expect(buildAuthHeaders()).toEqual({ apikey: 'test-token' });
+  });
+
+  it('preserves configured auth prefixes', async () => {
     vi.resetModules();
     configureBluejayEnv({ prefix: 'Bearer' });
     const { buildAuthHeaders } = await import('../../server/src/modules/bluejay/bluejay.service.js');
 
-    expect(buildAuthHeaders()).toMatchObject({
-      ApiKey: 'Bearer test-token',
-      apikey: 'Bearer test-token',
-    });
+    expect(buildAuthHeaders()).toEqual({ ApiKey: 'Bearer test-token' });
   });
 });

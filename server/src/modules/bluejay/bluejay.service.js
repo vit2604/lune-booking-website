@@ -74,13 +74,9 @@ export function buildAuthHeaders() {
       : '';
   const authValue = `${prefix}${env.BLUEJAY_API_TOKEN}`;
 
-  const headers = {
+  return {
     [env.BLUEJAY_AUTH_HEADER_NAME]: authValue,
-    ApiKey: authValue,
-    apikey: authValue,
   };
-
-  return headers;
 }
 
 function getBluejayUserAgent() {

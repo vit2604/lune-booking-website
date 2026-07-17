@@ -109,7 +109,7 @@ export default function RoomsPage() {
         return {
           ...current,
           checkIn: safeCheckIn,
-          checkOut: current.checkOut && safeCheckIn && current.checkOut <= safeCheckIn ? minCheckout : current.checkOut,
+          checkOut: minCheckout,
         };
       }
       if (key === 'checkOut' && current.checkIn && value <= current.checkIn) {

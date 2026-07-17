@@ -1,5 +1,5 @@
 import { getDefaultDates, toDateInputValue } from '../utils/booking.js';
-import { addDaysToDateString, calculateNights } from '../utils/dateUtils.js';
+import { addDaysToDateString } from '../utils/dateUtils.js';
 import { useTranslation } from '../i18n/useTranslation.js';
 import DateInput from './DateInput.jsx';
 import GuestSelector from './GuestSelector.jsx';
@@ -24,11 +24,10 @@ export default function DateSelector({
   const checkoutMin = addDaysToDateString(checkIn || today, 1);
 
   const handleCheckInChange = (value) => {
-    const changes = { checkIn: value };
-    if (!checkOut || calculateNights(value, checkOut) <= 0) {
-      changes.checkOut = addDaysToDateString(value, 1);
-    }
-    onChange(changes);
+    onChange({
+      checkIn: value,
+      checkOut: addDaysToDateString(value, 1),
+    });
   };
 
   return (
