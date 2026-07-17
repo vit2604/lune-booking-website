@@ -2,18 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { buildPayosDescription } from '../../server/src/modules/payments/paymentDescription.js';
 
 describe('buildPayosDescription', () => {
-  it('uses the full guest name followed by chuyen tien', () => {
+  it('uses the guest middle and final names followed by chuyen tien', () => {
     expect(buildPayosDescription({ guest: { fullName: 'Dang Trung Vuong' } }))
-      .toBe('Dang Trung Vuong chuyen tien');
+      .toBe('trung vuong chuyen tien');
     expect(buildPayosDescription({ guest: { fullName: 'Nguyen Dang Vuong' } }))
-      .toBe('Nguyen Dang Vuong chuyen tien');
-    expect(buildPayosDescription({ guest: { fullName: 'Nguyen AlexanderLongName' } }))
-      .toBe('Nguyen AlexanderLongName chuyen tien');
+      .toBe('dang vuong chuyen tien');
   });
 
-  it('removes unsupported punctuation without truncating the guest name', () => {
+  it('removes unsupported punctuation and keeps descriptions within PayOS limits', () => {
     expect(buildPayosDescription({ guest: { fullName: '  An @ Lune  ' } }))
-      .toBe('An Lune chuyen tien');
-    expect(buildPayosDescription({})).toBe('Khach chuyen tien');
+      .toBe('an lune chuyen tien');
+    expect(buildPayosDescription({})).toBe('khach chuyen tien');
+    expect(buildPayosDescription({ guest: { fullName: 'Tran Nguyen AlexanderLongName' } }))
+      .toBe('nguyen alexan chuyen tien');
+    expect(buildPayosDescription({ guest: { fullName: 'Tran Nguyen AlexanderLongName' } })).toHaveLength(25);
   });
 });

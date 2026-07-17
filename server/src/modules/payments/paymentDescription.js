@@ -1,4 +1,5 @@
 const PAYOS_DESCRIPTION_SUFFIX = ' chuyen tien';
+const PAYOS_DESCRIPTION_MAX_LENGTH = 25;
 
 function normalizeGuestName(value) {
   return String(value || '')
@@ -12,6 +13,8 @@ function normalizeGuestName(value) {
 }
 
 export function buildPayosDescription(booking) {
-  const guestName = normalizeGuestName(booking?.guest?.fullName) || 'Khach';
-  return `${guestName}${PAYOS_DESCRIPTION_SUFFIX}`;
+  const guestName = normalizeGuestName(booking?.guest?.fullName).toLowerCase();
+  const shortName = guestName.split(' ').filter(Boolean).slice(-2).join(' ') || 'khach';
+  const maxNameLength = PAYOS_DESCRIPTION_MAX_LENGTH - PAYOS_DESCRIPTION_SUFFIX.length;
+  return `${shortName.slice(0, maxNameLength).trim() || 'khach'}${PAYOS_DESCRIPTION_SUFFIX}`;
 }
