@@ -68,14 +68,8 @@ function buildBluejayUrl(path, params = {}) {
 }
 
 export function buildAuthHeaders() {
-  const prefix =
-    env.BLUEJAY_AUTH_HEADER_PREFIX && env.BLUEJAY_AUTH_HEADER_PREFIX.toLowerCase() !== 'none'
-      ? `${env.BLUEJAY_AUTH_HEADER_PREFIX} `
-      : '';
-  const authValue = `${prefix}${env.BLUEJAY_API_TOKEN}`;
-
   return {
-    [env.BLUEJAY_AUTH_HEADER_NAME]: authValue,
+    ApiKey: env.BLUEJAY_API_TOKEN,
   };
 }
 
