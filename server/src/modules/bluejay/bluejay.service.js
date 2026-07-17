@@ -93,6 +93,9 @@ async function readResponsePayload(response) {
 
 function extractBluejayError(payload) {
   if (!payload || typeof payload !== 'object') return null;
+  if (payload.Message && /fail|invalid|error|not found|does not exist|cancel/i.test(payload.Message)) {
+    return payload.Message;
+  }
   const error = payload.errors || payload.error;
   if (!error) return null;
 
@@ -701,16 +704,36 @@ export async function confirmBluejayBooking({ booking }) {
   if (!booking?.bluejayBookingCode) {
     throw createHttpError(500, 'Bluejay booking code is missing');
   }
-  if (!booking?.bluejayBookingId) {
-    throw createHttpError(500, 'Bluejay booking ID is missing');
-  }
-  const payload = await withTimeout(async (signal) =>
-    bluejayRequest(buildBluejayConfirmationPath(booking), {
+  const roomContexts = await Promise.all(
+    getBookingRoomItems(booking).map((item) => getCreateBookingContext({ booking, item })),
+  );
+  const modifyBody = {
+    ...buildBluejayBookingPayload({ booking, roomContexts }),
+    book_code: booking.bluejayBookingCode,
+    booking_code: booking.bluejayBookingCode,
+    code: booking.bluejayBookingCode,
+    status: 'confirm',
+  };
+
+  try {
+    const payload = await withTimeout(async (signal) =>
+      bluejayRequest('/booking/modify', {
+        method: 'POST',
+        body: modifyBody,
+        signal,
+      }),
+    );
+    const confirmed = assertBluejayBookingConfirmed(payload, booking.bluejayBookingCode);
+    return { skipped: false, payload: confirmed };
+  } catch (modifyError) {
+    const payload = await withTimeout(async (signal) =>
+      bluejayRequest(buildBluejayConfirmationPath({ ...booking, propertyId: env.BLUEJAY_PROPERTY_ID }), {
       method: 'POST',
       body: buildBluejayConfirmationPayload(booking),
       signal,
-    }),
-  );
-  const confirmed = assertBluejayBookingConfirmed(payload, booking.bluejayBookingCode);
-  return { skipped: false, payload: confirmed };
+      }),
+    );
+    const confirmed = assertBluejayBookingConfirmed(payload, booking.bluejayBookingCode);
+    return { skipped: false, payload: confirmed };
+  }
 }

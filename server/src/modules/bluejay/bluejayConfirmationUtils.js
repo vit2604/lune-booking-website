@@ -37,10 +37,10 @@ export function buildBluejayPaymentPayload({ booking, amount, payment }) {
 }
 
 export function buildBluejayConfirmationPath(booking) {
-  return `/api/v1/confirm-booking?Id=${encodeURIComponent(booking.bluejayBookingId || '')}`;
+  return `/api/v1/confirm-booking?Id=${encodeURIComponent(booking.propertyId || '')}`;
 }
 
-export function buildBluejayConfirmationPayload(booking, { propertyId, channelCode, redirectUrl }) {
+export function buildBluejayConfirmationPayload(booking) {
   const { paidAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
   const paidPayment = getLatestPaidPayment(booking.payments);
   return {
