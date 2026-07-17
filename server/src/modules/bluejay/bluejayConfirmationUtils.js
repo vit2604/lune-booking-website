@@ -44,7 +44,7 @@ export function buildBluejayConfirmationPath(booking) {
 export function buildBluejayConfirmationPayload(booking, { propertyId, channelCode, redirectUrl }) {
   const { paidAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
   const paidPayment = getLatestPaidPayment(booking.payments);
-  const payload = {
+  const reservation = {
     property_id: Number(propertyId),
     channel: channelCode,
     book_code: booking.bluejayBookingCode,
@@ -55,9 +55,13 @@ export function buildBluejayConfirmationPayload(booking, { propertyId, channelCo
     currency: booking.currency || 'VND',
   };
   if (paidAmount > 0) {
-    payload.payment = buildBluejayPaymentPayload({ booking, amount: paidAmount, payment: paidPayment });
+    reservation.payment = buildBluejayPaymentPayload({ booking, amount: paidAmount, payment: paidPayment });
   }
-  return payload;
+  // Bluejay validates booking identifiers at the root but documents payment under reservation.
+  return {
+    ...reservation,
+    reservation,
+  };
 }
 
 export function normalizeCreatedBooking(payload) {
