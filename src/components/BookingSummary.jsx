@@ -17,8 +17,20 @@ export default function BookingSummary({ booking, room, className = '' }) {
   const total = Number(booking.total ?? booking.totalPrice ?? roomSubtotal + serviceFee);
   const cardSurcharge = Number(booking.cardSurcharge || 0);
   const depositAmount = Number(booking.depositAmount || 0);
-  const balanceAtProperty = Number(booking.balanceAtProperty ?? 0);
   const grandTotal = Number(booking.grandTotal ?? total + cardSurcharge);
+  const payments = Array.isArray(booking.payments) ? booking.payments : [];
+  const paidAmount = Number(
+    booking.depositPaidAmount ??
+      booking.amountPaid ??
+      booking.paidAmount ??
+      payments
+        .filter((payment) => String(payment.status || '').toUpperCase() === 'PAID')
+        .reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+  );
+  const appliedDepositAmount = paidAmount > 0 && paidAmount < grandTotal ? paidAmount : depositAmount;
+  const balanceAtProperty = paidAmount > 0
+    ? Math.max(0, grandTotal - paidAmount)
+    : Number(booking.balanceAtProperty ?? 0);
   const roomItems = booking.rooms?.length ? booking.rooms : null;
   const totalRooms = roomItems
     ? roomItems.reduce((sum, item) => sum + Number(item.quantity || 1), 0)
@@ -33,6 +45,11 @@ export default function BookingSummary({ booking, room, className = '' }) {
     const label = t(key);
     return label === key ? String(value).replaceAll('_', ' ') : label;
   };
+  const paidDepositLabel = currentLanguage === 'vi' ? 'Đã cọc' : 'Deposit paid';
+  const remainingLabel = currentLanguage === 'vi' ? 'Còn lại' : 'Remaining';
+  const displayPaymentStatus = paidAmount > 0 && paidAmount < grandTotal
+    ? paidDepositLabel
+    : statusLabel('payment', booking.paymentStatus);
   const paymentLabelKey = {
     'pay-at-property': 'payment.payAtProperty',
     payAtProperty: 'payment.payAtProperty',
@@ -160,7 +177,7 @@ export default function BookingSummary({ booking, room, className = '' }) {
             </span>
             {booking.paymentStatus ? (
               <span className="rounded-md bg-white px-2 py-1 uppercase tracking-wide text-stone-500">
-                {t('common.payment')}: {statusLabel('payment', booking.paymentStatus)}
+                {t('common.payment')}: {displayPaymentStatus}
               </span>
             ) : null}
             {booking.bookingStatus ? (
@@ -176,14 +193,14 @@ export default function BookingSummary({ booking, room, className = '' }) {
             <span className="text-sm text-white/70">{t('common.total')}</span>
             <strong className="text-xl">{formatCurrency(grandTotal)}</strong>
           </div>
-          {depositAmount > 0 ? (
+          {appliedDepositAmount > 0 ? (
             <div className="mt-3 grid gap-1 border-t border-white/15 pt-3 text-sm">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-white/70">{t('payment.depositAmount')}</span>
-                <strong>{formatCurrency(depositAmount)}</strong>
+                <span className="text-white/70">{paidAmount > 0 ? paidDepositLabel : t('payment.depositAmount')}</span>
+                <strong>{formatCurrency(appliedDepositAmount)}</strong>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span className="text-white/70">{t('payment.balanceAtProperty')}</span>
+                <span className="text-white/70">{paidAmount > 0 ? remainingLabel : t('payment.balanceAtProperty')}</span>
                 <strong>{formatCurrency(balanceAtProperty)}</strong>
               </div>
             </div>

@@ -32,6 +32,7 @@ export default function SuccessPage() {
               paymentStatus: result.paymentStatus || confirmed.paymentStatus,
               bookingStatus: result.bookingStatus || confirmed.bookingStatus,
               depositPaidAmount: result.amountPaid || 0,
+              paidAmount: result.amountPaid || 0,
               balanceAtProperty: result.balanceAmount ?? confirmed.balanceAtProperty,
             };
             setBooking(updated);

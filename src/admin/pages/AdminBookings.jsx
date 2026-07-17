@@ -41,6 +41,13 @@ function normalizeBooking(booking) {
         pricePerNight: Number(item.pricePerNight || 0),
         totalPrice: Number(item.totalPrice || 0),
       })) || [];
+  const paidAmount = Math.round(
+    (booking.payments || [])
+      .filter((payment) => String(payment.status || '').toUpperCase() === 'PAID')
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+  );
+  const total = Number(booking.total || booking.totalPrice || 0);
+  const remainingAmount = Math.max(0, total - paidAmount);
   return {
     ...booking,
     guestInfo: booking.guestInfo || {
@@ -54,7 +61,9 @@ function normalizeBooking(booking) {
     roomName: rooms.length
       ? rooms.map((item) => `${item.roomName} ×${item.quantity}`).join(', ')
       : booking.roomName || booking.room?.name,
-    total: booking.total || booking.totalPrice,
+    total,
+    paidAmount,
+    remainingAmount,
     bookingStatus: String(booking.bookingStatus || 'received').toLowerCase(),
     paymentStatus: String(booking.paymentStatus || 'pending').toLowerCase(),
   };
@@ -198,6 +207,12 @@ export default function AdminBookings() {
                   <td className="px-4 py-4">
                     <p>{getPaymentMethodLabel(booking.paymentMethod)}</p>
                     <span className="rounded-md bg-lune-mist px-2 py-1 text-xs uppercase text-stone-600">{booking.paymentStatus}</span>
+                    {booking.paidAmount > 0 ? (
+                      <p className="mt-1 text-xs text-stone-500">
+                        Paid {formatCurrency(booking.paidAmount)}
+                        {booking.remainingAmount > 0 ? ` · Remaining ${formatCurrency(booking.remainingAmount)}` : ''}
+                      </p>
+                    ) : null}
                   </td>
                   <td className="px-4 py-4">
                     <span className="rounded-md bg-lune-mist px-2 py-1 text-xs uppercase text-stone-600">{booking.bookingStatus}</span>
@@ -245,6 +260,8 @@ export default function AdminBookings() {
                 ['Check-out', selected.checkOut],
                 ['Guests', formatGuestBreakdown(selected, guestLabel)],
                 ['Total', formatCurrency(selected.total)],
+                ['Paid / deposit', selected.paidAmount > 0 ? formatCurrency(selected.paidAmount) : '-'],
+                ['Remaining', selected.paidAmount > 0 ? formatCurrency(selected.remainingAmount) : '-'],
                 ['Payment method', getPaymentMethodLabel(selected.paymentMethod)],
                 ['Payment status', selected.paymentStatus],
                 ['Booking status', selected.bookingStatus],
