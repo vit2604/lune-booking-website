@@ -180,25 +180,31 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
   if (!isBluejayBookingCreateEnabled()) return booking;
   if (booking?.bookingStatus === 'CANCELLED') return booking;
   if (!forceConfirm && !canSyncBookingToBluejay(booking)) return booking;
-  if (
-    booking.bluejaySyncStatus === 'SYNCED' &&
-    booking.bookingStatus === 'CONFIRMED' &&
-    !forceConfirm &&
-    !hasPaidPayment(booking)
-  ) {
+  if (booking.bluejaySyncStatus === 'SYNCED' && booking.bookingStatus === 'CONFIRMED') {
     return booking;
   }
 
-  await prisma.booking.update({
-    where: { id: booking.id },
+  const stalePendingBefore = new Date(Date.now() - 2 * 60 * 1000);
+  const claimed = await prisma.booking.updateMany({
+    where: {
+      id: booking.id,
+      OR: [
+        { bluejaySyncStatus: { not: 'PENDING' } },
+        { bluejaySyncStatus: 'PENDING', updatedAt: { lt: stalePendingBefore } },
+      ],
+    },
     data: {
       bluejaySyncStatus: 'PENDING',
       bluejaySyncError: null,
     },
   });
+  if (!claimed.count) {
+    return prisma.booking.findUnique({ where: { id: booking.id }, include: bookingInclude });
+  }
 
   try {
-    let currentBooking = booking;
+    let currentBooking = await prisma.booking.findUnique({ where: { id: booking.id }, include: bookingInclude });
+    if (!currentBooking) throw createHttpError(404, 'Booking not found');
     let createdBluejayBooking = null;
     if (!currentBooking.bluejayBookingCode) {
       const result = await createBluejayBooking({ booking: currentBooking });
@@ -220,7 +226,11 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
       createdBluejayBooking = result.payload;
     }
 
-    if (String(createdBluejayBooking?.status || '').toLowerCase() !== 'confirm' || hasPaidPayment(currentBooking)) {
+    const createdStatus = String(createdBluejayBooking?.status || '').toLowerCase();
+    if (createdStatus === 'confirm' && hasPaidPayment(currentBooking)) {
+      throw createHttpError(502, 'Bluejay confirmed the booking before its deposit could be recorded');
+    }
+    if (createdStatus !== 'confirm') {
       await confirmBluejayBooking({ booking: currentBooking });
     }
     return prisma.booking.update({

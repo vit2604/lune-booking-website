@@ -11,7 +11,8 @@ function formatBluejayDateTime(value) {
 }
 
 export function getBluejayPaymentMethod(method) {
-  if (['vietQr', 'payos', 'vnpay'].includes(method)) return 8;
+  if (['vietQr', 'payos'].includes(method)) return 2;
+  if (method === 'vnpay') return 8;
   if (['creditCard', 'stripe', 'paypal'].includes(method)) return 5;
   return 2;
 }
@@ -46,9 +47,6 @@ export function buildBluejayConfirmationPayload(booking, { propertyId, channelCo
   const payload = {
     property_id: Number(propertyId),
     channel: channelCode,
-    BookingCode: booking.bluejayBookingCode,
-    PaymentValue: paidAmount,
-    PaymentMethod: getBluejayPaymentMethod(paidPayment?.method || booking.paymentMethod),
     book_code: booking.bluejayBookingCode,
     reference_code: booking.bookingCode,
     url_redirect: redirectUrl,
