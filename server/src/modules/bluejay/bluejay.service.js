@@ -4,7 +4,6 @@ import { getNightlyRates } from '../../utils/priceUtils.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 import {
   assertBluejayBookingConfirmed,
-  buildBluejayConfirmationPath,
   buildBluejayConfirmationPayload as buildConfirmationPayload,
   buildBluejayPaymentPayload,
   getLatestPaidPayment,
@@ -704,43 +703,13 @@ export async function confirmBluejayBooking({ booking }) {
   if (!booking?.bluejayBookingCode) {
     throw createHttpError(500, 'Bluejay booking code is missing');
   }
-  const roomContexts = await Promise.all(
-    getBookingRoomItems(booking).map((item) => getCreateBookingContext({ booking, item })),
+  const payload = await withTimeout(async (signal) =>
+    bluejayRequest('/booking/modify', {
+      method: 'POST',
+      body: buildBluejayConfirmationPayload(booking),
+      signal,
+    }),
   );
-  const modifyBody = {
-    ...buildBluejayBookingPayload({ booking, roomContexts }),
-    book_code: booking.bluejayBookingCode,
-    booking_code: booking.bluejayBookingCode,
-    code: booking.bluejayBookingCode,
-    status: 'confirm',
-  };
-
-  try {
-    const payload = await withTimeout(async (signal) =>
-      bluejayRequest('/booking/modify', {
-        method: 'POST',
-        body: modifyBody,
-        signal,
-      }),
-    );
-    const confirmed = assertBluejayBookingConfirmed(payload, booking.bluejayBookingCode);
-    return { skipped: false, payload: confirmed };
-  } catch (modifyError) {
-    try {
-      const payload = await withTimeout(async (signal) =>
-        bluejayRequest(buildBluejayConfirmationPath({ ...booking, propertyId: env.BLUEJAY_PROPERTY_ID }), {
-          method: 'POST',
-          body: buildBluejayConfirmationPayload(booking),
-          signal,
-        }),
-      );
-      const confirmed = assertBluejayBookingConfirmed(payload, booking.bluejayBookingCode);
-      return { skipped: false, payload: confirmed };
-    } catch (confirmationError) {
-      throw createHttpError(
-        502,
-        `Bluejay modify failed: ${modifyError?.message || 'unknown'}; Bluejay confirm failed: ${confirmationError?.message || 'unknown'}`,
-      );
-    }
-  }
+  const confirmed = assertBluejayBookingConfirmed(payload, booking.bluejayBookingCode);
+  return { skipped: false, payload: confirmed };
 }

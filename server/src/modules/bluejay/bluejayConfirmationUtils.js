@@ -40,15 +40,26 @@ export function buildBluejayConfirmationPath(booking) {
   return `/api/v1/confirm-booking?Id=${encodeURIComponent(booking.propertyId || '')}`;
 }
 
-export function buildBluejayConfirmationPayload(booking) {
+export function buildBluejayConfirmationPayload(booking, { propertyId, channelCode, redirectUrl }) {
   const { paidAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
   const paidPayment = getLatestPaidPayment(booking.payments);
-  return {
+  const reservation = {
+    property_id: Number(propertyId),
+    channel: channelCode,
     BookingCode: booking.bluejayBookingCode,
     PaymentValue: paidAmount,
     PaymentMethod: getBluejayPaymentMethod(paidPayment?.method || booking.paymentMethod),
-    Currency: booking.currency || 'VND',
+    book_code: booking.bluejayBookingCode,
+    reference_code: booking.bookingCode,
+    url_redirect: redirectUrl,
+    grand_total: money(booking.totalPrice),
+    total_pay: paidAmount,
+    currency: booking.currency || 'VND',
   };
+  if (paidAmount > 0) {
+    reservation.payment = buildBluejayPaymentPayload({ booking, amount: paidAmount, payment: paidPayment });
+  }
+  return { reservation };
 }
 
 export function normalizeCreatedBooking(payload) {

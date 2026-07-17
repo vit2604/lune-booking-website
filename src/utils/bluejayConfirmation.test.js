@@ -31,10 +31,24 @@ describe('Bluejay confirmation payload', () => {
     }, confirmationConfig);
 
     expect(payload).toMatchObject({
-      BookingCode: '003287',
-      PaymentValue: 150000,
-      PaymentMethod: 8,
-      Currency: 'VND',
+      reservation: {
+        property_id: 6439,
+        channel: 'WEB',
+        BookingCode: '003287',
+        PaymentValue: 150000,
+        PaymentMethod: 8,
+        book_code: '003287',
+        reference_code: 'LUNE-20260713-1234',
+        grand_total: 1500000,
+        total_pay: 150000,
+        currency: 'VND',
+        payment: {
+          amount: 150000,
+          payment_method: 8,
+          payment_for: '1',
+          pay_currency: 'VND',
+        },
+      },
     });
   });
 
@@ -48,8 +62,8 @@ describe('Bluejay confirmation payload', () => {
       payments: [],
     }, confirmationConfig);
 
-    expect(payload.PaymentValue).toBe(0);
-    expect(payload.PaymentMethod).toBe(2);
+    expect(payload.reservation.PaymentValue).toBe(0);
+    expect(payload.reservation.PaymentMethod).toBe(2);
   });
 
   it('normalizes both wrapped and direct Bluejay booking responses', () => {
