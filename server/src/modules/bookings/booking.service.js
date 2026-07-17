@@ -220,7 +220,7 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
       createdBluejayBooking = result.payload;
     }
 
-    if (String(createdBluejayBooking?.status || '').toLowerCase() !== 'confirm') {
+    if (String(createdBluejayBooking?.status || '').toLowerCase() !== 'confirm' || hasPaidPayment(currentBooking)) {
       await confirmBluejayBooking({ booking: currentBooking });
     }
     return prisma.booking.update({

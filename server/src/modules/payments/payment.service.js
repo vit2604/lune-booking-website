@@ -648,16 +648,31 @@ export async function verifyPaymentStatus(bookingCode, { forceBluejaySync = fals
       },
     });
   });
-  const syncedBooking = nextStatus === 'PAID'
-    ? await syncBookingToBluejay(updatedBooking, { forceConfirm: forceBluejaySync })
-    : updatedBooking;
+  let syncedBooking = updatedBooking;
+  let bluejaySyncError = null;
+  if (nextStatus === 'PAID') {
+    try {
+      syncedBooking = await syncBookingToBluejay(updatedBooking, { forceConfirm: forceBluejaySync });
+    } catch (error) {
+      bluejaySyncError = error?.message || 'Could not sync booking to Bluejay PMS';
+      syncedBooking = await prisma.booking.findUnique({
+        where: { id: updatedBooking.id },
+        include: {
+          room: { include: { images: true, ratePeriods: true } },
+          roomItems: { include: { room: { include: { images: true, ratePeriods: true } } } },
+          guest: true,
+          payments: true,
+        },
+      }) || updatedBooking;
+    }
+  }
   return {
     bookingCode,
     paymentStatus: nextStatus,
     bookingStatus: syncedBooking.bookingStatus,
     bluejaySyncStatus: syncedBooking.bluejaySyncStatus,
     bluejayBookingCode: syncedBooking.bluejayBookingCode || null,
-    bluejaySyncError: syncedBooking.bluejaySyncError || null,
+    bluejaySyncError: bluejaySyncError || syncedBooking.bluejaySyncError || null,
     amountPaid,
     paymentPurpose: payment.rawPayloadJson?.paymentPurpose || 'full',
     depositPercent: payment.rawPayloadJson?.depositPercent ?? null,
@@ -726,7 +741,11 @@ export async function handlePayosWebhook(payload) {
   });
 
   if (nextStatus === 'PAID') {
-    await syncBookingToBluejay(updatedBooking);
+    try {
+      await syncBookingToBluejay(updatedBooking);
+    } catch (_error) {
+      // The payment is already verified by PayOS; keep the webhook acknowledged and retry sync later.
+    }
   }
 
   return { received: true, matched: true, bookingCode: payment.booking.bookingCode, paymentStatus: nextStatus };

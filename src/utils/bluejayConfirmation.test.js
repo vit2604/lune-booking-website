@@ -15,6 +15,7 @@ describe('Bluejay confirmation payload', () => {
   it('sends the paid deposit while preserving the full booking total', () => {
     const payload = buildBluejayConfirmationPayload({
       bookingCode: 'LUNE-20260713-1234',
+      bluejayBookingId: '789',
       bluejayBookingCode: '003287',
       totalPrice: 1500000,
       currency: 'VND',
@@ -30,19 +31,10 @@ describe('Bluejay confirmation payload', () => {
     }, confirmationConfig);
 
     expect(payload).toMatchObject({
-      property_id: 6439,
-      channel: 'WEB',
-      book_code: '003287',
-      reference_code: 'LUNE-20260713-1234',
-      grand_total: 1500000,
-      total_pay: 150000,
-      currency: 'VND',
-      payment: {
-        amount: 150000,
-        payment_method: 8,
-        payment_for: '1',
-        pay_currency: 'VND',
-      },
+      BookingCode: '003287',
+      PaymentValue: 150000,
+      PaymentMethod: 8,
+      Currency: 'VND',
     });
   });
 
@@ -56,8 +48,8 @@ describe('Bluejay confirmation payload', () => {
       payments: [],
     }, confirmationConfig);
 
-    expect(payload.total_pay).toBe(0);
-    expect(payload).not.toHaveProperty('payment');
+    expect(payload.PaymentValue).toBe(0);
+    expect(payload.PaymentMethod).toBe(2);
   });
 
   it('normalizes both wrapped and direct Bluejay booking responses', () => {
@@ -79,8 +71,18 @@ describe('Bluejay confirmation payload', () => {
       data: { attributes: { booking: { code: '003287', status: 'confirm' } } },
     })).toMatchObject({ code: '003287', status: 'confirm' });
 
+    expect(assertBluejayBookingConfirmed({
+      StatusCode: 1,
+      Message: 'Confirm booking successfully',
+    }, '003287')).toMatchObject({ code: '003287', status: 'confirm' });
+
     expect(() => assertBluejayBookingConfirmed({
       data: { attributes: { booking: { code: '003287', status: 'new' } } },
     })).toThrow('instead of confirm');
+
+    expect(() => assertBluejayBookingConfirmed({
+      StatusCode: 1,
+      Message: 'Confirmation failed because this reservatin has been cancel',
+    })).toThrow('failed');
   });
 });

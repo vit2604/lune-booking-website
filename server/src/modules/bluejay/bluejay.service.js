@@ -4,6 +4,7 @@ import { getNightlyRates } from '../../utils/priceUtils.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 import {
   assertBluejayBookingConfirmed,
+  buildBluejayConfirmationPath,
   buildBluejayConfirmationPayload as buildConfirmationPayload,
   buildBluejayPaymentPayload,
   getLatestPaidPayment,
@@ -56,7 +57,9 @@ function requireBluejayConfig() {
 function buildBluejayUrl(path, params = {}) {
   const baseUrl = env.BLUEJAY_API_BASE_URL.replace(/\/$/, '');
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  const url = new URL(`${baseUrl}${normalizedPath}`);
+  const url = normalizedPath.startsWith('/api/')
+    ? new URL(`${new URL(baseUrl).origin}${normalizedPath}`)
+    : new URL(`${baseUrl}${normalizedPath}`);
 
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
@@ -698,13 +701,16 @@ export async function confirmBluejayBooking({ booking }) {
   if (!booking?.bluejayBookingCode) {
     throw createHttpError(500, 'Bluejay booking code is missing');
   }
+  if (!booking?.bluejayBookingId) {
+    throw createHttpError(500, 'Bluejay booking ID is missing');
+  }
   const payload = await withTimeout(async (signal) =>
-    bluejayRequest('/booking/modify', {
+    bluejayRequest(buildBluejayConfirmationPath(booking), {
       method: 'POST',
       body: buildBluejayConfirmationPayload(booking),
       signal,
     }),
   );
-  const confirmed = assertBluejayBookingConfirmed(payload);
+  const confirmed = assertBluejayBookingConfirmed(payload, booking.bluejayBookingCode);
   return { skipped: false, payload: confirmed };
 }
