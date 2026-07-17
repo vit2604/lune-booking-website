@@ -38,28 +38,15 @@ describe('Bluejay confirmation payload', () => {
       grand_total: 1500000,
       total_pay: 150000,
       currency: 'VND',
-      payment: {
+      payments: {
         amount: 150000,
         payment_method: 2,
         payment_for: '1',
         pay_currency: 'VND',
       },
-      reservation: {
-        property_id: 6439,
-        channel: 'WEB',
-        book_code: '003287',
-        reference_code: 'LUNE-20260713-1234',
-        grand_total: 1500000,
-        total_pay: 150000,
-        currency: 'VND',
-        payment: {
-          amount: 150000,
-          payment_method: 2,
-          payment_for: '1',
-          pay_currency: 'VND',
-        },
-      },
     });
+    expect(payload.payment).toBeUndefined();
+    expect(payload.reservation).toBeUndefined();
   });
 
   it('can confirm a pay-at-property booking without a payment record', () => {
@@ -73,9 +60,8 @@ describe('Bluejay confirmation payload', () => {
     }, confirmationConfig);
 
     expect(payload.total_pay).toBe(0);
-    expect(payload.payment).toBeUndefined();
-    expect(payload.reservation.total_pay).toBe(0);
-    expect(payload.reservation.payment).toBeUndefined();
+    expect(payload.payments).toBeUndefined();
+    expect(payload.reservation).toBeUndefined();
   });
 
   it('normalizes both wrapped and direct Bluejay booking responses', () => {
