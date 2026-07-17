@@ -106,6 +106,16 @@ function extractBluejayError(payload) {
   }
 
   if (typeof error === 'object') {
+    if (error.detail && typeof error.detail === 'object') {
+      const details = Object.entries(error.detail)
+        .flatMap(([key, value]) => {
+          if (Array.isArray(value)) return value.map((item) => `${key}: ${item}`);
+          return `${key}: ${value}`;
+        })
+        .filter(Boolean)
+        .join('; ');
+      if (details) return details;
+    }
     return error.message || error.title || error.detail || error.code || 'Bluejay API returned an error';
   }
 
@@ -703,10 +713,20 @@ export async function confirmBluejayBooking({ booking }) {
   if (!booking?.bluejayBookingCode) {
     throw createHttpError(500, 'Bluejay booking code is missing');
   }
+  const roomContexts = await Promise.all(
+    getBookingRoomItems(booking).map((item) => getCreateBookingContext({ booking, item })),
+  );
+  const modifyBody = {
+    ...buildBluejayBookingPayload({ booking, roomContexts }),
+    ...buildBluejayConfirmationPayload(booking),
+    booking_code: booking.bluejayBookingCode,
+    code: booking.bluejayBookingCode,
+    status: 'confirm',
+  };
   const payload = await withTimeout(async (signal) =>
     bluejayRequest('/booking/modify', {
       method: 'POST',
-      body: buildBluejayConfirmationPayload(booking),
+      body: modifyBody,
       signal,
     }),
   );

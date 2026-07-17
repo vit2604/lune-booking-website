@@ -43,7 +43,7 @@ export function buildBluejayConfirmationPath(booking) {
 export function buildBluejayConfirmationPayload(booking, { propertyId, channelCode, redirectUrl }) {
   const { paidAmount } = getBluejayPaymentSummary(booking.payments, booking.totalPrice);
   const paidPayment = getLatestPaidPayment(booking.payments);
-  const reservation = {
+  const payload = {
     property_id: Number(propertyId),
     channel: channelCode,
     BookingCode: booking.bluejayBookingCode,
@@ -57,9 +57,9 @@ export function buildBluejayConfirmationPayload(booking, { propertyId, channelCo
     currency: booking.currency || 'VND',
   };
   if (paidAmount > 0) {
-    reservation.payment = buildBluejayPaymentPayload({ booking, amount: paidAmount, payment: paidPayment });
+    payload.payment = buildBluejayPaymentPayload({ booking, amount: paidAmount, payment: paidPayment });
   }
-  return { reservation };
+  return payload;
 }
 
 export function normalizeCreatedBooking(payload) {
