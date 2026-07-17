@@ -524,7 +524,7 @@ export default function BookingPage() {
       checkIn: booking.checkIn,
       checkOut: booking.checkOut,
       guestInfo: form,
-      paymentMethod: booking.paymentMethod || 'payAtProperty',
+      paymentMethod: booking.paymentMethod,
       bookingCode: booking.bookingCode,
       bookingStatus: booking.bookingStatus,
     });
@@ -547,7 +547,7 @@ export default function BookingPage() {
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     guestInfo: form,
-    paymentMethod: booking.paymentMethod || 'payAtProperty',
+    paymentMethod: booking.paymentMethod,
     bookingCode: booking.bookingCode,
     bookingStatus: booking.bookingStatus,
   });

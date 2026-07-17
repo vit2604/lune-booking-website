@@ -41,7 +41,7 @@ export function normalizeBookingForApi(booking) {
     },
     specialRequest: guestInfo.specialRequest || booking.specialRequest || '',
     arrivalTime: guestInfo.arrivalTime || booking.arrivalTime || '',
-    paymentMethod: booking.paymentMethod || 'payAtProperty',
+    paymentMethod: booking.paymentMethod || undefined,
     phoneVerificationToken: booking.phoneVerificationToken || undefined,
   };
 }

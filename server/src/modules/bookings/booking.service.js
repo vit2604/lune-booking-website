@@ -159,6 +159,12 @@ function canSyncBookingToBluejay(booking) {
   );
 }
 
+function hasPaidPayment(booking) {
+  return (booking.payments || []).some(
+    (payment) => payment.status === 'PAID' && Number(payment.amount || 0) > 0,
+  );
+}
+
 function normalizeGuestBreakdown(input) {
   const childGuests = Math.max(0, Number(input.children || 0));
   const totalGuests = Math.max(1, Number(input.guests || 1));
@@ -174,7 +180,12 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
   if (!isBluejayBookingCreateEnabled()) return booking;
   if (booking?.bookingStatus === 'CANCELLED') return booking;
   if (!forceConfirm && !canSyncBookingToBluejay(booking)) return booking;
-  if (booking.bluejaySyncStatus === 'SYNCED' && booking.bookingStatus === 'CONFIRMED' && !forceConfirm) {
+  if (
+    booking.bluejaySyncStatus === 'SYNCED' &&
+    booking.bookingStatus === 'CONFIRMED' &&
+    !forceConfirm &&
+    !hasPaidPayment(booking)
+  ) {
     return booking;
   }
 
