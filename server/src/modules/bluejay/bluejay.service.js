@@ -726,14 +726,21 @@ export async function confirmBluejayBooking({ booking }) {
     const confirmed = assertBluejayBookingConfirmed(payload, booking.bluejayBookingCode);
     return { skipped: false, payload: confirmed };
   } catch (modifyError) {
-    const payload = await withTimeout(async (signal) =>
-      bluejayRequest(buildBluejayConfirmationPath({ ...booking, propertyId: env.BLUEJAY_PROPERTY_ID }), {
-      method: 'POST',
-      body: buildBluejayConfirmationPayload(booking),
-      signal,
-      }),
-    );
-    const confirmed = assertBluejayBookingConfirmed(payload, booking.bluejayBookingCode);
-    return { skipped: false, payload: confirmed };
+    try {
+      const payload = await withTimeout(async (signal) =>
+        bluejayRequest(buildBluejayConfirmationPath({ ...booking, propertyId: env.BLUEJAY_PROPERTY_ID }), {
+          method: 'POST',
+          body: buildBluejayConfirmationPayload(booking),
+          signal,
+        }),
+      );
+      const confirmed = assertBluejayBookingConfirmed(payload, booking.bluejayBookingCode);
+      return { skipped: false, payload: confirmed };
+    } catch (confirmationError) {
+      throw createHttpError(
+        502,
+        `Bluejay modify failed: ${modifyError?.message || 'unknown'}; Bluejay confirm failed: ${confirmationError?.message || 'unknown'}`,
+      );
+    }
   }
 }
