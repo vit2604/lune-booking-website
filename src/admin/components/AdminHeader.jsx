@@ -1,5 +1,6 @@
 import { Menu, Search } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import AdminChatNotifications from './AdminChatNotifications.jsx';
 import { getAdminUser } from '../services/adminAuthService.js';
 
 export default function AdminHeader({ onMenu }) {
@@ -46,9 +47,12 @@ export default function AdminHeader({ onMenu }) {
           Manage rooms, bookings, media
         </div>
 
-        <div className="hidden text-right sm:block">
-          <p className="text-sm font-semibold text-lune-ink">{user?.username || 'admin'}</p>
-          <p className="text-xs text-stone-500">Secure admin session</p>
+        <div className="flex items-center gap-3">
+          <AdminChatNotifications />
+          <div className="hidden text-right sm:block">
+            <p className="text-sm font-semibold text-lune-ink">{user?.username || 'admin'}</p>
+            <p className="text-xs text-stone-500">Secure admin session</p>
+          </div>
         </div>
       </div>
     </header>

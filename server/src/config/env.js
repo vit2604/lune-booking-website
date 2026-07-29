@@ -75,6 +75,9 @@ const schema = z.object({
   TWILIO_AUTH_TOKEN: optionalString,
   TWILIO_FROM_NUMBER: optionalString,
   TWILIO_MESSAGING_SERVICE_SID: optionalString,
+  TELEGRAM_BOT_TOKEN: optionalString,
+  TELEGRAM_CHAT_ID: optionalString,
+  TELEGRAM_CHAT_ADMIN_URL: optionalUrl,
 });
 
 const parsed = schema.safeParse(process.env);

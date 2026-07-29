@@ -1,5 +1,6 @@
 import { Archive, MessageCircle, RotateCcw, Send, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { readJsonStorage, storageKeys } from '../../constants/storageKeys.js';
 import { canUseMockFallback } from '../../config/apiConfig.js';
 import { getAdminToken } from '../../services/apiClient.js';
@@ -31,6 +32,8 @@ function appendUniqueMessage(current, message) {
 }
 
 export default function AdminMessages() {
+  const [searchParams] = useSearchParams();
+  const sessionFromNotification = searchParams.get('session');
   const [sessions, setSessions] = useState([]);
   const [selected, setSelected] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -79,7 +82,12 @@ export default function AdminMessages() {
       setSessions((current) => current.map((session) => (
         session.sessionCode === message.sessionCode ? { ...session, unreadByAdmin: 0 } : session
       )));
-      adminMarkChatRead(message.sessionCode).then(() => refresh()).catch(() => refresh());
+      adminMarkChatRead(message.sessionCode)
+        .then(() => {
+          window.dispatchEvent(new Event('lune:chat-updated'));
+          refresh();
+        })
+        .catch(() => refresh());
     };
 
     socket.on('admin:new_session', handleSessionUpdate);
@@ -104,7 +112,10 @@ export default function AdminMessages() {
     setSelected((current) => current?.sessionCode === sessionCode ? { ...current, unreadByAdmin: 0 } : current);
     setMessages(getLocalMessages(sessionCode));
     Promise.all([adminGetChatSession(sessionCode), adminMarkChatRead(sessionCode)])
-      .then(([session]) => setMessages(session.messages || []))
+      .then(([session]) => {
+        setMessages(session.messages || []);
+        window.dispatchEvent(new Event('lune:chat-updated'));
+      })
       .catch((error) => setSendError(error.message || 'Could not mark this conversation as read.'));
   }, [selected?.sessionCode]);
 
@@ -120,6 +131,12 @@ export default function AdminMessages() {
   }, [messages, selected?.language, translatedMessages]);
 
   const visibleSessions = useMemo(() => sessions, [sessions]);
+
+  useEffect(() => {
+    if (!sessionFromNotification || selected?.sessionCode === sessionFromNotification) return;
+    const matchingSession = sessions.find((session) => session.sessionCode === sessionFromNotification);
+    if (matchingSession) setSelected(matchingSession);
+  }, [selected?.sessionCode, sessionFromNotification, sessions]);
 
   const sendReply = async () => {
     const clean = reply.trim();

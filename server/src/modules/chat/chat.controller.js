@@ -13,6 +13,7 @@ import {
   sendAdminMessage,
   sendGuestMessage,
 } from './chat.service.js';
+import { notifyGuestChatMessage } from './chatNotification.service.js';
 
 const adminRoom = 'admin:support';
 const chatRoom = (sessionCode) => `chat:${sessionCode}`;
@@ -43,6 +44,7 @@ export async function publicMessages(req, res) {
 
 export async function publicSendMessage(req, res) {
   const message = await sendGuestMessage(req.params.sessionCode, req.body.message, req.body);
+  void notifyGuestChatMessage({ ...message, sessionCode: req.params.sessionCode });
   emitChatMessage(req, req.params.sessionCode, message);
   emitSessionUpdate(req, 'admin:unread_count', { sessionCode: req.params.sessionCode });
   sendSuccess(res, message, 'Message sent', 201);

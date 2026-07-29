@@ -81,3 +81,9 @@ services:
         sync: false
       - key: PAYOS_TIMEOUT_MS
         value: '15000'
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: TELEGRAM_CHAT_ADMIN_URL
+        value: https://www.luneboutiquedanang.com/admin/messages

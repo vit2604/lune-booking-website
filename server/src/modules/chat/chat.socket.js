@@ -7,6 +7,7 @@ import {
   sendAdminMessage,
   sendGuestMessage,
 } from './chat.service.js';
+import { notifyGuestChatMessage } from './chatNotification.service.js';
 
 const adminRoom = 'admin:support';
 const chatRoom = (sessionCode) => `chat:${sessionCode}`;
@@ -54,6 +55,7 @@ export function registerChatSocket(io) {
     socket.on('guest:message', async ({ sessionCode, message, guest }) => {
       const created = await sendGuestMessage(sessionCode, message, guest || {});
       const payload = { ...created, sessionCode };
+      void notifyGuestChatMessage(payload);
       io.to(chatRoom(sessionCode)).emit('chat:message', payload);
       io.to(adminRoom).emit('chat:message', payload);
       io.to(adminRoom).emit('admin:unread_count');

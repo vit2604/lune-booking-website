@@ -202,12 +202,13 @@ export default function CustomerChatWidget() {
           </div>
 
           <div className="border-t border-stone-200 bg-white p-3">
-            <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+            <div className="mb-3 flex flex-wrap gap-2">
               {quickQuestionKeys.map((key) => (
                 <button
                   key={key}
-                  className="shrink-0 rounded-full border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-700"
+                  className="min-h-10 max-w-full rounded-full border border-stone-200 bg-white px-3 py-2 text-left text-xs font-semibold leading-4 text-stone-700 transition hover:border-lune-gold hover:bg-lune-cream disabled:cursor-not-allowed disabled:opacity-60"
                   type="button"
+                  disabled={sending}
                   onClick={() => sendMessage(t(key))}
                 >
                   {t(key)}

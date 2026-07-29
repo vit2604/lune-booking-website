@@ -42,6 +42,9 @@ PAYOS_RETURN_URL=https://luneboutiquedanang.id.vn/success
 PAYOS_CANCEL_URL=https://luneboutiquedanang.id.vn/payment
 PAYOS_WEBHOOK_URL=https://api.luneboutiquedanang.id.vn/api/webhooks/payment/payos
 PAYOS_TIMEOUT_MS=15000
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+TELEGRAM_CHAT_ADMIN_URL=https://www.luneboutiquedanang.com/admin/messages
 ```
 
 Do not commit real secrets to Git. `JWT_SECRET`, database credentials, and real payment/provider secrets must live in the hosting provider environment variables.
@@ -142,3 +145,24 @@ Expected response:
 - PayOS QR payments are created by the backend only. Put `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, and `PAYOS_CHECKSUM_KEY` in backend environment variables, then set the PayOS webhook URL to `/api/webhooks/payment/payos`.
 - Card and wallet providers other than PayOS are placeholders. Do not process card data directly in frontend.
 - Keep `CORS_ORIGIN` restricted to the real frontend domain.
+
+## Phone Notifications For Website Chat
+
+The backend can send every new guest chat message to Telegram so staff receive a phone push notification.
+
+1. In Telegram, open `@BotFather`, create a bot, and copy the bot token into `TELEGRAM_BOT_TOKEN`.
+2. Open the new bot on your phone and send it any message, such as `hi`.
+3. Open this URL in a browser, replacing `<BOT_TOKEN>`:
+
+```text
+https://api.telegram.org/bot<BOT_TOKEN>/getUpdates
+```
+
+4. Copy `message.chat.id` into `TELEGRAM_CHAT_ID`.
+5. Set `TELEGRAM_CHAT_ADMIN_URL` to the admin messages page, for example:
+
+```text
+https://www.luneboutiquedanang.com/admin/messages
+```
+
+Redeploy the backend after adding these environment variables. If the Telegram variables are empty, website chat still works but no phone notification is sent.
