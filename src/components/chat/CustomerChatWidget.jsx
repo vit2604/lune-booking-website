@@ -52,6 +52,11 @@ function getTranslationStatusText(map, language) {
   return map[language] || map.en;
 }
 
+function isMissingChatSessionError(error) {
+  const message = error?.payload?.message || error?.message || '';
+  return error?.status === 404 && /chat session not found/i.test(message);
+}
+
 export default function CustomerChatWidget() {
   const { t, currentLanguage } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -118,8 +123,9 @@ export default function CustomerChatWidget() {
     });
   }, [currentLanguage, messages, translatedMessages]);
 
-  const ensureSession = async () => {
-    if (session?.sessionCode) return session;
+  const ensureSession = async ({ reset = false } = {}) => {
+    if (!reset && session?.sessionCode) return session;
+    if (reset) localStorage.removeItem(storageKeys.chatSessionCode);
     const { session: created } = await createChatSessionWithFallback({ language: currentLanguage });
     localStorage.setItem(storageKeys.chatSessionCode, created.sessionCode);
     setSession(created);
@@ -141,9 +147,19 @@ export default function CustomerChatWidget() {
         createdAt: new Date().toISOString(),
       };
       setMessages((current) => [...current, optimisticMessage]);
-      const { message } = await sendGuestMessageWithFallback(currentSession.sessionCode, clean, {
-        language: currentLanguage,
-      });
+      let result;
+      try {
+        result = await sendGuestMessageWithFallback(currentSession.sessionCode, clean, {
+          language: currentLanguage,
+        });
+      } catch (error) {
+        if (!isMissingChatSessionError(error)) throw error;
+        const freshSession = await ensureSession({ reset: true });
+        result = await sendGuestMessageWithFallback(freshSession.sessionCode, clean, {
+          language: currentLanguage,
+        });
+      }
+      const { message } = result;
       setMessages((current) => current.map((item) => (item.id === optimisticMessage.id ? message : item)));
       setDraft('');
     } finally {
