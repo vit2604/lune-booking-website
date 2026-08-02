@@ -160,7 +160,10 @@ export default function CustomerChatWidget() {
         });
       }
       const { message } = result;
-      setMessages((current) => current.map((item) => (item.id === optimisticMessage.id ? message : item)));
+      setMessages((current) => [
+        ...current.filter((item) => item.id !== optimisticMessage.id && item.id !== message.id),
+        message,
+      ]);
       setDraft('');
     } finally {
       setSending(false);
