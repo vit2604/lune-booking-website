@@ -153,7 +153,11 @@ export default function AdminBookings() {
   const confirmDelete = async () => {
     const bookingCode = deleteTarget.bookingCode;
     try {
-      if (source === 'api') await adminDeleteBooking(bookingCode);
+      if (source === 'api') {
+        await adminDeleteBooking(bookingCode, {
+          bluejayCancellationConfirmed: Boolean(deleteTarget.bluejayBookingCode),
+        });
+      }
       else deleteBooking(bookingCode);
       setBookings((current) => current.filter((booking) => booking.bookingCode !== bookingCode));
       setDeleteTarget(null);
@@ -295,8 +299,12 @@ export default function AdminBookings() {
       <ConfirmModal
         open={Boolean(deleteTarget)}
         title="Delete booking?"
-        message={`This will permanently remove ${deleteTarget?.bookingCode || 'this booking'} and its payment records.`}
-        confirmText="Delete booking"
+        message={
+          deleteTarget?.bluejayBookingCode
+            ? `This will permanently remove ${deleteTarget.bookingCode} and its payment records from this website. Only continue if Bluejay booking ${deleteTarget.bluejayBookingCode} has already been cancelled in Bluejay PMS.`
+            : `This will permanently remove ${deleteTarget?.bookingCode || 'this booking'} and its payment records.`
+        }
+        confirmText={deleteTarget?.bluejayBookingCode ? 'I cancelled it in Bluejay - delete' : 'Delete booking'}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
       />

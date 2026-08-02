@@ -84,7 +84,13 @@ export async function adminUpdateInternalNote(req, res, next) {
 
 export async function adminDeleteBooking(req, res, next) {
   try {
-    return sendSuccess(res, await deleteBooking(req.validated.params.bookingCode), 'Booking deleted');
+    return sendSuccess(
+      res,
+      await deleteBooking(req.validated.params.bookingCode, {
+        bluejayCancellationConfirmed: req.validated.body.bluejayCancellationConfirmed === true,
+      }),
+      'Booking deleted',
+    );
   } catch (error) {
     return next(error);
   }

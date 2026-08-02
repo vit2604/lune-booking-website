@@ -548,13 +548,14 @@ export async function updateInternalNote(bookingCode, internalNote) {
   return prisma.booking.update({ where: { bookingCode }, data: { internalNote }, include: bookingInclude });
 }
 
-export async function deleteBooking(bookingCode) {
+export async function deleteBooking(bookingCode, options = {}) {
   const booking = await prisma.booking.findUnique({ where: { bookingCode }, include: bookingInclude });
   if (!booking) throw createHttpError(404, 'Booking not found');
   if (
     booking.bluejaySyncStatus === 'SYNCED' &&
     booking.bluejayBookingCode &&
-    booking.bookingStatus !== 'CANCELLED'
+    booking.bookingStatus !== 'CANCELLED' &&
+    !options.bluejayCancellationConfirmed
   ) {
     throw createHttpError(
       409,

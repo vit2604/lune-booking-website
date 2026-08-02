@@ -102,8 +102,13 @@ export function adminUpdateInternalNote(bookingCode, internalNote) {
   });
 }
 
-export function adminDeleteBooking(bookingCode) {
-  return apiRequest(`/admin/bookings/${bookingCode}`, { method: 'DELETE' });
+export function adminDeleteBooking(bookingCode, options = {}) {
+  return apiRequest(`/admin/bookings/${bookingCode}`, {
+    method: 'DELETE',
+    body: {
+      bluejayCancellationConfirmed: options.bluejayCancellationConfirmed === true,
+    },
+  });
 }
 
 export function adminGetSettings() {
