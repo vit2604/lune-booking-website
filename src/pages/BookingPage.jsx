@@ -23,6 +23,7 @@ import {
   validateStay,
 } from '../utils/booking.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
+import { getGuestSupportErrorMessage } from '../utils/guestErrorMessages.js';
 import { getMaxChildren } from '../utils/occupancy.js';
 import { validatePhoneNumber } from '../utils/phoneValidation.js';
 import { loadBookingDraft, saveBookingDraft } from '../utils/storage.js';
@@ -241,11 +242,8 @@ export default function BookingPage() {
             bookingStatus: current.bookingStatus,
           });
         });
-      } catch (error) {
-        const message = /bluejay|timed out|too long/i.test(String(error?.message || ''))
-          ? 'Bluejay is taking too long to verify availability. Please try again in a moment.'
-          : error.message || 'Could not refresh room availability.';
-        if (!ignore) setErrors((current) => ({ ...current, rooms: message }));
+      } catch {
+        if (!ignore) setErrors((current) => ({ ...current, rooms: getGuestSupportErrorMessage(t) }));
       } finally {
         if (!ignore) setIsLoadingRooms(false);
       }
@@ -474,11 +472,11 @@ export default function BookingPage() {
           : 'OTP sent. Please check your phone.',
         error: '',
       }));
-    } catch (error) {
+    } catch {
       setPhoneVerification((current) => ({
         ...current,
         status: 'error',
-        error: error.message || 'Could not send OTP. Please try again.',
+        error: getGuestSupportErrorMessage(t),
         message: '',
       }));
     }
@@ -507,12 +505,12 @@ export default function BookingPage() {
         error: '',
       }));
       setErrors((current) => ({ ...current, phoneVerification: undefined }));
-    } catch (error) {
+    } catch {
       setPhoneVerification((current) => ({
         ...current,
         status: 'error',
         token: '',
-        error: error.message || 'Could not verify OTP. Please try again.',
+        error: getGuestSupportErrorMessage(t),
         message: '',
       }));
     }
@@ -536,10 +534,10 @@ export default function BookingPage() {
       const { booking: savedBooking } = await createBookingWithFallback(updatedBooking);
       saveBookingDraft(savedBooking);
       navigate('/payment');
-    } catch (error) {
+    } catch {
       setErrors((current) => ({
         ...current,
-        submit: error.message || t('errors.roomUnavailable'),
+        submit: getGuestSupportErrorMessage(t),
       }));
       setIsSubmitting(false);
     }

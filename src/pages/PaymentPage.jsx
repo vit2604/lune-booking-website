@@ -16,6 +16,7 @@ import {
 } from '../services/paymentApiService.js';
 import { getEnabledPaymentMethods as getLocalEnabledPaymentMethods, getPaymentSettings } from '../services/paymentService.js';
 import { formatCurrency, getPaymentStatus } from '../utils/booking.js';
+import { getGuestSupportErrorMessage } from '../utils/guestErrorMessages.js';
 import {
   clampDepositPercent,
   computePaymentBreakdown,
@@ -92,7 +93,7 @@ export default function PaymentPage() {
   const { t } = useTranslation();
   useDocumentMeta({ title: `${t('payment.reviewConfirm')} | ${BRAND}`, path: '/payment', noindex: true });
   const paymentCancelledMessage = t('payment.paymentCancelled');
-  const payosErrorMessage = t('payment.payosNotConfigured');
+  const payosErrorMessage = getGuestSupportErrorMessage(t);
 
   useEffect(() => {
     setBooking(loadBookingDraft());
@@ -145,8 +146,8 @@ export default function PaymentPage() {
         setCancellationNotice(paymentCancelledMessage);
         window.history.replaceState({}, '', window.location.pathname);
       })
-      .catch((paymentError) => {
-        if (active) setError(paymentError?.message || payosErrorMessage);
+      .catch(() => {
+        if (active) setError(payosErrorMessage);
       })
       .finally(() => {
         if (active) setConfirming(false);
@@ -299,14 +300,14 @@ export default function PaymentPage() {
           grandTotal: breakdown.grandTotal,
         });
       } else if (isPayosFlow) {
-        throw new Error(t('payment.payosNotConfigured'));
+        throw new Error(payosErrorMessage);
       }
 
       if (isPayosFlow) {
         setPaymentRequest(paymentResult);
         const checkoutUrl = payosCheckoutUrlFromResult(paymentResult);
         if (!checkoutUrl) {
-          throw new Error(paymentMessageFromResult(paymentResult) || t('payment.payosNotConfigured'));
+          throw new Error(paymentMessageFromResult(paymentResult) || payosErrorMessage);
         }
         const confirmedWithPayos = {
           ...confirmed,
@@ -331,8 +332,8 @@ export default function PaymentPage() {
       saveBookingDraft(confirmedBooking);
       persistBooking(confirmedBooking);
       navigate('/success');
-    } catch (paymentError) {
-      setError(paymentError?.message || t('payment.payosNotConfigured'));
+    } catch {
+      setError(payosErrorMessage);
     } finally {
       setConfirming(false);
     }

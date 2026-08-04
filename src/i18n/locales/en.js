@@ -336,7 +336,8 @@ export default {
     "minNights": "Minimum stay is {n} night(s).",
     "maxNights": "Maximum stay is {n} night(s).",
     "notEnoughRooms": "Only {count} room(s) remain for these dates.",
-    "apiUnavailable": "We could not connect to the booking system. Please try again or contact Lune support."
+    "apiUnavailable": "We could not connect to the booking system. Please try again or contact Lune support.",
+    "contactLuneSupport": "Something went wrong. Please contact Lune for more details."
   },
   "amenities": {
     "Free Wi-Fi": "Free Wi-Fi",

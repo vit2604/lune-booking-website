@@ -32,6 +32,7 @@ import {
 } from '../utils/booking.js';
 import { getApproxPriceText } from '../utils/currencyUtils.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
+import { getGuestSafeErrorMessage, getGuestSupportErrorMessage } from '../utils/guestErrorMessages.js';
 import { saveBookingDraft } from '../utils/storage.js';
 import { fetchRoomWithFallback } from '../services/roomApiService.js';
 
@@ -53,6 +54,7 @@ export default function RoomDetailPage() {
   const [errors, setErrors] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingRoom, setIsLoadingRoom] = useState(true);
+  const [availabilityError, setAvailabilityError] = useState('');
   const { t, currentLanguage } = useTranslation();
   const { currentCurrency } = useCurrency();
 
@@ -77,8 +79,11 @@ export default function RoomDetailPage() {
             ? current.map((item) => (item.id === apiRoom.id || item.slug === apiRoom.slug ? apiRoom : item))
             : [apiRoom, ...current];
         });
+        setAvailabilityError('');
       } catch {
-        if (!ignore) setRooms(getVisibleRooms());
+        if (!ignore) {
+          setAvailabilityError(getGuestSupportErrorMessage(t));
+        }
       } finally {
         if (!ignore) {
           setIsLoadingRoom(false);
@@ -94,7 +99,7 @@ export default function RoomDetailPage() {
       window.removeEventListener('lune:rooms-updated', refresh);
       window.removeEventListener('focus', refresh);
     };
-  }, [slug, currentLanguage, booking.checkIn, booking.checkOut, booking.guests, booking.adults, booking.children, booking.quantity]);
+  }, [slug, currentLanguage, booking.checkIn, booking.checkOut, booking.guests, booking.adults, booking.children, booking.quantity, t]);
 
   const totals = useMemo(() => {
     if (!room) return { nights: 0, roomSubtotal: 0, total: 0 };
@@ -148,7 +153,13 @@ export default function RoomDetailPage() {
   const localizedRoom = getLocalizedRoom(room, currentLanguage);
   const approxNight = getApproxPriceText(room.price, currentCurrency, currentLanguage);
   const approxTotal = getApproxPriceText(totals.total, currentCurrency, currentLanguage);
-  const availableRoomQuantity = Math.max(0, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1));
+  const roomUnavailable = room.availabilityStatus === 'not_available';
+  const availableRoomQuantity = roomUnavailable ? 0 : Math.max(0, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1));
+  const safeAvailabilityMessage = getGuestSafeErrorMessage(
+    t,
+    availabilityError || room.availabilityReason,
+    t('errors.roomUnavailable'),
+  );
 
   const handleBookingChange = (changes) => {
     setBooking((current) => ({
@@ -195,7 +206,9 @@ export default function RoomDetailPage() {
 
     const mergedErrors = { ...nextErrors, ...availability.errors };
     const availableQuantity = availableRoomQuantity;
-    if (booking.quantity > availableQuantity) {
+    if (roomUnavailable || availabilityError) {
+      mergedErrors.availability = safeAvailabilityMessage;
+    } else if (booking.quantity > availableQuantity) {
       mergedErrors.quantity = t('errors.notEnoughRooms', { count: availableQuantity });
     }
 
@@ -367,6 +380,11 @@ export default function RoomDetailPage() {
               {errorMessages.map((message) => (
                 <p key={message}>{message}</p>
               ))}
+            </div>
+          ) : null}
+          {roomUnavailable || availabilityError ? (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">
+              {safeAvailabilityMessage}
             </div>
           ) : null}
 
