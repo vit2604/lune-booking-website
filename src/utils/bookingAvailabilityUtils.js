@@ -10,15 +10,17 @@ import {
 } from './dateUtils.js';
 import { getRoomCapacity } from './occupancy.js';
 
-const holdingStatuses = ['received', 'confirmed'];
-
 function message(messages, key, fallback, params = {}) {
   const template = messages?.[key] || fallback;
   return Object.entries(params).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), template);
 }
 
 export function isBlockingBooking(booking) {
-  return holdingStatuses.includes(String(booking?.bookingStatus || 'received').toLowerCase());
+  const bookingStatus = String(booking?.bookingStatus || 'received').toLowerCase();
+  const paymentStatus = String(booking?.paymentStatus || '').toLowerCase();
+  if (bookingStatus === 'confirmed') return true;
+  if (bookingStatus !== 'received') return false;
+  return ['paid', 'pay_at_property'].includes(paymentStatus);
 }
 
 export function isBlockingRoomPeriod(period) {

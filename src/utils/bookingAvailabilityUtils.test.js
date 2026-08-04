@@ -20,14 +20,16 @@ const availableRoom = {
 };
 
 describe('booking availability utilities', () => {
-  it('blocks received and confirmed bookings but ignores cancelled bookings', () => {
+  it('blocks paid received and confirmed bookings but ignores pending or cancelled bookings', () => {
     const bookings = [
-      { roomId: 'room-a', checkIn: '2026-05-15', checkOut: '2026-05-17', bookingStatus: 'received' },
+      { roomId: 'room-a', checkIn: '2026-05-15', checkOut: '2026-05-17', bookingStatus: 'received', paymentStatus: 'paid' },
+      { roomId: 'room-a', checkIn: '2026-05-20', checkOut: '2026-05-22', bookingStatus: 'received', paymentStatus: 'pending' },
       { roomId: 'room-a', checkIn: '2026-06-01', checkOut: '2026-06-03', bookingStatus: 'cancelled' },
     ];
 
     expect(isRoomAvailable('room-a', '2026-05-16', '2026-05-18', bookings, availableRoom)).toBe(false);
     expect(isRoomAvailable('room-a', '2026-05-17', '2026-05-18', bookings, availableRoom)).toBe(true);
+    expect(isRoomAvailable('room-a', '2026-05-20', '2026-05-21', bookings, availableRoom)).toBe(true);
     expect(isRoomAvailable('room-a', '2026-06-01', '2026-06-02', bookings, availableRoom)).toBe(true);
   });
 

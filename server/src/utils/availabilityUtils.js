@@ -1,4 +1,4 @@
-import { bookingStatusesHoldingRoom } from '../constants/bookingStatus.js';
+import { bookingHoldWhere } from '../constants/bookingStatus.js';
 import { prisma } from '../config/prisma.js';
 import { checkBluejayRoomAvailability } from '../modules/bluejay/bluejay.service.js';
 import { calculateNights, hasDateOverlap, toHotelDate, validateDateRange } from './dateUtils.js';
@@ -9,8 +9,10 @@ export { calculateNights, hasDateOverlap, validateDateRange };
 export async function checkExistingBookings(roomId, checkIn, checkOut, db = prisma) {
   const bookings = await db.booking.findMany({
     where: {
-      bookingStatus: { in: bookingStatusesHoldingRoom },
-      OR: [{ roomId }, { roomItems: { some: { roomId } } }],
+      AND: [
+        bookingHoldWhere(),
+        { OR: [{ roomId }, { roomItems: { some: { roomId } } }] },
+      ],
     },
     select: {
       bookingCode: true,
@@ -32,9 +34,11 @@ export async function countExistingBookings(
 ) {
   const bookings = await db.booking.findMany({
     where: {
-      bookingStatus: { in: bookingStatusesHoldingRoom },
       bluejayBookingCode: onlyWithoutBluejayCode ? null : undefined,
-      OR: [{ roomId }, { roomItems: { some: { roomId } } }],
+      AND: [
+        bookingHoldWhere(),
+        { OR: [{ roomId }, { roomItems: { some: { roomId } } }] },
+      ],
     },
     select: {
       checkIn: true,
