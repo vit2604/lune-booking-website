@@ -9,6 +9,7 @@ import { buildPayosDescription } from './paymentDescription.js';
 import { bookingStatusAfterPayment } from './paymentStatusUtils.js';
 
 const DEFAULT_TRANSFER_CONTENT = 'Dang Trung Vuong chuyen tien';
+const fakeValuePattern = /placeholder|mock|example|todo|dummy|test[_ -]?only/i;
 
 const defaultPaymentMethods = {
   payAtProperty: {
@@ -28,14 +29,14 @@ const defaultPaymentMethods = {
     statusAfterConfirm: 'PAY_AT_PROPERTY',
   },
   bankTransfer: {
-    enabled: true,
-    visibleForGuests: true,
+    enabled: false,
+    visibleForGuests: false,
     displayName: 'Bank transfer Vietnam',
     description: 'Transfer to the official Lune bank account.',
     sortOrder: 3,
     statusAfterConfirm: 'PENDING',
-    bankName: 'PLACEHOLDER_BANK_NAME',
-    accountNumber: 'PLACEHOLDER_ACCOUNT_NUMBER',
+    bankName: '',
+    accountNumber: '',
     accountHolder: 'LUNE BOUTIQUE HOTEL',
     transferContentTemplate: DEFAULT_TRANSFER_CONTENT,
     qrImageUrl: '',
@@ -61,7 +62,7 @@ const defaultPaymentMethods = {
     enabled: false,
     visibleForGuests: true,
     displayName: 'Stripe',
-    description: 'Stripe backend integration placeholder.',
+    description: 'Stripe gateway integration.',
     sortOrder: 6,
     statusAfterConfirm: 'PENDING',
     backendEndpoint: '/api/payments/stripe/create',
@@ -70,7 +71,7 @@ const defaultPaymentMethods = {
     enabled: false,
     visibleForGuests: true,
     displayName: 'PayPal',
-    description: 'PayPal backend integration placeholder.',
+    description: 'PayPal gateway integration.',
     sortOrder: 7,
     statusAfterConfirm: 'PENDING',
     backendEndpoint: '/api/payments/paypal/create',
@@ -79,7 +80,7 @@ const defaultPaymentMethods = {
     enabled: false,
     visibleForGuests: true,
     displayName: 'VNPay',
-    description: 'VNPay backend integration placeholder.',
+    description: 'VNPay gateway integration.',
     sortOrder: 8,
     statusAfterConfirm: 'PENDING',
     backendEndpoint: '/api/payments/vnpay/create',
@@ -88,7 +89,7 @@ const defaultPaymentMethods = {
     enabled: false,
     visibleForGuests: true,
     displayName: 'MoMo',
-    description: 'MoMo backend integration placeholder.',
+    description: 'MoMo wallet integration.',
     sortOrder: 9,
     statusAfterConfirm: 'PENDING',
     backendEndpoint: '/api/payments/momo/create',
@@ -97,7 +98,7 @@ const defaultPaymentMethods = {
     enabled: false,
     visibleForGuests: true,
     displayName: 'ZaloPay',
-    description: 'ZaloPay backend integration placeholder.',
+    description: 'ZaloPay wallet integration.',
     sortOrder: 10,
     statusAfterConfirm: 'PENDING',
     backendEndpoint: '/api/payments/zalopay/create',
@@ -106,7 +107,7 @@ const defaultPaymentMethods = {
     enabled: false,
     visibleForGuests: true,
     displayName: 'International transfer',
-    description: 'SWIFT/Wise transfer placeholder for international guests.',
+    description: 'SWIFT/Wise transfer for international guests.',
     sortOrder: 11,
     statusAfterConfirm: 'PENDING',
   },
@@ -123,9 +124,15 @@ function normalizeSetting(setting) {
   const shouldExposePayos = setting.key === 'vietQr' && payosIsConfigured();
   const shouldExposeCreditCard = setting.key === 'creditCard';
   const shouldPayAtProperty = ['payAtProperty', 'cashAtProperty', 'creditCard'].includes(setting.key);
-  const enabled = setting.key === 'vietQr' ? shouldExposePayos : shouldExposeCreditCard ? true : setting.enabled;
+  const bankConfigured =
+    setting.key !== 'bankTransfer' || (isConfiguredPaymentValue(config.bankName) && isConfiguredPaymentValue(config.accountNumber));
+  const enabled = setting.key === 'vietQr' ? shouldExposePayos : shouldExposeCreditCard ? true : setting.enabled && bankConfigured;
   const visibleForGuests =
-    setting.key === 'vietQr' ? shouldExposePayos && setting.visibleForGuests : shouldExposeCreditCard ? true : setting.visibleForGuests;
+    setting.key === 'vietQr'
+      ? shouldExposePayos && setting.visibleForGuests
+      : shouldExposeCreditCard
+        ? true
+        : setting.visibleForGuests && bankConfigured;
   return {
     key: setting.key,
     ...config,
@@ -143,6 +150,19 @@ function normalizeSetting(setting) {
     sortOrder: setting.sortOrder,
     payosConfigured: setting.key === 'vietQr' ? payosIsConfigured() : undefined,
   };
+}
+
+function isConfiguredPaymentValue(value) {
+  const text = String(value || '').trim();
+  return Boolean(text && text !== '#' && !fakeValuePattern.test(text));
+}
+
+function isGuestSafePaymentMethod(method) {
+  if (!method.enabled || !method.visibleForGuests) return false;
+  if (method.key === 'bankTransfer') {
+    return isConfiguredPaymentValue(method.bankName) && isConfiguredPaymentValue(method.accountNumber);
+  }
+  return !fakeValuePattern.test(`${method.displayName || ''} ${method.description || ''} ${method.paymentNote || ''}`);
 }
 
 const sensitiveFieldPattern = /(secret|password|token|privatekey|private_key|apikey|api_key|clientsecret|client_secret|webhooksecret|webhook_secret)/i;
@@ -193,6 +213,17 @@ function normalizePaymentStatus(status) {
   if (value === 'PAY_AT_PROPERTY' || value === 'PAYATPROPERTY') return 'PAY_AT_PROPERTY';
   if (['PENDING', 'PAID', 'FAILED', 'REFUNDED'].includes(value)) return value;
   return 'PENDING';
+}
+
+const vietnamCountryNames = new Set(['vietnam', 'viet nam', 'việt nam', 'vn']);
+const payAtPropertyMethods = new Set(['payAtProperty', 'cashAtProperty']);
+
+function isVietnameseGuest(guest = {}) {
+  const country = String(guest.country || '')
+    .trim()
+    .toLowerCase();
+  const phoneCode = String(guest.phoneCode || '').trim();
+  return vietnamCountryNames.has(country) || phoneCode.startsWith('+84');
 }
 
 function payosIsConfigured() {
@@ -345,7 +376,7 @@ export async function getPaymentSettings() {
 
 export async function getEnabledPaymentMethods() {
   const settings = await getPaymentSettings();
-  return settings.filter((method) => method.enabled && method.visibleForGuests);
+  return settings.filter(isGuestSafePaymentMethod);
 }
 
 export async function savePaymentSettings(input) {
@@ -422,6 +453,9 @@ export async function createPaymentRequest({
   if (!booking) throw createHttpError(404, 'Booking not found');
   if (booking.bookingStatus === 'CANCELLED') throw createHttpError(409, 'Cancelled bookings cannot be paid');
   if (!isAllowedPaymentMethod(method)) throw createHttpError(400, 'Payment method is not supported');
+  if (payAtPropertyMethods.has(method) && isVietnameseGuest(booking.guest)) {
+    throw createHttpError(400, 'Pay at property is not available for Vietnamese guests');
+  }
   if (!booking.totalPrice || booking.totalPrice <= 0) throw createHttpError(400, 'Invalid booking amount');
   const paymentAmount = normalizeRequestedPaymentAmount({ booking, amount, grandTotal });
   const normalizedPurpose = paymentPurpose === 'deposit' && paymentAmount < booking.totalPrice ? 'deposit' : 'full';
@@ -583,8 +617,8 @@ export async function createPaymentRequest({
     bankInfo:
       method === 'bankTransfer'
         ? {
-            bankName: selected.bankName || 'PLACEHOLDER_BANK_NAME',
-            accountNumber: selected.accountNumber || 'PLACEHOLDER_ACCOUNT_NUMBER',
+            bankName: selected.bankName || '',
+            accountNumber: selected.accountNumber || '',
             accountHolder: selected.accountHolder || 'LUNE BOUTIQUE HOTEL',
             transferContent,
             qrImageUrl: selected.qrImageUrl || '',
@@ -597,7 +631,7 @@ export async function createPaymentRequest({
           ? 'QR payment link created.'
           : method === 'vietQr'
             ? providerPayload?.message || 'Online QR payment is not configured.'
-        : 'Payment request created as a placeholder.',
+        : 'Payment request created.',
   };
 }
 

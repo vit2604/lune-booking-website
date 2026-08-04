@@ -14,7 +14,7 @@ import {
   getPaymentMethodsWithFallback,
   verifyPaymentWithProvider,
 } from '../services/paymentApiService.js';
-import { getPaymentSettings } from '../services/paymentService.js';
+import { getEnabledPaymentMethods as getLocalEnabledPaymentMethods, getPaymentSettings } from '../services/paymentService.js';
 import { formatCurrency, getPaymentStatus } from '../utils/booking.js';
 import {
   clampDepositPercent,
@@ -79,11 +79,11 @@ function roomFromBookingDraft(booking) {
 export default function PaymentPage() {
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
-  const [choice, setChoice] = useState('cash');
+  const [choice, setChoice] = useState('payos');
   const [depositPercent, setDepositPercent] = useState(String(MIN_DEPOSIT_PERCENT));
   const [settings, setSettings] = useState(getPaymentSettings());
   const [branding, setBranding] = useState(getBrandingSettings());
-  const [availablePaymentMethods, setAvailablePaymentMethods] = useState([]);
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState(getLocalEnabledPaymentMethods());
   const [paymentRequest, setPaymentRequest] = useState(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState('');
@@ -159,7 +159,6 @@ export default function PaymentPage() {
 
   const room = useMemo(() => getRoomById(booking?.roomId) || roomFromBookingDraft(booking), [booking]);
   const baseTotal = Number(booking?.total ?? booking?.totalPrice ?? 0);
-  const breakdown = computePaymentBreakdown({ total: baseTotal, choice, depositPercent });
   const paymentMethodMap = useMemo(
     () => new Map(availablePaymentMethods.map((method) => [method.key || method.id, method])),
     [availablePaymentMethods],
@@ -175,16 +174,15 @@ export default function PaymentPage() {
   );
   const guestIsVietnamese = useMemo(() => isVietnameseGuest(paymentGuestInfo), [paymentGuestInfo]);
   const payosMethod = paymentMethodMap.get('vietQr');
-  const depositUsesPayos =
-    choice === 'deposit' &&
-    guestIsVietnamese &&
-    Boolean(payosMethod && payosMethod.enabled !== false && payosMethod.visibleForGuests !== false);
-  const effectivePaymentMethod = depositUsesPayos ? 'vietQr' : breakdown.method;
-  const isPayosFlow = effectivePaymentMethod === 'vietQr';
+  const bankTransferMethod = paymentMethodMap.get('bankTransfer');
   const visiblePaymentChoices = useMemo(() => {
     let choices;
     if (!availablePaymentMethods.length) {
-      choices = paymentChoices.filter((option) => option.method !== 'vietQr');
+      const localPaymentMethodMap = new Map(getLocalEnabledPaymentMethods().map((method) => [method.key || method.id, method]));
+      choices = paymentChoices.filter((option) => {
+        const method = localPaymentMethodMap.get(option.method);
+        return Boolean(method && method.enabled !== false && method.visibleForGuests !== false);
+      });
     } else {
       choices = paymentChoices.filter((option) => {
         const method = paymentMethodMap.get(option.method);
@@ -193,6 +191,16 @@ export default function PaymentPage() {
     }
     return filterPaymentChoicesForGuest(choices, paymentGuestInfo);
   }, [availablePaymentMethods.length, paymentGuestInfo, paymentMethodMap]);
+  const activeChoice = visiblePaymentChoices.some((option) => option.id === choice)
+    ? choice
+    : visiblePaymentChoices[0]?.id || choice;
+  const breakdown = computePaymentBreakdown({ total: baseTotal, choice: activeChoice, depositPercent });
+  const depositUsesPayos =
+    activeChoice === 'deposit' &&
+    guestIsVietnamese &&
+    Boolean(payosMethod && payosMethod.enabled !== false && payosMethod.visibleForGuests !== false);
+  const effectivePaymentMethod = depositUsesPayos ? 'vietQr' : breakdown.method;
+  const isPayosFlow = effectivePaymentMethod === 'vietQr';
 
   useEffect(() => {
     if (!visiblePaymentChoices.length) return;
@@ -218,7 +226,8 @@ export default function PaymentPage() {
     );
   }
 
-  const bankMethod = settings.paymentMethods?.bankTransfer || {};
+  const bankMethod = bankTransferMethod || settings.paymentMethods?.bankTransfer || {};
+  const bankTransferConfigured = Boolean(bankTransferMethod);
   const bankQrSrc = safePaymentImageSrc(bankMethod.qrImageUrl || settings.qrImageUrl);
   const contacts = [
     { icon: Phone, value: branding.phone, href: branding.phone ? `tel:${branding.phone}` : null },
@@ -228,7 +237,7 @@ export default function PaymentPage() {
 
   const currentBooking = {
     ...booking,
-    paymentChoice: choice,
+    paymentChoice: activeChoice,
     paymentMethod: effectivePaymentMethod,
     paymentStatus: getPaymentStatus(effectivePaymentMethod),
     cardSurcharge: breakdown.surcharge,
@@ -248,6 +257,10 @@ export default function PaymentPage() {
   };
 
   const handleConfirm = async () => {
+    if (!visiblePaymentChoices.length) {
+      setError(t('payment.noAvailableMethods'));
+      return;
+    }
     setConfirming(true);
     setError('');
     setPaymentRequest(null);
@@ -262,7 +275,7 @@ export default function PaymentPage() {
       guests: Number(booking.guests || 1),
       adults: Number(booking.adults || booking.guests || 1),
       children: Number(booking.children || 0),
-      paymentChoice: choice,
+      paymentChoice: activeChoice,
       paymentMethod: effectivePaymentMethod,
       paymentStatus: getPaymentStatus(effectivePaymentMethod),
       cardSurcharge: breakdown.surcharge,
@@ -279,10 +292,10 @@ export default function PaymentPage() {
       let paymentResult = null;
       if (booking.bookingCode) {
         paymentResult = await createPaymentWithFallback(booking.bookingCode, effectivePaymentMethod, {
-          amount: choice === 'deposit' ? breakdown.depositAmount : breakdown.dueNow || breakdown.grandTotal,
-          paymentPurpose: choice === 'deposit' ? 'deposit' : 'full',
-          depositPercent: choice === 'deposit' ? breakdown.depositPercent : undefined,
-          balanceAmount: choice === 'deposit' ? breakdown.balanceAtProperty : undefined,
+          amount: activeChoice === 'deposit' ? breakdown.depositAmount : breakdown.dueNow || breakdown.grandTotal,
+          paymentPurpose: activeChoice === 'deposit' ? 'deposit' : 'full',
+          depositPercent: activeChoice === 'deposit' ? breakdown.depositPercent : undefined,
+          balanceAmount: activeChoice === 'deposit' ? breakdown.balanceAtProperty : undefined,
           grandTotal: breakdown.grandTotal,
         });
       } else if (isPayosFlow) {
@@ -342,10 +355,11 @@ export default function PaymentPage() {
 
             <fieldset className="mt-8">
               <legend className="label">{t('payment.choosePayment')}</legend>
-              <div className="mt-2 grid gap-3">
-                {visiblePaymentChoices.map((option) => {
+              {visiblePaymentChoices.length ? (
+                <div className="mt-2 grid gap-3">
+                  {visiblePaymentChoices.map((option) => {
                   const Icon = choiceIcons[option.id];
-                  const active = choice === option.id;
+                  const active = activeChoice === option.id;
                   return (
                     <label
                       key={option.id}
@@ -374,11 +388,16 @@ export default function PaymentPage() {
                       </span>
                     </label>
                   );
-                })}
-              </div>
+                  })}
+                </div>
+              ) : (
+                <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                  {t('payment.noAvailableMethods')}
+                </p>
+              )}
             </fieldset>
 
-            {choice === 'card' ? (
+            {activeChoice === 'card' ? (
               <div className="mt-6 flex items-start gap-3 rounded-lg border border-stone-200 bg-white p-5 text-sm leading-7 text-stone-600">
                 <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
                 <div>
@@ -397,7 +416,7 @@ export default function PaymentPage() {
               </div>
             ) : null}
 
-            {choice === 'deposit' ? (
+            {activeChoice === 'deposit' ? (
               <div className="mt-6 rounded-lg border border-lune-gold/30 bg-lune-cream p-5">
                 <label className="block">
                   <span className="label">{t('payment.depositPercentLabel')}</span>
@@ -439,19 +458,19 @@ export default function PaymentPage() {
                       <p>{t('payment.depositPayosInstruction')}</p>
                     </div>
                   </div>
-                ) : (
+                ) : bankTransferConfigured ? (
                   <>
                     <p className="mt-4 text-sm leading-6 text-stone-700">{t('payment.transferInstruction')}</p>
                     <dl className="mt-3 grid gap-3 text-sm">
                       <div className="rounded-md bg-white p-3">
                         <dt className="text-stone-500">{t('payment.bankName')}</dt>
-                        <dd className="mt-1 font-semibold text-lune-ink">{bankMethod.bankName || 'PLACEHOLDER_BANK_NAME'}</dd>
+                        <dd className="mt-1 font-semibold text-lune-ink">{bankMethod.bankName}</dd>
                       </div>
                       <div className="grid gap-2 rounded-md bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center">
                         <div>
                           <dt className="text-stone-500">{t('payment.accountNumber')}</dt>
                           <dd className="mt-1 break-all font-semibold text-lune-ink">
-                            {bankMethod.accountNumber || 'PLACEHOLDER_ACCOUNT_NUMBER'}
+                            {bankMethod.accountNumber}
                           </dd>
                         </div>
                         <button
@@ -478,11 +497,15 @@ export default function PaymentPage() {
                       )}
                     </div>
                   </>
+                ) : (
+                  <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+                    {t('payment.bankTransferUnavailable')}
+                  </p>
                 )}
               </div>
             ) : null}
 
-            {choice === 'payos' ? (
+            {activeChoice === 'payos' ? (
               <div className="mt-6 rounded-lg border border-lune-gold/30 bg-lune-cream p-5">
                 <div className="flex items-start gap-3 text-sm leading-7 text-stone-700">
                   <QrCode className="mt-0.5 h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
@@ -539,11 +562,11 @@ export default function PaymentPage() {
             {cancellationNotice ? <p className="mt-4 text-sm font-medium text-green-700">{cancellationNotice}</p> : null}
             {error ? <p className="mt-4 text-sm font-medium text-red-600">{error}</p> : null}
 
-            <button className="btn-gold mt-8 w-full sm:w-auto" type="button" disabled={confirming} onClick={handleConfirm}>
+            <button className="btn-gold mt-8 w-full sm:w-auto" type="button" disabled={confirming || !visiblePaymentChoices.length} onClick={handleConfirm}>
               {confirming
                 ? t('common.confirming')
                 : isPayosFlow
-                  ? t(choice === 'deposit' ? 'payment.confirmDeposit' : 'payment.confirmPayment')
+                  ? t(activeChoice === 'deposit' ? 'payment.confirmDeposit' : 'payment.confirmPayment')
                   : t('payment.confirmBooking')}
             </button>
           </RevealOnScroll>

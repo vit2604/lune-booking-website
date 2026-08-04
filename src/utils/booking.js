@@ -197,8 +197,8 @@ export const getPaymentMethodLabel = (paymentMethod) => {
     cashAtProperty: 'Cash at property',
     'bank-transfer': 'Bank transfer',
     bankTransfer: 'Bank transfer',
-    'qr-payment': 'QR payment placeholder',
-    qrPayment: 'QR payment placeholder',
+    'qr-payment': 'QR payment',
+    qrPayment: 'QR payment',
     vietQr: 'VietQR',
     creditCard: 'Credit/Debit Card',
     stripe: 'Stripe',
@@ -208,7 +208,7 @@ export const getPaymentMethodLabel = (paymentMethod) => {
     zaloPay: 'ZaloPay',
     internationalTransfer: 'International transfer',
   };
-  return labels[paymentMethod] || 'Pay at property';
+  return labels[paymentMethod] || 'Not selected';
 };
 
 export const buildBookingDraft = ({
@@ -326,7 +326,7 @@ export const buildBookingDraft = ({
   const totalAdults = normalizedRoomItems.reduce((sum, item) => sum + item.adults * item.quantity, 0);
   const totalChildren = normalizedRoomItems.reduce((sum, item) => sum + item.children * item.quantity, 0);
   const pricePerNight = normalizedRoomItems.reduce((sum, item) => sum + item.pricePerNight * item.quantity, 0);
-  const selectedPaymentMethod = paymentMethod || 'payAtProperty';
+  const selectedPaymentMethod = paymentMethod || null;
 
   return {
     bookingCode: bookingCode || createBookingCode(),

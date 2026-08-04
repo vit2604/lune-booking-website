@@ -52,6 +52,18 @@ const secondApiPricedRoom = {
 };
 
 describe('booking draft pricing', () => {
+  it('does not assume pay at property before the guest chooses payment', () => {
+    const draft = buildBookingDraft({
+      room: apiPricedRoom,
+      checkIn: '2026-12-01',
+      checkOut: '2026-12-03',
+      guests: 2,
+    });
+
+    expect(draft.paymentMethod).toBeNull();
+    expect(draft.paymentStatus).toBe('pending');
+  });
+
   it('uses the API subtotal instead of multiplying the first night across the stay', () => {
     const draft = buildBookingDraft({
       room: apiPricedRoom,

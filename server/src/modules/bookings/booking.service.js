@@ -159,6 +159,23 @@ function canSyncBookingToBluejay(booking) {
   );
 }
 
+const vietnamCountryNames = new Set(['vietnam', 'viet nam', 'việt nam', 'vn']);
+const payAtPropertyMethods = new Set(['payAtProperty', 'cashAtProperty']);
+
+function isVietnameseGuest(guest = {}) {
+  const country = String(guest.country || '')
+    .trim()
+    .toLowerCase();
+  const phoneCode = String(guest.phoneCode || '').trim();
+  return vietnamCountryNames.has(country) || phoneCode.startsWith('+84');
+}
+
+function normalizeInitialPaymentMethod(input = {}) {
+  const method = input.paymentMethod || null;
+  if (payAtPropertyMethods.has(method) && isVietnameseGuest(input.guest)) return null;
+  return method;
+}
+
 function hasPaidPayment(booking) {
   return (booking.payments || []).some(
     (payment) => payment.status === 'PAID' && Number(payment.amount || 0) > 0,
@@ -334,8 +351,9 @@ export async function createBooking(input) {
   }));
 
   const bookingCode = await createUniqueBookingCode(prisma);
+  const initialPaymentMethod = normalizeInitialPaymentMethod(input);
   const paymentStatus =
-    input.paymentMethod === 'payAtProperty' || input.paymentMethod === 'cashAtProperty'
+    initialPaymentMethod === 'payAtProperty' || initialPaymentMethod === 'cashAtProperty'
       ? 'PAY_AT_PROPERTY'
       : 'PENDING';
 
@@ -428,7 +446,7 @@ export async function createBooking(input) {
         arrivalTime: cleanText(input.arrivalTime, 40) || null,
         bookingStatus: 'RECEIVED',
         paymentStatus,
-        paymentMethod: input.paymentMethod || null,
+        paymentMethod: initialPaymentMethod,
       },
       include: bookingInclude,
     });
@@ -451,11 +469,11 @@ export async function createBooking(input) {
       })),
     });
 
-    if (input.paymentMethod) {
+    if (initialPaymentMethod) {
       await tx.payment.create({
         data: {
           bookingId: created.id,
-          method: input.paymentMethod,
+          method: initialPaymentMethod,
           amount: price.totalPrice,
           currency: 'VND',
           status: paymentStatus,
