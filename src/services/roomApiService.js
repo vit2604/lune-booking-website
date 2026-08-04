@@ -43,13 +43,13 @@ export async function fetchRoomsWithFallback(query = {}, options = {}) {
   }
 }
 
-export async function fetchRoomWithFallback(slug, query = {}) {
+export async function fetchRoomWithFallback(slug, query = {}, options = {}) {
   try {
     const params = new URLSearchParams();
     Object.entries(query).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') params.set(key, value);
     });
-    const data = await apiRequest(`/rooms/${slug}${params.toString() ? `?${params}` : ''}`);
+    const data = await apiRequest(`/rooms/${slug}${params.toString() ? `?${params}` : ''}`, options);
     return {
       source: 'api',
       room: normalizeApiRoom(

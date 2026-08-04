@@ -69,7 +69,7 @@ export default function RoomsPage() {
             adults: filters.adults,
             children: filters.children,
           },
-          { timeoutMs: 12000 },
+          { timeoutMs: 25000 },
         );
         if (!ignore) {
           setRooms(nextRooms);

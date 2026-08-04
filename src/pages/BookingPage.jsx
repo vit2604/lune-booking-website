@@ -200,7 +200,7 @@ export default function BookingPage() {
           guests: 1,
           adults: 1,
           children: 0,
-        });
+        }, { timeoutMs: 25000 });
         const detailPromises = booking.rooms.map((item) =>
           fetchRoomWithFallback(item.roomId, {
             lang: currentLanguage,
@@ -209,7 +209,7 @@ export default function BookingPage() {
             guests: item.guests,
             adults: item.adults,
             children: item.children,
-          }),
+          }, { timeoutMs: 25000 }),
         );
         const [listResult, ...detailResults] = await Promise.all([listPromise, ...detailPromises]);
         if (ignore) return;
@@ -242,7 +242,10 @@ export default function BookingPage() {
           });
         });
       } catch (error) {
-        if (!ignore) setErrors((current) => ({ ...current, rooms: error.message || 'Could not refresh room availability.' }));
+        const message = /bluejay|timed out|too long/i.test(String(error?.message || ''))
+          ? 'Bluejay is taking too long to verify availability. Please try again in a moment.'
+          : error.message || 'Could not refresh room availability.';
+        if (!ignore) setErrors((current) => ({ ...current, rooms: message }));
       } finally {
         if (!ignore) setIsLoadingRooms(false);
       }

@@ -10,6 +10,8 @@ import {
 import { getBluejayPaymentSummary } from './bluejayPaymentUtils.js';
 
 const DEFAULT_MEAL_PLAN = { breakfast: false, lunch: false, dinner: false };
+const MIN_AVAILABILITY_TIMEOUT_MS = 15_000;
+const AVAILABILITY_RETRY_COUNT = 1;
 
 function safeJsonParse(value, fallback = {}) {
   if (!value) return fallback;
@@ -148,9 +150,9 @@ async function bluejayRequest(path, { method = 'GET', params, body, signal } = {
   return payload;
 }
 
-async function withTimeout(callback) {
+async function withTimeout(callback, { timeoutMs = env.BLUEJAY_TIMEOUT_MS } = {}) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), env.BLUEJAY_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     return await callback(controller.signal);
@@ -162,6 +164,29 @@ async function withTimeout(callback) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function isBluejayTimeout(error) {
+  return error?.statusCode === 504 || /timed out/i.test(String(error?.message || ''));
+}
+
+async function withAvailabilityRetry(callback) {
+  const timeoutMs = Math.max(Number(env.BLUEJAY_TIMEOUT_MS || 0), MIN_AVAILABILITY_TIMEOUT_MS);
+  let lastError;
+
+  for (let attempt = 0; attempt <= AVAILABILITY_RETRY_COUNT; attempt += 1) {
+    try {
+      return await withTimeout(callback, { timeoutMs });
+    } catch (error) {
+      lastError = error;
+      if (!isBluejayTimeout(error) || attempt >= AVAILABILITY_RETRY_COUNT) break;
+    }
+  }
+
+  if (isBluejayTimeout(lastError)) {
+    throw createHttpError(504, 'Bluejay is taking too long to verify availability. Please try again.');
+  }
+  throw lastError;
 }
 
 function getAttributes(payload) {
@@ -347,7 +372,7 @@ export async function listBluejayRoomTypes({ image = 'none', lang = 'vi-VN' } = 
 
 export async function searchBluejayRoomTypes({ checkIn, checkOut, guests = 1, adults, children, child = 0, image = 'none', lang = 'vi-VN' }) {
   const occupancy = normalizeOccupancy({ guests, adults, children, child });
-  return withTimeout(async (signal) =>
+  return withAvailabilityRetry(async (signal) =>
     bluejayRequest('/search-roomtypes', {
       signal,
       params: {
