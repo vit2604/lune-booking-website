@@ -25,12 +25,12 @@ describe('computePaymentBreakdown', () => {
   });
 
   it('splits a deposit and the remaining balance', () => {
-    const b = computePaymentBreakdown({ total: 2_000_000, choice: 'deposit', depositPercent: 25 });
+    const b = computePaymentBreakdown({ total: 2_000_000, choice: 'deposit', depositPercent: 35 });
     expect(b.method).toBe('bankTransfer');
-    expect(b.depositPercent).toBe(25);
-    expect(b.depositAmount).toBe(500_000);
-    expect(b.dueNow).toBe(500_000);
-    expect(b.balanceAtProperty).toBe(1_500_000);
+    expect(b.depositPercent).toBe(35);
+    expect(b.depositAmount).toBe(700_000);
+    expect(b.dueNow).toBe(700_000);
+    expect(b.balanceAtProperty).toBe(1_300_000);
     expect(b.grandTotal).toBe(2_000_000);
   });
 
@@ -43,13 +43,13 @@ describe('computePaymentBreakdown', () => {
     expect(b.balanceAtProperty).toBe(0);
   });
 
-  it('enforces the 10% minimum deposit', () => {
-    expect(clampDepositPercent(0)).toBe(10);
-    expect(clampDepositPercent(5)).toBe(10);
+  it('enforces the 30% minimum deposit', () => {
+    expect(clampDepositPercent(0)).toBe(30);
+    expect(clampDepositPercent(29)).toBe(30);
     expect(clampDepositPercent(150)).toBe(100);
     const b = computePaymentBreakdown({ total: 1_000_000, choice: 'deposit', depositPercent: 3 });
-    expect(b.depositPercent).toBe(10);
-    expect(b.depositAmount).toBe(100_000);
+    expect(b.depositPercent).toBe(30);
+    expect(b.depositAmount).toBe(300_000);
   });
 
   it('rounds money to whole VND', () => {
@@ -62,13 +62,14 @@ describe('computePaymentBreakdown', () => {
 describe('guest payment choices', () => {
   it('detects Vietnamese guests by country or phone code', () => {
     expect(isVietnameseGuest({ country: 'Vietnam' })).toBe(true);
+    expect(isVietnameseGuest({ country: 'Việt Nam' })).toBe(true);
     expect(isVietnameseGuest({ country: 'France', phoneCode: '+84 Vietnam' })).toBe(true);
     expect(isVietnameseGuest({ country: 'France', phoneCode: '+33 France' })).toBe(false);
   });
 
-  it('hides cash and card-at-property choices for Vietnamese guests', () => {
+  it('hides cash but keeps card fallback for Vietnamese guests', () => {
     const choices = filterPaymentChoicesForGuest(paymentChoices, { country: 'Vietnam' }).map((choice) => choice.id);
-    expect(choices).toEqual(['deposit', 'payos']);
+    expect(choices).toEqual(['payos', 'deposit', 'card']);
   });
 
   it('shows QR payment, cash, and international card for foreign guests', () => {

@@ -1,5 +1,5 @@
 export const CARD_FEE_PERCENT = 5;
-export const MIN_DEPOSIT_PERCENT = 10;
+export const MIN_DEPOSIT_PERCENT = 30;
 
 // Guest-facing choices map to a backend-accepted paymentMethod enum value.
 export const paymentChoices = [
@@ -11,16 +11,22 @@ export const paymentChoices = [
 
 const vietnamCountryNames = new Set(['vietnam', 'viet nam', 'việt nam', 'vn']);
 
-export function isVietnameseGuest(guestInfo = {}) {
-  const country = String(guestInfo.country || '')
+function normalizeCountryName(value) {
+  return String(value || '')
     .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+export function isVietnameseGuest(guestInfo = {}) {
+  const country = normalizeCountryName(guestInfo.country);
   const phoneCode = String(guestInfo.phoneCode || guestInfo.phoneCountryCode || '').toLowerCase();
   return vietnamCountryNames.has(country) || phoneCode.includes('+84');
 }
 
 export function filterPaymentChoicesForGuest(choices, guestInfo = {}) {
-  const preferredOrder = isVietnameseGuest(guestInfo) ? ['deposit', 'payos'] : ['payos', 'cash', 'card'];
+  const preferredOrder = isVietnameseGuest(guestInfo) ? ['payos', 'deposit', 'card'] : ['payos', 'cash', 'card'];
   const choiceMap = new Map(choices.map((choice) => [choice.id, choice]));
   return preferredOrder.map((id) => choiceMap.get(id)).filter(Boolean);
 }

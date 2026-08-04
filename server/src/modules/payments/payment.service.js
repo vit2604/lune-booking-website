@@ -9,6 +9,7 @@ import { buildPayosDescription } from './paymentDescription.js';
 import { bookingStatusAfterPayment } from './paymentStatusUtils.js';
 
 const DEFAULT_TRANSFER_CONTENT = 'Dang Trung Vuong chuyen tien';
+const MIN_DEPOSIT_PERCENT = 30;
 const fakeValuePattern = /placeholder|mock|example|todo|dummy|test[_ -]?only/i;
 
 const defaultPaymentMethods = {
@@ -215,13 +216,19 @@ function normalizePaymentStatus(status) {
   return 'PENDING';
 }
 
-const vietnamCountryNames = new Set(['vietnam', 'viet nam', 'việt nam', 'vn']);
+const vietnamCountryNames = new Set(['vietnam', 'viet nam', 'vn']);
 const payAtPropertyMethods = new Set(['payAtProperty', 'cashAtProperty']);
 
-function isVietnameseGuest(guest = {}) {
-  const country = String(guest.country || '')
+function normalizeCountryName(value) {
+  return String(value || '')
     .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function isVietnameseGuest(guest = {}) {
+  const country = normalizeCountryName(guest.country);
   const phoneCode = String(guest.phoneCode || '').trim();
   return vietnamCountryNames.has(country) || phoneCode.startsWith('+84');
 }
@@ -459,6 +466,12 @@ export async function createPaymentRequest({
   if (!booking.totalPrice || booking.totalPrice <= 0) throw createHttpError(400, 'Invalid booking amount');
   const paymentAmount = normalizeRequestedPaymentAmount({ booking, amount, grandTotal });
   const normalizedPurpose = paymentPurpose === 'deposit' && paymentAmount < booking.totalPrice ? 'deposit' : 'full';
+  if (normalizedPurpose === 'deposit') {
+    const minimumDepositAmount = Math.round((booking.totalPrice * MIN_DEPOSIT_PERCENT) / 100);
+    if (paymentAmount < minimumDepositAmount) {
+      throw createHttpError(400, `Deposit must be at least ${MIN_DEPOSIT_PERCENT}% of the booking total`);
+    }
+  }
   const normalizedDepositPercent =
     normalizedPurpose === 'deposit' && Number.isFinite(Number(depositPercent)) ? Number(depositPercent) : null;
   const normalizedBalanceAmount =

@@ -6,8 +6,11 @@ describe('bookingStatusAfterPayment', () => {
     expect(bookingStatusAfterPayment('RECEIVED', 'FAILED')).toBe('CANCELLED');
   });
 
-  it('does not cancel confirmed or paid bookings', () => {
-    expect(bookingStatusAfterPayment('CONFIRMED', 'FAILED')).toBe('CONFIRMED');
+  it('releases confirmed bookings when PayOS fails before payment is captured', () => {
+    expect(bookingStatusAfterPayment('CONFIRMED', 'FAILED')).toBe('CANCELLED');
+  });
+
+  it('does not change received bookings before payment is captured', () => {
     expect(bookingStatusAfterPayment('RECEIVED', 'PAID')).toBe('RECEIVED');
   });
 });

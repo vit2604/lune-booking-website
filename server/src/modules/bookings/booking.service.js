@@ -150,24 +150,31 @@ function normalizeSyncError(error) {
   return String(error?.message || 'Bluejay booking sync failed').slice(0, 1000);
 }
 
+const vietnamCountryNames = new Set(['vietnam', 'viet nam', 'vn']);
+const payAtPropertyMethods = new Set(['payAtProperty', 'cashAtProperty']);
+
+function normalizeCountryName(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function isVietnameseGuest(guest = {}) {
+  const country = normalizeCountryName(guest.country);
+  const phoneCode = String(guest.phoneCode || '').trim();
+  return vietnamCountryNames.has(country) || phoneCode.startsWith('+84');
+}
+
 function canSyncBookingToBluejay(booking) {
   if (!booking || booking.bookingStatus === 'CANCELLED') return false;
   if (booking.paymentStatus === 'PAID') return true;
+  if (booking.paymentStatus === 'PAY_AT_PROPERTY' && isVietnameseGuest(booking.guest)) return false;
   return (
     booking.paymentStatus === 'PAY_AT_PROPERTY' &&
     ['payAtProperty', 'cashAtProperty', 'creditCard'].includes(booking.paymentMethod)
   );
-}
-
-const vietnamCountryNames = new Set(['vietnam', 'viet nam', 'việt nam', 'vn']);
-const payAtPropertyMethods = new Set(['payAtProperty', 'cashAtProperty']);
-
-function isVietnameseGuest(guest = {}) {
-  const country = String(guest.country || '')
-    .trim()
-    .toLowerCase();
-  const phoneCode = String(guest.phoneCode || '').trim();
-  return vietnamCountryNames.has(country) || phoneCode.startsWith('+84');
 }
 
 function normalizeInitialPaymentMethod(input = {}) {
