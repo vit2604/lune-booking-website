@@ -468,7 +468,8 @@ export async function createBooking(input) {
 
   await consumePhoneVerification(phoneVerification);
 
-  return publicBookingSummary(booking);
+  const syncedBooking = await syncBookingToBluejay(booking);
+  return publicBookingSummary(syncedBooking || booking);
 }
 
 export async function getPublicBooking(bookingCode) {
