@@ -139,6 +139,22 @@ function getTransporter() {
   return transporter;
 }
 
+export async function verifyBookingConfirmationEmailTransport() {
+  if (!emailIsConfigured()) {
+    console.warn('Booking confirmation email is disabled or Gmail SMTP credentials are missing.');
+    return { configured: false, ready: false };
+  }
+
+  try {
+    await getTransporter().verify();
+    console.log('Gmail SMTP is ready for booking confirmation emails.');
+    return { configured: true, ready: true };
+  } catch (error) {
+    console.warn('Gmail SMTP verification failed:', String(error?.message || error).slice(0, 500));
+    return { configured: true, ready: false };
+  }
+}
+
 async function loadEmailSettings() {
   const settings = await getAllSettings();
   return {
@@ -268,4 +284,3 @@ export async function retryPendingBookingConfirmationEmails() {
   const results = await Promise.all(bookings.map(sendBookingConfirmationEmailIfNeeded));
   return { attempted: bookings.length, sent: results.filter(Boolean).length };
 }
-

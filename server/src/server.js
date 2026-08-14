@@ -3,7 +3,10 @@ import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { createSocketServer } from './config/socket.js';
 import { cleanupStaleChatSessions } from './modules/chat/chat.service.js';
-import { retryPendingBookingConfirmationEmails } from './modules/bookings/bookingConfirmationEmail.service.js';
+import {
+  retryPendingBookingConfirmationEmails,
+  verifyBookingConfirmationEmailTransport,
+} from './modules/bookings/bookingConfirmationEmail.service.js';
 
 const app = createApp();
 const httpServer = http.createServer(app);
@@ -40,3 +43,4 @@ async function runBookingEmailRetry() {
 
 runBookingEmailRetry();
 setInterval(runBookingEmailRetry, BOOKING_EMAIL_RETRY_INTERVAL_MS).unref();
+void verifyBookingConfirmationEmailTransport();
