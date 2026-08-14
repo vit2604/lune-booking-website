@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { resolve4 } from 'node:dns/promises';
 import { env } from '../../config/env.js';
 import { prisma } from '../../config/prisma.js';
 import { getAllSettings } from '../settings/setting.service.js';
@@ -7,6 +8,7 @@ const CLAIM_TIMEOUT_MS = 10 * 60 * 1000;
 const RETRY_BATCH_SIZE = 10;
 
 let transporter;
+let transporterPromise;
 let missingConfigWasLogged = false;
 
 const escapeHtml = (value) => String(value ?? '')
@@ -124,19 +126,31 @@ function emailIsConfigured() {
   );
 }
 
-function getTransporter() {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_SECURE,
-      auth: { user: env.SMTP_USER, pass: env.SMTP_APP_PASSWORD.replace(/\s/g, '') },
-      connectionTimeout: 15_000,
-      greetingTimeout: 15_000,
-      socketTimeout: 30_000,
-    });
+async function getTransporter() {
+  if (transporter) return transporter;
+  if (!transporterPromise) {
+    transporterPromise = (async () => {
+      const [smtpIpv4] = await resolve4(env.SMTP_HOST);
+      if (!smtpIpv4) throw new Error(`Could not resolve an IPv4 address for ${env.SMTP_HOST}`);
+      return nodemailer.createTransport({
+        host: smtpIpv4,
+        port: env.SMTP_PORT,
+        secure: env.SMTP_SECURE,
+        auth: { user: env.SMTP_USER, pass: env.SMTP_APP_PASSWORD.replace(/\s/g, '') },
+        tls: { servername: env.SMTP_HOST },
+        connectionTimeout: 15_000,
+        greetingTimeout: 15_000,
+        socketTimeout: 30_000,
+      });
+    })();
   }
-  return transporter;
+  try {
+    transporter = await transporterPromise;
+    return transporter;
+  } catch (error) {
+    transporterPromise = null;
+    throw error;
+  }
 }
 
 export async function verifyBookingConfirmationEmailTransport() {
@@ -146,7 +160,7 @@ export async function verifyBookingConfirmationEmailTransport() {
   }
 
   try {
-    await getTransporter().verify();
+    await (await getTransporter()).verify();
     console.log('Gmail SMTP is ready for booking confirmation emails.');
     return { configured: true, ready: true };
   } catch (error) {
@@ -213,7 +227,7 @@ export async function sendBookingConfirmationEmailIfNeeded(booking) {
   try {
     const settings = await loadEmailSettings();
     const message = buildBookingConfirmationEmail(claimedBooking, settings);
-    const result = await getTransporter().sendMail({
+    const result = await (await getTransporter()).sendMail({
       from: { name: env.SMTP_FROM_NAME, address: env.SMTP_USER },
       replyTo: env.SMTP_USER,
       to: claimedBooking.guest.email,
