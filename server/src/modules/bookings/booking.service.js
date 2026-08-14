@@ -19,6 +19,7 @@ import { calculateTotalPrice } from '../../utils/priceUtils.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 import { cleanText } from '../../utils/sanitizeUtils.js';
 import { assertPhoneVerification, consumePhoneVerification } from '../phone-verifications/phoneVerification.service.js';
+import { sendBookingConfirmationEmailIfNeeded } from './bookingConfirmationEmail.service.js';
 
 const bookingInclude = {
   room: { include: { images: true, ratePeriods: true } },
@@ -205,6 +206,7 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
   if (booking?.bookingStatus === 'CANCELLED') return booking;
   if (!forceConfirm && !canSyncBookingToBluejay(booking)) return booking;
   if (booking.bluejaySyncStatus === 'SYNCED' && booking.bookingStatus === 'CONFIRMED') {
+    await sendBookingConfirmationEmailIfNeeded(booking);
     return booking;
   }
 
@@ -257,7 +259,7 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
     if (createdStatus !== 'confirm') {
       await confirmBluejayBooking({ booking: currentBooking });
     }
-    return prisma.booking.update({
+    const confirmedBooking = await prisma.booking.update({
       where: { id: booking.id },
       data: {
         bookingStatus: 'CONFIRMED',
@@ -267,6 +269,8 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
       },
       include: bookingInclude,
     });
+    await sendBookingConfirmationEmailIfNeeded(confirmedBooking);
+    return confirmedBooking;
   } catch (error) {
     const message = normalizeSyncError(error);
     await prisma.booking
@@ -552,7 +556,13 @@ export async function updateBookingStatus(bookingCode, bookingStatus) {
     if (!booking) throw createHttpError(404, 'Booking not found');
     return syncBookingToBluejay(booking, { forceConfirm: true });
   }
-  return prisma.booking.update({ where: { bookingCode }, data: { bookingStatus }, include: bookingInclude });
+  const booking = await prisma.booking.update({
+    where: { bookingCode },
+    data: { bookingStatus },
+    include: bookingInclude,
+  });
+  await sendBookingConfirmationEmailIfNeeded(booking);
+  return booking;
 }
 
 export async function updatePaymentStatus(bookingCode, paymentStatus) {

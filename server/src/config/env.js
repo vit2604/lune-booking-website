@@ -78,6 +78,13 @@ const schema = z.object({
   TELEGRAM_BOT_TOKEN: optionalString,
   TELEGRAM_CHAT_ID: optionalString,
   TELEGRAM_CHAT_ADMIN_URL: optionalUrl,
+  BOOKING_CONFIRMATION_EMAIL_ENABLED: optionalBoolean(false),
+  SMTP_HOST: z.string().default('smtp.gmail.com'),
+  SMTP_PORT: z.coerce.number().int().positive().default(465),
+  SMTP_SECURE: optionalBoolean(true),
+  SMTP_USER: optionalEmail,
+  SMTP_APP_PASSWORD: optionalString,
+  SMTP_FROM_NAME: z.string().default('Lune Boutique Hotel & Apartment Da Nang'),
 });
 
 const parsed = schema.safeParse(process.env);

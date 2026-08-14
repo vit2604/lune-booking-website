@@ -224,6 +224,11 @@ model Booking {
   bluejaySyncStatus  String    @default("NOT_SYNCED")
   bluejaySyncError   String?
   bluejaySyncedAt    DateTime?
+  confirmationEmailSentAt        DateTime?
+  confirmationEmailClaimedAt     DateTime?
+  confirmationEmailNextAttemptAt DateTime?
+  confirmationEmailAttempts      Int      @default(0)
+  confirmationEmailError         String?
   source         BookingSource @default(DIRECT_WEBSITE)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt

@@ -87,3 +87,17 @@ services:
         sync: false
       - key: TELEGRAM_CHAT_ADMIN_URL
         value: https://www.luneboutiquedanang.com/admin/messages
+      - key: BOOKING_CONFIRMATION_EMAIL_ENABLED
+        value: 'true'
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: '465'
+      - key: SMTP_SECURE
+        value: 'true'
+      - key: SMTP_USER
+        value: luneboutique92tl@gmail.com
+      - key: SMTP_APP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_NAME
+        value: Lune Boutique Hotel & Apartment Da Nang
