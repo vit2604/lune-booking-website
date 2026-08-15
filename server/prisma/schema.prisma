@@ -59,6 +59,49 @@ enum MediaSource {
   UPLOAD
 }
 
+enum AiContentMode {
+  REVIEW_REQUIRED
+  AUTO_AFTER_UPLOAD
+  FULL_AUTO_SAFE
+}
+
+enum AiWorkflowState {
+  TREND_DETECTED
+  IDEA_PROPOSED
+  AWAITING_MEDIA
+  MEDIA_UPLOADED
+  MEDIA_ANALYZING
+  MEDIA_REJECTED
+  MEDIA_READY
+  DRAFT_GENERATING
+  DRAFT_READY
+  AWAITING_APPROVAL
+  APPROVED
+  SCHEDULED
+  PUBLISHING
+  PUBLISH_UNKNOWN
+  PUBLISHED
+  PUBLISH_FAILED
+  PAUSED
+  ARCHIVED
+}
+
+enum AiJobState {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  DEAD_LETTER
+  CANCELLED
+}
+
+enum ConsentStatus {
+  UNKNOWN
+  GRANTED
+  DENIED
+  NOT_REQUIRED
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -72,40 +115,40 @@ model User {
 }
 
 model Room {
-  id                       String            @id @default(cuid())
-  slug                     String            @unique
-  name                     String
-  shortDescription         String
-  fullDescription          String
-  basePrice                Int
-  weekendPrice             Int?
-  holidayPrice             Int?
-  longStayDiscountEnabled  Boolean           @default(true)
-  longStayMinNights        Int               @default(7)
-  longStayDiscountPercent  Float             @default(5)
-  serviceFeePercent        Float             @default(0)
-  taxPercent               Float             @default(0)
-  minNights                Int               @default(1)
-  maxNights                Int               @default(30)
-  allowSameDayBooking      Boolean           @default(true)
-  advanceBookingDays       Int               @default(365)
-  cleaningBufferHours      Int               @default(0)
-  size                     String
-  maxGuests                Int
-  bedType                  String
-  numberOfBeds             Int               @default(1)
-  status                   RoomStatus        @default(ACTIVE)
-  isFeatured               Boolean           @default(false)
-  sortOrder                Int               @default(0)
-  createdAt                DateTime          @default(now())
-  updatedAt                DateTime          @updatedAt
-  translations             RoomTranslation[]
-  images                   RoomImage[]
-  amenities                RoomAmenity[]
-  blockedDates             RoomBlockedDate[]
-  ratePeriods              RoomRatePeriod[]
-  bookings                 Booking[]
-  bookingItems             BookingRoom[]
+  id                      String            @id @default(cuid())
+  slug                    String            @unique
+  name                    String
+  shortDescription        String
+  fullDescription         String
+  basePrice               Int
+  weekendPrice            Int?
+  holidayPrice            Int?
+  longStayDiscountEnabled Boolean           @default(true)
+  longStayMinNights       Int               @default(7)
+  longStayDiscountPercent Float             @default(5)
+  serviceFeePercent       Float             @default(0)
+  taxPercent              Float             @default(0)
+  minNights               Int               @default(1)
+  maxNights               Int               @default(30)
+  allowSameDayBooking     Boolean           @default(true)
+  advanceBookingDays      Int               @default(365)
+  cleaningBufferHours     Int               @default(0)
+  size                    String
+  maxGuests               Int
+  bedType                 String
+  numberOfBeds            Int               @default(1)
+  status                  RoomStatus        @default(ACTIVE)
+  isFeatured              Boolean           @default(false)
+  sortOrder               Int               @default(0)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  translations            RoomTranslation[]
+  images                  RoomImage[]
+  amenities               RoomAmenity[]
+  blockedDates            RoomBlockedDate[]
+  ratePeriods             RoomRatePeriod[]
+  bookings                Booking[]
+  bookingItems            BookingRoom[]
 }
 
 model RoomTranslation {
@@ -195,42 +238,47 @@ model Guest {
 }
 
 model Booking {
-  id             String        @id @default(cuid())
-  bookingCode    String        @unique
-  idempotencyKey String?       @unique
-  roomId         String
-  guestId        String
-  checkIn        DateTime
-    checkOut       DateTime
-    nights         Int
-    guests         Int
-    adults         Int           @default(1)
-    children       Int           @default(0)
-    pricePerNight  Int
-  subtotal       Int
-  discountAmount Int           @default(0)
-  serviceFee     Int           @default(0)
-  taxAmount      Int           @default(0)
-  totalPrice     Int
-  currency       String        @default("VND")
-  specialRequest String?
-  arrivalTime    String?
-  bookingStatus  BookingStatus @default(RECEIVED)
-  paymentStatus  PaymentStatus @default(PENDING)
-  paymentMethod  String?
-  internalNote   String?
+  id                 String        @id @default(cuid())
+  bookingCode        String        @unique
+  idempotencyKey     String?       @unique
+  roomId             String
+  guestId            String
+  checkIn            DateTime
+  checkOut           DateTime
+  nights             Int
+  guests             Int
+  adults             Int           @default(1)
+  children           Int           @default(0)
+  pricePerNight      Int
+  subtotal           Int
+  discountAmount     Int           @default(0)
+  serviceFee         Int           @default(0)
+  taxAmount          Int           @default(0)
+  totalPrice         Int
+  currency           String        @default("VND")
+  specialRequest     String?
+  arrivalTime        String?
+  bookingStatus      BookingStatus @default(RECEIVED)
+  paymentStatus      PaymentStatus @default(PENDING)
+  paymentMethod      String?
+  internalNote       String?
   bluejayBookingId   String?
   bluejayBookingCode String?
-  bluejaySyncStatus  String    @default("NOT_SYNCED")
+  bluejaySyncStatus  String        @default("NOT_SYNCED")
   bluejaySyncError   String?
   bluejaySyncedAt    DateTime?
-  source         BookingSource @default(DIRECT_WEBSITE)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  room           Room          @relation(fields: [roomId], references: [id])
-  guest          Guest         @relation(fields: [guestId], references: [id])
-  payments       Payment[]
-  roomItems      BookingRoom[]
+  confirmationEmailSentAt       DateTime?
+  confirmationEmailClaimedAt    DateTime?
+  confirmationEmailNextAttemptAt DateTime?
+  confirmationEmailAttempts     Int           @default(0)
+  confirmationEmailError        String?
+  source             BookingSource @default(DIRECT_WEBSITE)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  room               Room          @relation(fields: [roomId], references: [id])
+  guest              Guest         @relation(fields: [guestId], references: [id])
+  payments           Payment[]
+  roomItems          BookingRoom[]
 }
 
 model BookingRoom {
@@ -313,31 +361,35 @@ model SiteSetting {
 }
 
 model ChatSession {
-  id             String        @id @default(cuid())
-  sessionCode    String        @unique
-  guestName      String?
-  guestPhone     String?
-  guestEmail     String?
-  language       String        @default("en")
-  bookingCode    String?
-  status         ChatStatus    @default(OPEN)
-  unreadByAdmin  Int           @default(0)
-  unreadByGuest  Int           @default(0)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  messages       ChatMessage[]
+  id            String        @id @default(cuid())
+  sessionCode   String        @unique
+  guestName     String?
+  guestPhone    String?
+  guestEmail    String?
+  language      String        @default("en")
+  bookingCode   String?
+  status        ChatStatus    @default(OPEN)
+  unreadByAdmin Int           @default(0)
+  unreadByGuest Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  messages      ChatMessage[]
 }
 
 model ChatMessage {
-  id          String      @id @default(cuid())
-  sessionId   String
-  senderType  SenderType
-  senderName  String?
-  message     String
-  readByAdmin Boolean     @default(false)
-  readByGuest Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id             String      @id @default(cuid())
+  sessionId      String
+  senderType     SenderType
+  senderName     String?
+  message        String
+  attachmentData String?
+  attachmentMime String?
+  attachmentName String?
+  attachmentSize Int?
+  readByAdmin    Boolean     @default(false)
+  readByGuest    Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  session        ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model CurrencyRateCache {
@@ -354,11 +406,343 @@ model CurrencyRateCache {
 }
 
 model MediaAsset {
-  id        String      @id @default(cuid())
-  url       String
-  type      MediaType   @default(IMAGE)
-  altText   String?
-  source    MediaSource @default(URL)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id               String            @id @default(cuid())
+  url              String
+  type             MediaType         @default(IMAGE)
+  altText          String?
+  source           MediaSource       @default(URL)
+  originalFilename String?
+  safeFilename     String?
+  detectedMime     String?
+  sha256           String?           @unique
+  perceptualHash   String?
+  width            Int?
+  height           Int?
+  durationSeconds  Float?
+  orientation      String?
+  fileSizeBytes    BigInt?
+  storageKey       String?
+  capturedAt       DateTime?
+  blurScore        Float?
+  exposureScore    Float?
+  audioScore       Float?
+  faceCount        Int               @default(0)
+  privacyFlags     Json?
+  consentStatus    ConsentStatus     @default(UNKNOWN)
+  qualityStatus    String            @default("PENDING")
+  rejectionReason  String?
+  tags             Json?
+  usageCount       Int               @default(0)
+  lastUsedAt       DateTime?
+  archivedAt       DateTime?
+  deletedAt        DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  contentAssets    AiContentAsset[]
+  consents         AiConsentRecord[]
+
+  @@index([qualityStatus, createdAt])
+  @@index([deletedAt])
+}
+
+model AiBusinessProfile {
+  id              String        @id @default("lune")
+  brandName       String
+  address         String
+  hotline         String
+  website         String
+  verifiedFacts   Json
+  allowedCtas     Json
+  languages       Json
+  toneOfVoice     String
+  forbiddenClaims Json
+  trendKeywords   Json          @default("[]")
+  autonomyMode    AiContentMode @default(REVIEW_REQUIRED)
+  emergencyStop   Boolean       @default(false)
+  updatedById     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model AiTrendSignal {
+  id                  String          @id @default(cuid())
+  source              String
+  sourceUrl           String?
+  title               String
+  summary             String?
+  publishedAt         DateTime?
+  fetchedAt           DateTime        @default(now())
+  geographicScope     String?
+  keywords            Json
+  reliability         Float
+  commercialUseStatus String
+  dedupHash           String          @unique
+  expiresAt           DateTime?
+  score               Float?
+  scoreBreakdown      Json?
+  riskFlags           Json?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  ideas               AiContentIdea[]
+
+  @@index([score, expiresAt])
+}
+
+model AiContentIdea {
+  id                   String           @id @default(cuid())
+  trendId              String?
+  title                String
+  objective            String
+  audience             String
+  contentPillar        String
+  outputType           String
+  keyMessage           String
+  rationale            String
+  sourceUrl            String?
+  estimatedMinutes     Int              @default(15)
+  recommendedPublishAt DateTime?
+  expiresAt            DateTime?
+  priority             Int              @default(50)
+  allowedMode          AiContentMode    @default(REVIEW_REQUIRED)
+  claimsToVerify       Json
+  status               AiWorkflowState  @default(IDEA_PROPOSED)
+  feedback             String?
+  selectedAt           DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  trend                AiTrendSignal?   @relation(fields: [trendId], references: [id], onDelete: SetNull)
+  shotItems            AiShotItem[]
+  drafts               AiContentDraft[]
+
+  @@index([status, createdAt])
+}
+
+model AiShotItem {
+  id              String        @id @default(cuid())
+  ideaId          String
+  sortOrder       Int
+  mediaType       String
+  orientation     String
+  aspectRatio     String
+  durationSeconds Int?
+  instruction     String
+  position        String?
+  cameraDirection String?
+  movement        String?
+  lighting        String?
+  preparation     String?
+  avoid           String?
+  acceptance      String
+  fallback        String?
+  takes           Int           @default(2)
+  completedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  idea            AiContentIdea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@unique([ideaId, sortOrder])
+}
+
+model AiContentDraft {
+  id                   String           @id @default(cuid())
+  ideaId               String?
+  state                AiWorkflowState  @default(DRAFT_READY)
+  version              Int              @default(1)
+  captionVi            String
+  captionEn            String
+  captionKo            String?
+  shortCaption         String
+  headline             String
+  cta                  String
+  hashtags             Json
+  altText              String
+  factsUsed            Json
+  sourceIds            Json
+  riskFlags            Json
+  confidence           Float
+  recommendedPublishAt DateTime?
+  approvedAt           DateTime?
+  approvedById         String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  idea                 AiContentIdea?   @relation(fields: [ideaId], references: [id], onDelete: SetNull)
+  assets               AiContentAsset[]
+  publications         AiPublication[]
+
+  @@index([state, recommendedPublishAt])
+}
+
+model AiContentAsset {
+  id           String         @id @default(cuid())
+  draftId      String
+  mediaAssetId String
+  role         String
+  sortOrder    Int            @default(0)
+  renderMeta   Json?
+  createdAt    DateTime       @default(now())
+  draft        AiContentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  mediaAsset   MediaAsset     @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+
+  @@unique([draftId, mediaAssetId, role])
+}
+
+model AiPublication {
+  id                String                 @id @default(cuid())
+  draftId           String
+  idempotencyKey    String                 @unique
+  publisher         String                 @default("mock")
+  pageId            String?
+  approvedVersion   Int
+  contentHash       String
+  state             AiWorkflowState        @default(SCHEDULED)
+  scheduledAt       DateTime?
+  claimedAt         DateTime?
+  claimOwner        String?
+  remotePostId      String?                @unique
+  remotePermalink   String?
+  failureCode       String?
+  failureMessage    String?
+  reconciliationDue Boolean                @default(false)
+  publishedAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  draft             AiContentDraft         @relation(fields: [draftId], references: [id], onDelete: Restrict)
+  attempts          AiPublicationAttempt[]
+  analytics         AiAnalyticsSnapshot[]
+
+  @@unique([draftId, approvedVersion, publisher, pageId])
+  @@index([state, scheduledAt])
+}
+
+model AiPublicationAttempt {
+  id            String        @id @default(cuid())
+  publicationId String
+  attemptNumber Int
+  status        String
+  responseCode  Int?
+  remotePostId  String?
+  errorCategory String?
+  errorMessage  String?
+  startedAt     DateTime      @default(now())
+  finishedAt    DateTime?
+  publication   AiPublication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+
+  @@unique([publicationId, attemptNumber])
+}
+
+model AiJob {
+  id             String     @id @default(cuid())
+  type           String
+  payload        Json
+  state          AiJobState @default(PENDING)
+  idempotencyKey String     @unique
+  scheduledAt    DateTime   @default(now())
+  claimedAt      DateTime?
+  claimOwner     String?
+  claimToken     String?
+  leaseExpiresAt DateTime?
+  heartbeatAt    DateTime?
+  attempts       Int        @default(0)
+  maxAttempts    Int        @default(5)
+  lastError      String?
+  finishedAt     DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([state, scheduledAt])
+  @@index([claimOwner, heartbeatAt])
+}
+
+model AiMetaConnection {
+  id                   String    @id @default(cuid())
+  pageId               String    @unique
+  pageName             String
+  tokenCiphertext      String
+  tokenIv              String
+  tokenAuthTag         String
+  encryptionKeyVersion String
+  grantedScopes        Json
+  tokenExpiresAt       DateTime?
+  connectedById        String
+  connectedAt          DateTime  @default(now())
+  lastHealthCheckAt    DateTime?
+  disconnectedAt       DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model AiMetaOAuthState {
+  id          String    @id @default(cuid())
+  stateHash   String    @unique
+  adminId     String
+  redirectUri String
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([adminId, expiresAt])
+}
+
+model AiAnalyticsSnapshot {
+  id            String        @id @default(cuid())
+  publicationId String
+  windowHours   Int
+  reach         Int           @default(0)
+  impressions   Int           @default(0)
+  reactions     Int           @default(0)
+  comments      Int           @default(0)
+  shares        Int           @default(0)
+  linkClicks    Int           @default(0)
+  videoViews    Int           @default(0)
+  watchTimeMs   BigInt        @default(0)
+  isMock        Boolean       @default(false)
+  capturedAt    DateTime      @default(now())
+  publication   AiPublication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+
+  @@unique([publicationId, windowHours])
+}
+
+model AiConsentRecord {
+  id           String        @id @default(cuid())
+  mediaAssetId String
+  status       ConsentStatus
+  scope        String
+  evidenceRef  String?
+  grantedAt    DateTime?
+  expiresAt    DateTime?
+  revokedAt    DateTime?
+  createdById  String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  mediaAsset   MediaAsset    @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+
+  @@index([mediaAssetId, status])
+}
+
+model AiServiceUsage {
+  id         String    @id @default(cuid())
+  service    String
+  periodKey  String
+  units      Int       @default(0)
+  hardLimit  Int
+  disabledAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([service, periodKey])
+}
+
+model AiAuditLog {
+  id            String   @id @default(cuid())
+  actorId       String?
+  action        String
+  entityType    String
+  entityId      String?
+  correlationId String?
+  ipHash        String?
+  details       Json?
+  createdAt     DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
 }

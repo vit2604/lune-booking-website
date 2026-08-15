@@ -26,11 +26,10 @@ import {
   calculateGrandTotal,
   calculateNights,
   calculateRoomSubtotal,
-  formatCurrency,
   getDefaultDates,
   validateStay,
 } from '../utils/booking.js';
-import { getApproxPriceText } from '../utils/currencyUtils.js';
+import { getDisplayPriceText } from '../utils/currencyUtils.js';
 import { validateBookingDates } from '../utils/bookingAvailabilityUtils.js';
 import { getGuestSafeErrorMessage, getGuestSupportErrorMessage } from '../utils/guestErrorMessages.js';
 import { saveBookingDraft } from '../utils/storage.js';
@@ -151,8 +150,9 @@ export default function RoomDetailPage() {
 
   if (!room) return <Navigate to="/rooms" replace />;
   const localizedRoom = getLocalizedRoom(room, currentLanguage);
-  const approxNight = getApproxPriceText(room.price, currentCurrency, currentLanguage);
-  const approxTotal = getApproxPriceText(totals.total, currentCurrency, currentLanguage);
+  const displayNight = getDisplayPriceText(room.price, currentCurrency);
+  const displaySubtotal = getDisplayPriceText(totals.roomSubtotal, currentCurrency);
+  const displayTotal = getDisplayPriceText(totals.total, currentCurrency);
   const roomUnavailable = room.availabilityStatus === 'not_available';
   const availableRoomQuantity = roomUnavailable ? 0 : Math.max(0, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1));
   const safeAvailabilityMessage = getGuestSafeErrorMessage(
@@ -263,10 +263,9 @@ export default function RoomDetailPage() {
                   {localizedRoom.name}
                 </h1>
                 <p className="mt-3 text-lg font-semibold text-lune-ink">
-                  {formatCurrency(room.price)}
+                  {displayNight}
                   <span className="text-sm font-normal text-stone-500"> {t('common.perNight')}</span>
                 </p>
-                {approxNight ? <p className="mt-1 text-sm text-stone-500">{approxNight}</p> : null}
               </div>
             </div>
           </RevealOnScroll>
@@ -327,10 +326,9 @@ export default function RoomDetailPage() {
           <p className="eyebrow">{t('roomDetail.reserveStay')}</p>
           <h2 className="mt-2 font-display text-3xl font-bold text-lune-ink">{localizedRoom.name}</h2>
           <p className="mt-2 text-base font-semibold text-lune-ink">
-            {formatCurrency(room.price)}
+            {displayNight}
             <span className="text-sm font-normal text-stone-500"> {t('common.perNight')}</span>
           </p>
-          {approxNight ? <p className="mt-1 text-xs text-stone-500">{approxNight}</p> : null}
 
           <div className="mt-6">
             <DateSelector
@@ -352,11 +350,12 @@ export default function RoomDetailPage() {
                 {t('common.roomsAvailable', { count: availableRoomQuantity })}
               </p>
             </div>
-            <div className="grid grid-cols-[40px_44px_40px] items-center" aria-label={t('common.roomQuantity')}>
+            <div className="grid grid-cols-[44px_44px_44px] items-center" aria-label={t('common.roomQuantity')}>
               <button
-                className="grid h-10 w-10 place-items-center rounded-md border border-stone-300 text-lune-ink disabled:opacity-40"
+                className="grid h-11 w-11 place-items-center rounded-md border border-stone-300 text-lune-ink disabled:opacity-40"
                 type="button"
                 title={t('common.decreaseRooms')}
+                aria-label={t('common.decreaseRooms')}
                 disabled={booking.quantity <= 1}
                 onClick={() => handleBookingChange({ quantity: booking.quantity - 1 })}
               >
@@ -364,9 +363,10 @@ export default function RoomDetailPage() {
               </button>
               <strong className="text-center text-base text-lune-ink">{booking.quantity}</strong>
               <button
-                className="grid h-10 w-10 place-items-center rounded-md border border-stone-300 text-lune-ink disabled:opacity-40"
+                className="grid h-11 w-11 place-items-center rounded-md border border-stone-300 text-lune-ink disabled:opacity-40"
                 type="button"
                 title={t('common.increaseRooms')}
+                aria-label={t('common.increaseRooms')}
                 disabled={booking.quantity >= Math.max(1, availableRoomQuantity)}
                 onClick={() => handleBookingChange({ quantity: booking.quantity + 1 })}
               >
@@ -399,19 +399,18 @@ export default function RoomDetailPage() {
             </div>
             <div className="flex justify-between gap-4">
               <span className="text-stone-600">{t('common.roomSubtotal')}</span>
-              <strong>{formatCurrency(totals.roomSubtotal)}</strong>
+              <strong>{displaySubtotal}</strong>
             </div>
             <div className="flex justify-between gap-4 border-t border-stone-200 pt-3">
               <span className="font-semibold text-lune-ink">{t('common.totalPrice')}</span>
-              <strong className="text-lg text-lune-ink">{formatCurrency(totals.total)}</strong>
+              <strong className="text-lg text-lune-ink">{displayTotal}</strong>
             </div>
-            {approxTotal ? <p className="text-right text-xs text-stone-500">{approxTotal}</p> : null}
           </div>
 
           <button
             className="btn-gold mt-6 w-full"
             type="button"
-            disabled={isProcessing}
+            disabled={isProcessing || roomUnavailable || Boolean(availabilityError)}
             onClick={handleReserve}
           >
             {isProcessing ? t('common.processing') : t('roomDetail.reserveThisRoom')}
@@ -423,15 +422,15 @@ export default function RoomDetailPage() {
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 p-3 shadow-[0_-12px_30px_rgba(23,20,18,0.12)] backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs text-stone-500">{t('common.from')} {formatCurrency(room.price)} {t('common.perNight')}</p>
+            <p className="text-xs text-stone-500">{t('common.from')} {displayNight} {t('common.perNight')}</p>
             <p className="truncate text-sm font-bold text-lune-ink">
-              {t('common.total')} {formatCurrency(totals.total)}
+              {t('common.total')} {displayTotal}
             </p>
           </div>
           <button
             className="btn-gold shrink-0 px-4"
             type="button"
-            disabled={isProcessing}
+            disabled={isProcessing || roomUnavailable || Boolean(availabilityError)}
             onClick={handleReserve}
           >
             {isProcessing ? t('common.processing') : t('roomDetail.reserve')}

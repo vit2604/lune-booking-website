@@ -26,9 +26,26 @@ export function isVietnameseGuest(guestInfo = {}) {
 }
 
 export function filterPaymentChoicesForGuest(choices, guestInfo = {}) {
-  const preferredOrder = isVietnameseGuest(guestInfo) ? ['payos', 'deposit', 'card'] : ['payos', 'cash', 'card'];
+  const preferredOrder = isVietnameseGuest(guestInfo) ? ['payos', 'deposit'] : ['payos', 'cash', 'card'];
   const choiceMap = new Map(choices.map((choice) => [choice.id, choice]));
   return preferredOrder.map((id) => choiceMap.get(id)).filter(Boolean);
+}
+
+function paymentMethodIsAvailable(methodMap, key) {
+  const method = methodMap.get(key);
+  return Boolean(method && method.enabled !== false && method.visibleForGuests !== false);
+}
+
+export function getVisiblePaymentChoices(choices, methods, guestInfo = {}) {
+  const methodMap = new Map((methods || []).map((method) => [method.key || method.id, method]));
+  const vietnameseGuest = isVietnameseGuest(guestInfo);
+  const payosDepositAvailable = vietnameseGuest && paymentMethodIsAvailable(methodMap, 'vietQr');
+  const availableChoices = choices.filter((option) => {
+    if (option.id === 'deposit' && payosDepositAvailable) return true;
+    return paymentMethodIsAvailable(methodMap, option.method);
+  });
+
+  return filterPaymentChoicesForGuest(availableChoices, guestInfo);
 }
 
 const roundVnd = (value) => Math.max(0, Math.round(Number(value) || 0));

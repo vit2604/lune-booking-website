@@ -11,11 +11,13 @@ import {
   Settings,
   Languages,
   MessageCircle,
+  Sparkles,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const items = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin/ai-content', label: 'AI Content', icon: Sparkles },
   { to: '/admin/rooms', label: 'Rooms', icon: BedDouble },
   { to: '/admin/rates', label: 'Rate Calendar', icon: CalendarDays },
   { to: '/admin/bookings', label: 'Bookings', icon: CalendarDays },

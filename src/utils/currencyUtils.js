@@ -43,15 +43,21 @@ export function getRateForCurrency(currency = 'VND') {
 
 export function formatCurrency(amount, currency = 'VND') {
   const value = Math.max(0, Number(amount) || 0);
-  if (currency === 'VND') {
+  const normalizedCurrency = String(currency || 'VND').toUpperCase();
+  if (normalizedCurrency === 'VND') {
     return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value)} VND`;
   }
 
-  return new Intl.NumberFormat(localeMap[currency] || 'en-US', {
-    style: 'currency',
-    currency,
+  const formattedNumber = new Intl.NumberFormat(localeMap[normalizedCurrency] || 'en-US', {
     maximumFractionDigits: 0,
   }).format(value);
+  return `${normalizedCurrency} ${formattedNumber}`;
+}
+
+export function getDisplayPriceText(amountVND, targetCurrency = 'VND') {
+  const normalizedCurrency = String(targetCurrency || 'VND').toUpperCase();
+  if (normalizedCurrency === 'VND') return formatCurrency(amountVND, 'VND');
+  return `≈ ${formatCurrency(convertFromVND(amountVND, normalizedCurrency), normalizedCurrency)}`;
 }
 
 export function getApproxPriceText(amountVND, targetCurrency = 'VND', language = 'en') {

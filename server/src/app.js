@@ -4,11 +4,13 @@ import morgan from 'morgan';
 import { prisma } from './config/prisma.js';
 import { corsMiddleware } from './config/cors.js';
 import { env } from './config/env.js';
+import { requireAdminDeviceKey } from './middlewares/adminDeviceKeyMiddleware.js';
 import { aiRateLimit, authRateLimit, generalRateLimit } from './middlewares/rateLimitMiddleware.js';
 import { noStoreForSensitive } from './middlewares/cacheControlMiddleware.js';
 import { errorMiddleware, notFoundMiddleware } from './middlewares/errorMiddleware.js';
 import { requestContextMiddleware } from './middlewares/requestContextMiddleware.js';
 import { aiRouter } from './modules/ai/ai.routes.js';
+import { aiContentRouter } from './modules/ai-content/aiContent.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { adminBluejayRouter } from './modules/bluejay/bluejay.routes.js';
 import { adminBookingRouter, publicBookingRouter } from './modules/bookings/booking.routes.js';
@@ -25,7 +27,9 @@ import { sendSuccess } from './utils/responseUtils.js';
 export function createApp() {
   const app = express();
 
-  app.set('trust proxy', true);
+  // Trust only the immediate reverse proxy (Render/nginx). `true` would let a
+  // client spoof X-Forwarded-For and bypass IP-based rate limits.
+  app.set('trust proxy', 1);
 
   app.use(helmet());
   app.use(corsMiddleware());
@@ -83,7 +87,7 @@ export function createApp() {
   app.use(noStoreForSensitive);
   app.use('/api', generalRateLimit);
 
-  app.use('/api/auth', authRateLimit, authRouter);
+  app.use('/api/auth', authRateLimit, requireAdminDeviceKey, authRouter);
   app.use('/api/rooms', publicRoomRouter);
   app.use('/api/bookings', publicBookingRouter);
   app.use('/api', publicPaymentRouter);
@@ -92,6 +96,7 @@ export function createApp() {
   app.use('/api/ai', aiRateLimit, aiRouter);
   app.use('/api/chat', publicChatRouter);
   app.use('/api/phone-verification', phoneVerificationRouter);
+  app.use('/api/admin', requireAdminDeviceKey);
   app.use('/api/admin/rooms', adminRoomRouter);
   app.use('/api/admin/bluejay', adminBluejayRouter);
   app.use('/api/admin', adminRateRouter);
@@ -100,6 +105,7 @@ export function createApp() {
   app.use('/api/admin/settings', adminSettingRouter);
   app.use('/api/admin/chat', adminChatRouter);
   app.use('/api/admin/media', adminMediaRouter);
+  if (env.AI_CONTENT_ENABLED) app.use('/api/admin/ai-content', aiRateLimit, aiContentRouter);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);

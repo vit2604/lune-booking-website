@@ -1,0 +1,11 @@
+{
+  "name": "Lune Boutique Apartment",
+  "short_name": "Lune",
+  "start_url": "/admin/ai-content",
+  "display": "standalone",
+  "background_color": "#f8f5ef",
+  "theme_color": "#25231f",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

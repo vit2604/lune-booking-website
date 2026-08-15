@@ -79,3 +79,17 @@ export function addInternalNote(code, note) {
 export function deleteBooking(code) {
   writeBookings(readBookings().filter((booking) => booking.bookingCode !== code));
 }
+
+export function deleteOldBookings() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const current = readBookings();
+  const kept = current.filter((booking) => {
+    const checkOut = new Date(booking.checkOut);
+    const paid = String(booking.paymentStatus || '').toLowerCase() === 'paid';
+    const activeBluejay = booking.bluejayBookingCode && String(booking.bookingStatus || '').toLowerCase() !== 'cancelled';
+    return !(checkOut < today && !paid && !activeBluejay);
+  });
+  writeBookings(kept);
+  return { deleted: current.length - kept.length, protected: 0 };
+}

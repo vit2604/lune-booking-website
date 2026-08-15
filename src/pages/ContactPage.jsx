@@ -4,6 +4,7 @@ import { getBrandingSettings } from '../admin/services/adminSettingsService.js';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
+import { isConfiguredUrl, isConfiguredValue } from '../utils/productionGuards.js';
 
 const luneAddress = '92-94 Thạch Lam, Sơn Trà, Đà Nẵng, Việt Nam';
 const legacyDefaultAddresses = new Set([
@@ -19,6 +20,8 @@ function getDisplayAddress(value) {
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [formError, setFormError] = useState('');
   const [copied, setCopied] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
   const [branding, setBranding] = useState(getBrandingSettings());
@@ -43,10 +46,39 @@ export default function ContactPage() {
     return () => window.removeEventListener('lune:settings-updated', refresh);
   }, []);
 
+  const contactLinks = [
+    branding.phone ? { key: 'call', className: 'btn-gold', href: `tel:${branding.phone}`, label: t('contact.call') } : null,
+    branding.email ? { key: 'email', className: 'btn-secondary', href: `mailto:${branding.email}`, label: t('contact.email') } : null,
+    isConfiguredValue(branding.zalo)
+      ? { key: 'zalo', className: 'btn-secondary', href: `https://zalo.me/${branding.zalo}`, label: t('contact.zalo') }
+      : null,
+    isConfiguredValue(branding.whatsapp)
+      ? { key: 'whatsapp', className: 'btn-secondary', href: `https://wa.me/${branding.whatsapp}`, label: t('contact.whatsapp') }
+      : null,
+    isConfiguredUrl(branding.facebook)
+      ? { key: 'messenger', className: 'btn-secondary', href: branding.facebook, label: t('contact.messenger') }
+      : null,
+  ].filter(Boolean);
+
   const handleSubmit = (event) => {
     event.preventDefault();
+    setFormError('');
+    setSending(true);
+    const data = new FormData(event.currentTarget);
+    const name = String(data.get('name') || '').trim();
+    const email = String(data.get('email') || '').trim();
+    const message = String(data.get('message') || '').trim();
+    if (!name || !email || !message) {
+      setFormError(t('errors.fullNameRequired'));
+      setSending(false);
+      return;
+    }
+    const subject = encodeURIComponent(`Lune website enquiry from ${name}`);
+    const body = encodeURIComponent(`${message}\n\n${name}\n${email}`);
+    window.location.href = `mailto:${branding.email}?subject=${subject}&body=${body}`;
     setSent(true);
     event.currentTarget.reset();
+    setSending(false);
   };
 
   const copyAddress = async () => {
@@ -83,11 +115,11 @@ export default function ContactPage() {
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <a className="btn-gold" href={`tel:${branding.phone}`}>{t('contact.call')}</a>
-              <a className="btn-secondary" href={`mailto:${branding.email}`}>{t('contact.email')}</a>
-              <a className="btn-secondary" href={branding.zalo ? `https://zalo.me/${branding.zalo}` : '#'}>{t('contact.zalo')}</a>
-              <a className="btn-secondary" href={branding.whatsapp ? `https://wa.me/${branding.whatsapp}` : '#'}>{t('contact.whatsapp')}</a>
-              <a className="btn-secondary" href={branding.facebook || '#'}>{t('contact.messenger')}</a>
+              {contactLinks.map((link) => (
+                <a key={link.key} className={link.className} href={link.href} target={link.key === 'call' || link.key === 'email' ? undefined : '_blank'} rel={link.key === 'call' || link.key === 'email' ? undefined : 'noreferrer'}>
+                  {link.label}
+                </a>
+              ))}
               <a className="btn-secondary" href={openMapsUrl} target="_blank" rel="noreferrer">
                 <ExternalLink className="h-4 w-4" aria-hidden="true" />
                 {t('contact.openMaps')}
@@ -177,7 +209,7 @@ export default function ContactPage() {
                 </label>
                 <label>
                   <span className="label">{t('contact.email')}</span>
-                  <input className="input-field" name="email" type="text" inputMode="email" autoComplete="email" required />
+                  <input className="input-field" name="email" type="email" autoComplete="email" required />
                 </label>
                 <label>
                   <span className="label">{t('contact.message')}</span>
@@ -189,9 +221,10 @@ export default function ContactPage() {
                   {t('contact.received')}
                 </p>
               ) : null}
-              <button className="btn-gold mt-6" type="submit">
+              {formError ? <p className="mt-4 text-sm font-medium text-red-600">{formError}</p> : null}
+              <button className="btn-gold mt-6" type="submit" disabled={sending}>
                 <Send className="h-4 w-4" aria-hidden="true" />
-                {t('contact.send')}
+                {sending ? t('common.processing') : t('contact.send')}
               </button>
             </RevealOnScroll>
           </div>

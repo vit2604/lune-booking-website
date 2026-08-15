@@ -30,7 +30,6 @@ import BookingPolicy from '../components/BookingPolicy.jsx';
 import RevealOnScroll from '../components/animations/RevealOnScroll.jsx';
 import { useTranslation } from '../i18n/useTranslation.js';
 import useDocumentMeta, { BRAND } from '../hooks/useDocumentMeta.js';
-import useMediaQuery from '../hooks/useMediaQuery.js';
 import { fetchRoomsWithFallback } from '../services/roomApiService.js';
 import { addDays, buildBookingDraft, getDefaultDates, toDateInputValue } from '../utils/booking.js';
 import { saveBookingDraft } from '../utils/storage.js';
@@ -55,7 +54,6 @@ export default function HomePage() {
   const [branding, setBranding] = useState(getBrandingSettings());
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
-  const isDesktopViewport = useMediaQuery('(min-width: 1024px)');
 
   const setCheckIn = (value) => {
     const checkIn = value && value < today ? today : value;
@@ -224,56 +222,136 @@ export default function HomePage() {
   const parkingEmbedUrl = `https://www.google.com/maps?q=${parkingQuery}&output=embed`;
   const parkingMapsUrl = `https://www.google.com/maps/search/?api=1&query=${parkingQuery}`;
 
+  const renderHeroSearchPanel = (placement, className = '') => (
+    <form
+      data-hero-search={placement}
+      className={`hero-search-panel relative z-40 rounded-lg border border-white bg-white p-2.5 text-lune-ink shadow-[0_24px_70px_rgba(23,20,18,0.18)] ring-1 ring-stone-200/80 sm:p-3 ${className}`}
+      onSubmit={handleSearch}
+    >
+      <div className="grid gap-2 sm:gap-3 lg:grid-cols-[1fr_1fr_0.9fr_220px]">
+        <label className="rounded-lg border border-stone-200 bg-white p-2.5 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-stone-500 sm:text-xs">{t('common.checkInDate')}</span>
+          <span className="mt-1.5 flex items-center gap-3 rounded-lg bg-white px-3 py-1 ring-1 ring-stone-200 sm:mt-3 sm:py-2">
+            <CalendarDays className="h-4 w-4 shrink-0 text-lune-goldDark sm:h-5 sm:w-5" aria-hidden="true" />
+            <DateInput
+              className="min-h-9 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light] sm:min-h-12"
+              name="checkIn"
+              value={heroDates.checkIn}
+              min={today}
+              onChange={(event) => setCheckIn(event.target.value)}
+            />
+          </span>
+        </label>
+        <label className="rounded-lg border border-stone-200 bg-white p-2.5 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-stone-500 sm:text-xs">{t('common.checkOutDate')}</span>
+          <span className="mt-1.5 flex items-center gap-3 rounded-lg bg-white px-3 py-1 ring-1 ring-stone-200 sm:mt-3 sm:py-2">
+            <CalendarDays className="h-4 w-4 shrink-0 text-lune-goldDark sm:h-5 sm:w-5" aria-hidden="true" />
+            <DateInput
+              className="min-h-9 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light] sm:min-h-12"
+              name="checkOut"
+              value={heroDates.checkOut}
+              min={nextDay(heroDates.checkIn)}
+              onChange={(event) => setCheckOut(event.target.value)}
+            />
+          </span>
+        </label>
+        <label className="rounded-lg border border-stone-200 bg-white p-2.5 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-stone-500 sm:text-xs">{t('common.guests')}</span>
+          <span className="mt-1.5 flex items-center gap-3 rounded-lg bg-white px-3 py-1 ring-1 ring-stone-200 sm:mt-3 sm:py-2">
+            <Users className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
+            <GuestSelector
+              className="min-h-9 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light] sm:min-h-12"
+              adults={heroGuests.adults}
+              children={heroGuests.children}
+              maxGuests={4}
+              onChange={setHeroGuests}
+              t={t}
+              showIcon={false}
+              compact
+            />
+          </span>
+        </label>
+        <button
+          className="btn-gold min-h-11 rounded-lg bg-[#463527] px-6 text-sm font-bold uppercase tracking-wide sm:min-h-16 lg:min-h-full"
+          type="submit"
+        >
+          {heroButtonText}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+    </form>
+  );
+
   return (
     <>
-      <RevealOnScroll as="section" direction="none" duration={500} className="lune-hero-section relative isolate overflow-hidden bg-lune-ink text-white">
+      <RevealOnScroll
+        as="section"
+        direction="none"
+        duration={500}
+        className="lune-hero-section relative isolate touch-pan-y overflow-hidden bg-lune-ink text-white"
+        aria-roledescription="carousel"
+        aria-label="Lune Boutique Apartment photo gallery"
+      >
         {heroSlides.map((slide, index) => (
           <LuneImage
             key={slide.src}
             src={slide.src}
+            highQuality
             alt={index === activeHeroIndex ? slide.alt : ''}
             aria-hidden={index === activeHeroIndex ? undefined : 'true'}
-            loading={index === 0 ? 'eager' : 'lazy'}
+            loading="eager"
             decoding="async"
             fetchPriority={index === 0 ? 'high' : 'auto'}
-            className={`lune-hero-image ${index === 0 ? 'lune-hero-image-exterior' : 'lune-hero-image-room'} absolute inset-0 z-0 h-full w-full object-cover transition-opacity duration-1000 ${
+            className={`lune-hero-image ${index === 0 ? 'lune-hero-image-exterior' : 'lune-hero-image-room'} absolute inset-0 z-0 hidden h-full w-full object-cover transition-opacity duration-[1400ms] ease-in-out lg:block ${
               index === activeHeroIndex ? 'opacity-100' : 'opacity-0'
             }`}
           />
         ))}
-        <div className="lune-hero-overlay absolute inset-0 z-[1] bg-[radial-gradient(circle_at_62%_32%,rgba(255,255,255,0.18),transparent_30%),linear-gradient(90deg,rgba(21,16,11,0.82),rgba(60,43,26,0.44)_42%,rgba(23,18,13,0.12)_78%)]" />
-        {isDesktopViewport ? (
-          <img
-            src={heroSlides[activeHeroIndex]?.src || branding.heroImage}
-            alt=""
-            aria-hidden="true"
-            decoding="async"
-            className="lune-hero-depth-layer pointer-events-none absolute inset-0 z-[12] hidden h-full w-full object-cover lg:block"
-          />
-        ) : null}
-        <div className="absolute inset-x-0 bottom-0 z-[2] h-40 bg-gradient-to-t from-black/45 to-transparent" />
+        <div className="lune-hero-overlay absolute inset-0 z-[1] hidden bg-[radial-gradient(circle_at_62%_32%,rgba(255,255,255,0.18),transparent_30%),linear-gradient(90deg,rgba(21,16,11,0.82),rgba(60,43,26,0.44)_42%,rgba(23,18,13,0.12)_78%)] lg:block" />
+        <div className="absolute inset-x-0 bottom-0 z-[2] hidden h-40 bg-gradient-to-t from-black/45 to-transparent lg:block" />
 
-        <div className="page-shell relative z-20 flex min-h-[560px] flex-col justify-end pb-0 pt-24 sm:min-h-[820px] sm:pt-32 lg:min-h-screen">
-          <div className="max-w-3xl pb-6 sm:pb-14">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-lune-gold sm:text-base">
+        <div className="relative z-10 bg-lune-ink pt-20 lg:hidden">
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-lune-ink">
+            {heroSlides.map((slide, index) => (
+              <LuneImage
+                key={`mobile-${slide.src}`}
+                src={slide.src}
+                highQuality
+                alt={index === activeHeroIndex ? slide.alt : ''}
+                aria-hidden={index === activeHeroIndex ? undefined : 'true'}
+                loading="eager"
+                decoding="async"
+                fetchPriority={index === 0 ? 'high' : 'auto'}
+                className={`lune-mobile-hero-image absolute inset-0 h-full w-full object-cover transition-opacity duration-[1400ms] ease-in-out ${
+                  index === activeHeroIndex ? 'opacity-100' : 'opacity-0'
+                }`}
+              />
+            ))}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-black/10" aria-hidden="true" />
+          </div>
+        </div>
+
+        <div className="page-shell relative z-20 flex flex-col overflow-hidden bg-[#f5f0e8] pb-0 text-lune-ink lg:min-h-screen lg:justify-end lg:overflow-visible lg:bg-transparent lg:pt-32 lg:text-white">
+          <div className="relative z-10 max-w-[calc(100vw-2rem)] pb-6 pt-7 lg:max-w-3xl lg:pb-14 lg:pt-0">
+            <p className="max-w-full text-xs font-semibold uppercase tracking-[0.18em] text-lune-goldDark lg:max-w-none lg:text-base lg:tracking-[0.24em] lg:text-lune-gold">
               {heroSlogan || branding.hotelName}
             </p>
-            <h1 className="lune-hero-title mt-5 max-w-2xl font-display text-5xl font-bold leading-[0.98] tracking-normal sm:text-7xl lg:text-8xl">
+            <h1 className="lune-hero-title mt-4 max-w-[22rem] font-display text-4xl font-bold leading-[1.02] tracking-normal text-lune-ink lg:mt-5 lg:max-w-2xl lg:text-8xl lg:leading-[0.96] lg:text-white">
               {heroTitle}
             </h1>
-            <p className="mt-4 max-w-xl text-lg leading-8 text-white/88 sm:mt-6 sm:text-xl">{heroSubtitle}</p>
+            <p className="mt-4 max-w-[22rem] break-words text-base leading-7 text-stone-600 lg:mt-6 lg:max-w-xl lg:text-xl lg:leading-8 lg:text-white/90">{heroSubtitle}</p>
             <Link
               to="/rooms"
-              className="mt-6 inline-flex min-h-14 items-center justify-center rounded-xl bg-lune-goldDark px-8 text-sm font-bold uppercase tracking-wide text-white shadow-[0_18px_45px_rgba(0,0,0,0.22)] transition duration-200 hover:bg-lune-goldDeep sm:mt-8"
+              className="btn-gold mt-5 min-h-12 rounded-lg px-6 text-xs font-bold uppercase tracking-wide shadow-[0_18px_45px_rgba(0,0,0,0.22)] lg:mt-8 lg:min-h-14 lg:px-8 lg:text-sm"
             >
               {heroButtonText}
             </Link>
-            <div className="mt-5 flex items-center gap-3 sm:mt-7" aria-label="Hero image selector">
+            <div className="mt-4 flex items-center gap-2 lg:mt-7 lg:gap-3" aria-label="Hero image selector">
               {heroSlides.map((slide, index) => (
                 <button
                   key={slide.src}
                   type="button"
-                  className="group grid h-11 min-w-11 place-items-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                  className="group grid h-9 min-w-9 place-items-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-lune-goldDark/70 lg:h-11 lg:min-w-11 lg:focus-visible:ring-white/80"
                   aria-label={`Show image ${index + 1}`}
                   aria-current={index === activeHeroIndex}
                   onClick={() => setActiveHeroIndex(index)}
@@ -281,8 +359,10 @@ export default function HomePage() {
                   onFocus={() => setActiveHeroIndex(index)}
                 >
                   <span
-                    className={`h-3.5 rounded-full border border-white/70 transition-all duration-300 ${
-                      index === activeHeroIndex ? 'w-10 bg-white' : 'w-3.5 bg-white/35 group-hover:bg-white/75'
+                    className={`h-2.5 rounded-full border border-lune-goldDark/45 transition-all duration-300 lg:h-3.5 lg:border-white/70 ${
+                      index === activeHeroIndex
+                        ? 'w-10 bg-lune-goldDark lg:bg-white'
+                        : 'w-2.5 bg-stone-300 group-hover:bg-lune-gold/60 lg:w-3.5 lg:bg-white/35 lg:group-hover:bg-white/75'
                     }`}
                   />
                 </button>
@@ -290,60 +370,15 @@ export default function HomePage() {
             </div>
           </div>
 
-          <form className="hero-search-panel relative z-40 mb-10 rounded-3xl border border-white bg-white p-3 text-lune-ink shadow-[0_32px_90px_rgba(23,20,18,0.34)] ring-1 ring-stone-200/80" onSubmit={handleSearch}>
-            <div className="grid gap-3 lg:grid-cols-[1fr_1fr_0.9fr_220px]">
-            <label className="rounded-2xl border border-stone-200 bg-white p-4 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
-              <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.checkInDate')}</span>
-              <span className="mt-3 flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-stone-200">
-                <CalendarDays className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
-                <DateInput
-                  className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
-                  name="checkIn"
-                  value={heroDates.checkIn}
-                  min={today}
-                  onChange={(event) => setCheckIn(event.target.value)}
-                />
-              </span>
-            </label>
-            <label className="rounded-2xl border border-stone-200 bg-white p-4 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
-              <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.checkOutDate')}</span>
-              <span className="mt-3 flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-stone-200">
-                <CalendarDays className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
-                <DateInput
-                  className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
-                  name="checkOut"
-                  value={heroDates.checkOut}
-                  min={nextDay(heroDates.checkIn)}
-                  onChange={(event) => setCheckOut(event.target.value)}
-                />
-              </span>
-            </label>
-            <label className="rounded-2xl border border-stone-200 bg-white p-4 shadow-[0_10px_28px_rgba(23,20,18,0.05)] sm:p-5">
-              <span className="text-xs font-bold uppercase tracking-wide text-stone-500">{t('common.guests')}</span>
-              <span className="mt-3 flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-stone-200">
-                <Users className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" />
-                <GuestSelector
-                  className="min-h-12 w-full bg-white text-base font-semibold text-lune-ink outline-none [color-scheme:light]"
-                  adults={heroGuests.adults}
-                  children={heroGuests.children}
-                  maxGuests={4}
-                  onChange={setHeroGuests}
-                  t={t}
-                  showIcon={false}
-                />
-              </span>
-            </label>
-            <button
-              className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#463527] px-6 text-sm font-bold uppercase tracking-wide text-white opacity-100 shadow-[0_12px_34px_rgba(23,20,18,0.18)] transition hover:bg-lune-goldDark lg:min-h-full"
-              type="submit"
-            >
-              {heroButtonText}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-            </div>
-          </form>
+          {renderHeroSearchPanel('mobile', 'mb-4 sm:mb-10 lg:hidden')}
         </div>
       </RevealOnScroll>
+
+      <section className="hidden bg-[#f5f0e8] py-6 lg:block" aria-label={t('common.checkAvailability')}>
+        <div className="page-shell">
+          {renderHeroSearchPanel('desktop')}
+        </div>
+      </section>
 
       <RevealOnScroll as="section" variant="float" className="bg-white py-10 shadow-[0_-1px_0_rgba(0,0,0,0.05)]">
         <div className="page-shell grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

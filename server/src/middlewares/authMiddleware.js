@@ -19,11 +19,20 @@ export async function requireAuth(req, _res, next) {
       username: user.username,
       email: user.email,
       role: user.role,
+      authenticatedAt: payload.iat ? new Date(payload.iat * 1000) : null,
     };
     return next();
   } catch (error) {
     return next(error.statusCode ? error : createHttpError(401, 'Unauthorized'));
   }
+}
+
+export function requireRecentAuth(maxAgeMinutes = 15) {
+  return (req, _res, next) => {
+    const age = req.user?.authenticatedAt ? Date.now() - req.user.authenticatedAt.getTime() : Infinity;
+    if (age > maxAgeMinutes * 60_000) return next(createHttpError(403, 'Recent sign-in required'));
+    return next();
+  };
 }
 
 export function requireAdmin(req, _res, next) {

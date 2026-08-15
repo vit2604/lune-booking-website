@@ -164,7 +164,8 @@ export default {
     "highToLow": "价格从高到低",
     "viewDetails": "查看详情",
     "availableStays": "可预订房型",
-    "noRoomsAvailable": "所选日期暂无可订房间。请更换日期或联系 Lune。"
+    "noRoomsAvailable": "所选日期暂无可订房间。请更换日期或联系 Lune。",
+    "tryDefaultDates": "Try next available dates"
   },
   "roomDetail": {
     "backToRooms": "返回房型列表",
@@ -196,7 +197,7 @@ export default {
   },
   "payment": {
     "reviewConfirm": "检查并确认",
-    "mockNotice": "这是模拟付款流程，不会产生真实扣款。",
+    "mockNotice": "Payment will be confirmed by Lune through the selected official method.",
     "payAtProperty": "到店付款",
     "payAtPropertyDesc": "抵达 Lune Boutique Hotel & Apartment 后直接付款。",
     "bankTransfer": "银行转账",
@@ -231,6 +232,8 @@ export default {
     "walletPlaceholderNote": "此付款方式正在准备中。团队会联系您提供付款说明。",
     "internationalTransferNote": "国际汇款信息目前为占位。转账前请先联系 Lune。",
     "noPaymentMethods": "请联系 Lune 团队确认您的预订。",
+    "noAvailableMethods": "Please contact Lune team to confirm your booking.",
+    "bankTransferUnavailable": "Bank transfer is not available until official bank details are configured.",
     "qrPlaceholder": "二维码付款占位",
     "paymentProviderNote": "安全卡付款将由我们的支付服务商处理。",
     "payosScanNote": "Scan the QR code to complete payment. Final payment is charged in VND.",
@@ -243,7 +246,7 @@ export default {
     "optCashTitle": "Cash on arrival",
     "optCashDesc": "For international guests paying cash at check-in. No extra fee.",
     "optDepositTitle": "Bank transfer deposit",
-    "optDepositDesc": "Transfer a deposit now (min 10%), then pay the remaining balance at check-in.",
+    "optDepositDesc": "Transfer a deposit now (min 30%), then pay the remaining balance at check-in.",
     "optCardTitle": "International card (+5%)",
     "optCardDesc": "Pay by international card at the property. A 5% card fee applies.",
     "vietnamPaymentNotice": "Vietnamese guests can place a bank-transfer deposit or pay the full amount by QR. Cash at the counter is not available.",

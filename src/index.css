@@ -14,6 +14,7 @@
   body {
     margin: 0;
     min-width: 320px;
+    overflow-x: hidden;
     background: var(--lune-page-bg, #fbfaf7);
     color: #171412;
     font-family: Inter, system-ui, sans-serif;
@@ -26,6 +27,21 @@
 
   img {
     display: block;
+  }
+
+  button,
+  a,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+
+  #root {
+    overflow-x: hidden;
   }
 
   /* keep native dropdown options readable even when the select uses light text */
@@ -67,16 +83,51 @@
   }
 
   .btn-primary {
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-lune-ink px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:bg-lune-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-lune-ink px-6 py-3 text-sm font-semibold text-white hover:bg-lune-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-gold {
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-lune-goldDark px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:bg-lune-goldDeep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-lune-goldDark px-6 py-3 text-sm font-semibold text-white hover:bg-lune-goldDeep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/40 disabled:cursor-not-allowed disabled:opacity-60;
     background: var(--lune-button-color, #8b6834);
   }
 
   .btn-secondary {
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-lune-ink transition duration-200 hover:border-lune-gold hover:text-lune-goldDark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/30;
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-lune-ink hover:border-lune-gold hover:text-lune-goldDark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lune-gold/30;
+  }
+
+  .btn-primary,
+  .btn-gold,
+  .btn-secondary,
+  .lune-icon-button {
+    transform: translate3d(0, 0, 0) scale(1);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: 280ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+
+  @media (hover: hover) {
+    .btn-primary:not(:disabled):hover,
+    .btn-gold:not(:disabled):hover,
+    .btn-secondary:not(:disabled):hover,
+    .lune-icon-button:not(:disabled):hover {
+      transform: translate3d(0, -2px, 0) scale(1.01);
+    }
+  }
+
+  .btn-primary:not(:disabled):active,
+  .btn-gold:not(:disabled):active,
+  .btn-secondary:not(:disabled):active,
+  .lune-icon-button:not(:disabled):active {
+    transform: translate3d(0, 1px, 0) scale(0.965);
+    transition-duration: 90ms;
+  }
+
+  .btn-primary:disabled,
+  .btn-gold:disabled,
+  .btn-secondary:disabled {
+    transform: none;
+    will-change: auto;
   }
 
   .card {
@@ -114,6 +165,13 @@
     -webkit-text-stroke: 0.55px rgba(255, 255, 255, 0.2);
   }
 
+  @media (max-width: 1023px) {
+    .lune-hero-title {
+      text-shadow: none;
+      -webkit-text-stroke: 0;
+    }
+  }
+
   .hero-search-panel input,
   .hero-search-panel select {
     color: #171412;
@@ -129,6 +187,9 @@
 
   .lune-hero-image {
     object-position: center center;
+    backface-visibility: hidden;
+    image-rendering: auto;
+    will-change: opacity;
   }
 
   .lune-hero-image-exterior {
@@ -139,6 +200,27 @@
     object-position: center center;
   }
 
+  .lune-mobile-hero-image {
+    object-position: center center;
+    backface-visibility: hidden;
+    image-rendering: auto;
+    will-change: opacity;
+  }
+
+  .lune-page-transition {
+    animation: lunePageEnter 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: 50% 0;
+  }
+
+  .lune-calendar-popover {
+    animation: lunePopoverEnter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: 50% 100%;
+  }
+
+  .lune-menu-icon {
+    animation: luneIconSwap 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
   .room-carousel {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -146,30 +228,6 @@
 
   .room-carousel::-webkit-scrollbar {
     display: none;
-  }
-
-  .lune-hero-depth-layer {
-    clip-path: polygon(58% 0, 100% 0, 100% 100%, 69% 100%, 64% 76%, 72% 48%, 63% 23%);
-    filter: saturate(1.05) contrast(1.05);
-    mask-image: linear-gradient(90deg, transparent 0%, transparent 53%, rgba(0, 0, 0, 0.2) 61%, #000 78%);
-    opacity: 0.86;
-  }
-
-  @media (max-width: 767px) {
-    .lune-hero-image,
-    .lune-hero-overlay {
-      bottom: auto !important;
-      height: min(92svh, 640px) !important;
-      min-height: 560px;
-    }
-
-    .lune-hero-image-exterior {
-      object-position: center top;
-    }
-
-    .lune-hero-image-room {
-      object-position: center center;
-    }
   }
 
   .reveal-on-scroll {
@@ -256,6 +314,39 @@
   }
 }
 
+@keyframes lunePageEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.997);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes lunePopoverEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes luneIconSwap {
+  from {
+    opacity: 0;
+    transform: rotate(-18deg) scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -268,5 +359,19 @@
     animation: none !important;
     filter: none;
     will-change: auto;
+  }
+
+  .lune-page-transition,
+  .lune-calendar-popover,
+  .lune-menu-icon {
+    animation: none !important;
+  }
+
+  .btn-primary,
+  .btn-gold,
+  .btn-secondary,
+  .lune-icon-button {
+    transform: none !important;
+    transition-duration: 0.01ms !important;
   }
 }

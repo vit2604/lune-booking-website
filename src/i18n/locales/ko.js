@@ -164,7 +164,8 @@ export default {
     "highToLow": "높은 가격순",
     "viewDetails": "상세 보기",
     "availableStays": "예약 가능한 객실",
-    "noRoomsAvailable": "선택하신 날짜에 예약 가능한 객실이 없습니다. 다른 날짜를 선택하시거나 Lune에 문의해 주세요."
+    "noRoomsAvailable": "선택하신 날짜에 예약 가능한 객실이 없습니다. 다른 날짜를 선택하시거나 Lune에 문의해 주세요.",
+    "tryDefaultDates": "Try next available dates"
   },
   "roomDetail": {
     "backToRooms": "객실 목록으로",
@@ -196,7 +197,7 @@ export default {
   },
   "payment": {
     "reviewConfirm": "확인 및 결제",
-    "mockNotice": "모의 결제 흐름입니다. 실제 결제는 발생하지 않습니다.",
+    "mockNotice": "Payment will be confirmed by Lune through the selected official method.",
     "payAtProperty": "현장 결제",
     "payAtPropertyDesc": "Lune Boutique Hotel & Apartment 도착 시 직접 결제합니다.",
     "bankTransfer": "계좌 이체",
@@ -231,6 +232,8 @@ export default {
     "walletPlaceholderNote": "이 결제 방법은 준비 중입니다. 결제 안내를 위해 팀이 연락드리겠습니다.",
     "internationalTransferNote": "국제 송금 정보는 현재 자리표시자입니다. 송금 전 Lune에 문의해 주세요.",
     "noPaymentMethods": "예약 확인을 위해 Lune 팀에 문의해 주세요.",
+    "noAvailableMethods": "Please contact Lune team to confirm your booking.",
+    "bankTransferUnavailable": "Bank transfer is not available until official bank details are configured.",
     "qrPlaceholder": "QR 결제 자리표시자",
     "paymentProviderNote": "안전한 카드 결제는 결제 제공업체가 처리합니다.",
     "payosScanNote": "Scan the QR code to complete payment. Final payment is charged in VND.",
@@ -243,7 +246,7 @@ export default {
     "optCashTitle": "Cash on arrival",
     "optCashDesc": "For international guests paying cash at check-in. No extra fee.",
     "optDepositTitle": "Bank transfer deposit",
-    "optDepositDesc": "Transfer a deposit now (min 10%), then pay the remaining balance at check-in.",
+    "optDepositDesc": "Transfer a deposit now (min 30%), then pay the remaining balance at check-in.",
     "optCardTitle": "International card (+5%)",
     "optCardDesc": "Pay by international card at the property. A 5% card fee applies.",
     "vietnamPaymentNotice": "Vietnamese guests can place a bank-transfer deposit or pay the full amount by QR. Cash at the counter is not available.",

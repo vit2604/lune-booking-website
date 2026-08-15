@@ -39,6 +39,16 @@ describe('production admin authentication', () => {
     expect(isAdminLoggedIn()).toBe(false);
   });
 
+  it('persists the device key before the login request and keeps it after logout', async () => {
+    backendAdminLogin.mockResolvedValue({ token: 'jwt-token', admin: { username: 'admin', role: 'ADMIN' } });
+
+    await login('admin', 'secret', '  device-secret  ');
+    expect(localStorage.getItem('lune_admin_device_key')).toBe('device-secret');
+
+    logout();
+    expect(localStorage.getItem('lune_admin_device_key')).toBe('device-secret');
+  });
+
   it('clears every admin session value on logout', () => {
     localStorage.setItem('lune_admin_token', 'jwt-token');
     localStorage.setItem('lune_admin_logged_in', 'true');

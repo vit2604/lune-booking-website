@@ -3,6 +3,7 @@ import {
   savePaymentSettings as writeAdminPaymentSettings,
 } from '../admin/services/adminSettingsService.js';
 import { updatePaymentStatus as updateStoredBookingPaymentStatus } from '../admin/services/adminBookingService.js';
+import { isGuestSafePaymentMethod } from '../utils/productionGuards.js';
 import { loadConfirmedBooking, saveConfirmedBooking } from '../utils/storage.js';
 
 const methodAliases = {
@@ -35,7 +36,7 @@ export function getEnabledPaymentMethods() {
   const settings = getPaymentSettings();
   return Object.entries(settings.paymentMethods || {})
     .map(([id, method]) => ({ id, ...method }))
-    .filter((method) => method.enabled && method.visibleForGuests !== false)
+    .filter(isGuestSafePaymentMethod)
     .sort((a, b) => (a.sortOrder || 999) - (b.sortOrder || 999));
 }
 

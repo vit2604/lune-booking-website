@@ -1,5 +1,6 @@
 import { getPaymentSettings } from '../admin/services/adminSettingsService.js';
 import { canUseMockFallback } from '../config/apiConfig.js';
+import { isGuestSafePaymentMethod } from '../utils/productionGuards.js';
 import { apiRequest } from './apiClient.js';
 
 export async function getPaymentMethodsWithFallback() {
@@ -11,14 +12,14 @@ export async function getPaymentMethodsWithFallback() {
         id: method.id || method.key,
         ...method,
         statusAfterConfirm: String(method.statusAfterConfirm || 'pending').toLowerCase(),
-      })),
+      })).filter(isGuestSafePaymentMethod),
     };
   } catch (_error) {
     if (!canUseMockFallback()) throw _error;
     const settings = getPaymentSettings();
     const methods = Object.entries(settings.paymentMethods || {})
       .map(([key, config]) => ({ id: key, key, ...config }))
-      .filter((method) => method.enabled !== false && method.visibleForGuests !== false)
+      .filter(isGuestSafePaymentMethod)
       .sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99));
     return { source: 'local', methods };
   }

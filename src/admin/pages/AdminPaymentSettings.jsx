@@ -11,12 +11,12 @@ const methodLabels = {
   cashAtProperty: 'Cash at property',
   bankTransfer: 'Bank transfer Vietnam',
   vietQr: 'VietQR',
-  creditCard: 'Credit/Debit Card mock',
-  stripe: 'Stripe placeholder',
-  paypal: 'PayPal placeholder',
-  vnpay: 'VNPay placeholder',
-  momo: 'MoMo placeholder',
-  zaloPay: 'ZaloPay placeholder',
+  creditCard: 'Credit/Debit Card',
+  stripe: 'Stripe gateway',
+  paypal: 'PayPal gateway',
+  vnpay: 'VNPay gateway',
+  momo: 'MoMo wallet',
+  zaloPay: 'ZaloPay wallet',
   internationalTransfer: 'International transfer',
 };
 
@@ -94,7 +94,7 @@ export default function AdminPaymentSettings() {
       } else {
         savePaymentSettings(payload);
       }
-      setMessage('Payment settings saved. Guest Payment page now uses these enabled methods and placeholders.');
+      setMessage('Payment settings saved. Guest Payment page now uses enabled, configured methods.');
     } catch (error) {
       setMessage(error.message || 'Could not save payment settings.');
     }
@@ -107,7 +107,7 @@ export default function AdminPaymentSettings() {
           <p className="eyebrow">Payments</p>
           <h2 className="mt-2 font-display text-4xl font-bold text-lune-ink">Payment settings</h2>
           <p className="mt-2 text-sm text-stone-600">
-            Enable customer-facing payment methods and prepare placeholders for future backend integrations.
+            Enable customer-facing payment methods and keep unfinished gateways hidden until they are configured.
           </p>
         </div>
         <button className="btn-gold" type="submit">
@@ -125,7 +125,7 @@ export default function AdminPaymentSettings() {
       <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
         <h3 className="font-display text-3xl font-bold text-lune-ink">Visible payment methods</h3>
         <p className="mt-2 text-sm leading-6 text-stone-600">
-          Toggle methods guests can choose on the Payment page. All methods are mock placeholders until backend payment endpoints are connected.
+          Toggle methods guests can choose on the Payment page. Keep any unfinished gateway hidden until backend endpoints are connected.
         </p>
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           {Object.entries(settings.paymentMethods || {}).map(([methodId, method]) => (
@@ -183,23 +183,23 @@ export default function AdminPaymentSettings() {
       <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
         <h3 className="font-display text-3xl font-bold text-lune-ink">Bank transfer and VietQR</h3>
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
-          <AdminFormInput label="Bank name" value={bankTransfer.bankName || ''} onChange={(e) => updateMethod('bankTransfer', 'bankName', e.target.value)} placeholder="PLACEHOLDER_BANK_NAME" />
-          <AdminFormInput label="Account number" value={bankTransfer.accountNumber || ''} onChange={(e) => updateMethod('bankTransfer', 'accountNumber', e.target.value)} placeholder="PLACEHOLDER_ACCOUNT_NUMBER" />
+          <AdminFormInput label="Bank name" value={bankTransfer.bankName || ''} onChange={(e) => updateMethod('bankTransfer', 'bankName', e.target.value)} placeholder="Bank name" />
+          <AdminFormInput label="Account number" value={bankTransfer.accountNumber || ''} onChange={(e) => updateMethod('bankTransfer', 'accountNumber', e.target.value)} placeholder="Account number" />
           <AdminFormInput label="Account holder" value={bankTransfer.accountHolder || ''} onChange={(e) => updateMethod('bankTransfer', 'accountHolder', e.target.value)} />
           <AdminFormInput label="Transfer content template" value={bankTransfer.transferContentTemplate || ''} onChange={(e) => updateMethod('bankTransfer', 'transferContentTemplate', e.target.value)} />
-          <AdminFormInput label="Bank API provider placeholder" value={bankTransfer.bankApiProvider || ''} onChange={(e) => updateMethod('bankTransfer', 'bankApiProvider', e.target.value)} />
-          <AdminFormInput label="Bank API base URL placeholder" value={bankTransfer.bankApiBaseUrl || ''} onChange={(e) => updateMethod('bankTransfer', 'bankApiBaseUrl', e.target.value)} />
-          <AdminFormInput label="Webhook URL placeholder" value={bankTransfer.webhookUrl || ''} onChange={(e) => updateMethod('bankTransfer', 'webhookUrl', e.target.value)} />
-          <AdminFormInput label="VietQR API base URL placeholder" value={settings.paymentMethods?.vietQr?.apiBaseUrl || ''} onChange={(e) => updateMethod('vietQr', 'apiBaseUrl', e.target.value)} />
+          <AdminFormInput label="Bank API provider" value={bankTransfer.bankApiProvider || ''} onChange={(e) => updateMethod('bankTransfer', 'bankApiProvider', e.target.value)} />
+          <AdminFormInput label="Bank API base URL" value={bankTransfer.bankApiBaseUrl || ''} onChange={(e) => updateMethod('bankTransfer', 'bankApiBaseUrl', e.target.value)} />
+          <AdminFormInput label="Webhook URL" value={bankTransfer.webhookUrl || ''} onChange={(e) => updateMethod('bankTransfer', 'webhookUrl', e.target.value)} />
+          <AdminFormInput label="VietQR API base URL" value={settings.paymentMethods?.vietQr?.apiBaseUrl || ''} onChange={(e) => updateMethod('vietQr', 'apiBaseUrl', e.target.value)} />
         </div>
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
-          <ImageUploader label="Bank QR image mock" images={bankTransfer.qrImageUrl ? [bankTransfer.qrImageUrl] : []} multiple={false} onChange={(images) => updateMethod('bankTransfer', 'qrImageUrl', images[0] || '')} />
-          <ImageUploader label="VietQR image mock" images={settings.paymentMethods?.vietQr?.qrImageUrl ? [settings.paymentMethods.vietQr.qrImageUrl] : []} multiple={false} onChange={(images) => updateMethod('vietQr', 'qrImageUrl', images[0] || '')} />
+          <ImageUploader label="Bank QR image" images={bankTransfer.qrImageUrl ? [bankTransfer.qrImageUrl] : []} multiple={false} onChange={(images) => updateMethod('bankTransfer', 'qrImageUrl', images[0] || '')} />
+          <ImageUploader label="VietQR image" images={settings.paymentMethods?.vietQr?.qrImageUrl ? [settings.paymentMethods.vietQr.qrImageUrl] : []} multiple={false} onChange={(images) => updateMethod('vietQr', 'qrImageUrl', images[0] || '')} />
         </div>
       </section>
 
       <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-        <h3 className="font-display text-3xl font-bold text-lune-ink">Gateway and wallet placeholders</h3>
+        <h3 className="font-display text-3xl font-bold text-lune-ink">Gateway and wallet setup</h3>
         <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
           Do not use real secret key here. Use backend environment variables in production. The frontend should only call backend endpoints.
         </p>
@@ -216,25 +216,25 @@ export default function AdminPaymentSettings() {
                     onChange={(event) => updateMethod(methodId, gatewayMethodIds.includes(methodId) ? 'providerName' : 'providerName', event.target.value)}
                   />
                   <AdminFormInput
-                    label="Backend endpoint placeholder"
+                    label="Backend endpoint"
                     value={method.backendEndpoint || ''}
                     onChange={(event) => updateMethod(methodId, 'backendEndpoint', event.target.value)}
                   />
                   {gatewayMethodIds.includes(methodId) ? (
                     <AdminFormInput
-                      label="Public key placeholder"
+                      label="Public key"
                       value={method.publicKey || ''}
                       onChange={(event) => updateMethod(methodId, 'publicKey', event.target.value)}
                     />
                   ) : (
                     <AdminFormInput
-                      label="Merchant ID placeholder"
+                      label="Merchant ID"
                       value={method.merchantId || ''}
                       onChange={(event) => updateMethod(methodId, 'merchantId', event.target.value)}
                     />
                   )}
                   <AdminFormInput
-                    label="Webhook URL placeholder"
+                    label="Webhook URL"
                     value={method.webhookUrl || ''}
                     onChange={(event) => updateMethod(methodId, 'webhookUrl', event.target.value)}
                   />

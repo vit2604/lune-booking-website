@@ -32,6 +32,10 @@ export function getAdminToken() {
   return localStorage.getItem(storageKeys.adminToken);
 }
 
+export function getAdminDeviceKey() {
+  return localStorage.getItem(storageKeys.adminDeviceKey) || '';
+}
+
 function expireAdminSession() {
   localStorage.removeItem(storageKeys.adminToken);
   localStorage.removeItem(storageKeys.adminLoggedIn);
@@ -51,15 +55,19 @@ export async function apiRequest(path, options = {}) {
   const timeout = globalThis.setTimeout(() => controller.abort(), options.timeoutMs || apiConfig.timeoutMs);
   const headers = new Headers(options.headers || {});
   const token = options.token ?? getAdminToken();
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
 
-  if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  if (options.body && !isFormData && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
+
+  const deviceKey = getAdminDeviceKey();
+  if (deviceKey && !headers.has('x-admin-device-key')) headers.set('x-admin-device-key', deviceKey);
 
   try {
     const response = await fetch(`${apiConfig.baseUrl}${path}`, {
       ...options,
       headers,
-      body: options.body && typeof options.body !== 'string' ? JSON.stringify(options.body) : options.body,
+      body: options.body && typeof options.body !== 'string' && !isFormData ? JSON.stringify(options.body) : options.body,
       signal: controller.signal,
     });
     const payload = await response.json().catch(() => ({}));
@@ -74,6 +82,34 @@ export async function apiRequest(path, options = {}) {
       throw new ApiError('The booking system took too long to respond. Please try again.', 0, { code: 'timeout' });
     }
     throw new ApiError('Could not reach the booking system. Please try again.', 0, { code: 'network' });
+  } finally {
+    globalThis.clearTimeout(timeout);
+  }
+}
+
+export async function apiBlobRequest(path, options = {}) {
+  if (shouldUseMockOnly() && !options.ignoreMockOnly) {
+    throw new ApiError('Backend API is not configured for this deployment.', 0, { success: false });
+  }
+  const controller = new AbortController();
+  const timeout = globalThis.setTimeout(() => controller.abort(), options.timeoutMs || apiConfig.timeoutMs);
+  const headers = new Headers(options.headers || {});
+  const token = options.token ?? getAdminToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const deviceKey = getAdminDeviceKey();
+  if (deviceKey) headers.set('x-admin-device-key', deviceKey);
+  try {
+    const response = await fetch(`${apiConfig.baseUrl}${path}`, { ...options, headers, signal: controller.signal });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      if (response.status === 401 && token) expireAdminSession();
+      throw new ApiError(getApiErrorMessage(payload), response.status, payload);
+    }
+    return response.blob();
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error.name === 'AbortError') throw new ApiError('Media preview took too long to load.', 0, { code: 'timeout' });
+    throw new ApiError('Could not load the protected media preview.', 0, { code: 'network' });
   } finally {
     globalThis.clearTimeout(timeout);
   }

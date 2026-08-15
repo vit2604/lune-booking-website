@@ -20,7 +20,7 @@ import { getGuestSupportErrorMessage } from '../utils/guestErrorMessages.js';
 import {
   clampDepositPercent,
   computePaymentBreakdown,
-  filterPaymentChoicesForGuest,
+  getVisiblePaymentChoices,
   isVietnameseGuest,
   MIN_DEPOSIT_PERCENT,
   paymentChoices,
@@ -177,21 +177,9 @@ export default function PaymentPage() {
   const payosMethod = paymentMethodMap.get('vietQr');
   const bankTransferMethod = paymentMethodMap.get('bankTransfer');
   const visiblePaymentChoices = useMemo(() => {
-    let choices;
-    if (!availablePaymentMethods.length) {
-      const localPaymentMethodMap = new Map(getLocalEnabledPaymentMethods().map((method) => [method.key || method.id, method]));
-      choices = paymentChoices.filter((option) => {
-        const method = localPaymentMethodMap.get(option.method);
-        return Boolean(method && method.enabled !== false && method.visibleForGuests !== false);
-      });
-    } else {
-      choices = paymentChoices.filter((option) => {
-        const method = paymentMethodMap.get(option.method);
-        return Boolean(method && method.enabled !== false && method.visibleForGuests !== false);
-      });
-    }
-    return filterPaymentChoicesForGuest(choices, paymentGuestInfo);
-  }, [availablePaymentMethods.length, paymentGuestInfo, paymentMethodMap]);
+    const methods = availablePaymentMethods.length ? availablePaymentMethods : getLocalEnabledPaymentMethods();
+    return getVisiblePaymentChoices(paymentChoices, methods, paymentGuestInfo);
+  }, [availablePaymentMethods, paymentGuestInfo]);
   const activeChoice = visiblePaymentChoices.some((option) => option.id === choice)
     ? choice
     : visiblePaymentChoices[0]?.id || choice;

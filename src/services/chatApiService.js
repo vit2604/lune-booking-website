@@ -91,3 +91,55 @@ export async function sendGuestMessageWithFallback(sessionCode, message, meta = 
   );
   return { source: 'local', message: created };
 }
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('Could not read image'));
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function sendGuestImageWithFallback(sessionCode, file, meta = {}) {
+  const form = new FormData();
+  form.append('image', file);
+  Object.entries(meta).forEach(([key, value]) => {
+    if (value != null && value !== '') form.append(key, value);
+  });
+
+  try {
+    return {
+      source: 'api',
+      message: await apiRequest(`/chat/sessions/${sessionCode}/images`, {
+        method: 'POST',
+        body: form,
+        timeoutMs: 30000,
+      }),
+    };
+  } catch (error) {
+    if (!canUseMockFallback()) throw error;
+  }
+
+  const created = {
+    id: crypto.randomUUID(),
+    sessionCode,
+    senderType: 'GUEST',
+    sender: 'guest',
+    message: '[Image]',
+    attachmentData: await fileToDataUrl(file),
+    attachmentMime: file.type,
+    attachmentName: file.name,
+    attachmentSize: file.size,
+    createdAt: new Date().toISOString(),
+    readByGuest: true,
+    readByAdmin: false,
+  };
+  saveLocalMessages([...localMessages(), created]);
+  saveLocalSessions(localSessions().map((session) => (
+    session.sessionCode === sessionCode
+      ? { ...session, unreadByAdmin: (session.unreadByAdmin || 0) + 1, updatedAt: created.createdAt }
+      : session
+  )));
+  return { source: 'local', message: created };
+}

@@ -2,6 +2,7 @@ import { sendSuccess } from '../../utils/responseUtils.js';
 import {
   createBooking,
   deleteBooking,
+  deleteOldSafeBookings,
   getAdminBooking,
   getPublicBooking,
   listAdminBookings,
@@ -91,6 +92,14 @@ export async function adminDeleteBooking(req, res, next) {
       }),
       'Booking deleted',
     );
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function adminDeleteOldBookings(_req, res, next) {
+  try {
+    return sendSuccess(res, await deleteOldSafeBookings(), 'Old bookings cleaned up');
   } catch (error) {
     return next(error);
   }

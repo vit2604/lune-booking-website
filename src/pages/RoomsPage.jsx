@@ -1,6 +1,6 @@
-import { SlidersHorizontal } from 'lucide-react';
+import { CalendarDays, MessageCircle, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getVisibleRooms } from '../admin/services/adminRoomService.js';
 import DateInput from '../components/DateInput.jsx';
 import GuestSelector from '../components/GuestSelector.jsx';
@@ -167,13 +167,13 @@ export default function RoomsPage() {
   return (
     <RevealOnScroll as="section" direction="none" duration={450} className="section-space bg-lune-cream">
       <div className="page-shell">
-        <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
-          <RevealOnScroll as="aside" variant="curve-right" className="h-fit rounded-lg border border-stone-200 bg-white p-5 shadow-soft lg:sticky lg:top-28">
+        <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:gap-8">
+          <RevealOnScroll as="aside" variant="curve-right" className="h-fit rounded-lg border border-stone-200 bg-white p-4 shadow-soft sm:p-5 lg:sticky lg:top-28">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="h-5 w-5 text-lune-goldDark" aria-hidden="true" />
-              <h2 className="font-display text-3xl font-bold text-lune-ink">{t('rooms.filters')}</h2>
+              <h2 className="font-display text-2xl font-bold text-lune-ink sm:text-3xl">{t('rooms.filters')}</h2>
             </div>
-            <div className="mt-6 grid gap-4">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               <label>
                 <span className="label">{t('common.checkIn')}</span>
                 <DateInput
@@ -220,13 +220,14 @@ export default function RoomsPage() {
             </div>
           </RevealOnScroll>
 
-          <div>
+          <div className="min-w-0">
             <RevealOnScroll variant="float" className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div>
                 <p className="eyebrow">{t('rooms.availableStays')}</p>
-                <h1 className="section-title mt-3">{t('rooms.title')}</h1>
+                <h1 className="mt-3 font-display text-4xl font-bold leading-tight text-lune-ink sm:text-5xl">{t('rooms.title')}</h1>
               </div>
-              <p className="text-sm font-medium text-stone-600">
+              <p className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-stone-700 shadow-sm">
+                <CalendarDays className="h-4 w-4 text-lune-goldDark" aria-hidden="true" />
                 {t('rooms.roomsFound', { count: filteredRooms.length })}
               </p>
             </RevealOnScroll>
@@ -237,7 +238,7 @@ export default function RoomsPage() {
               </div>
             ) : null}
 
-            <div className="mt-8 grid gap-6 xl:grid-cols-2">
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:gap-6">
               {filteredRooms.map((room, index) => (
                 <RevealOnScroll key={room.id} variant={index % 2 === 0 ? 'curve-left' : 'curve-right'} delay={index * 80}>
                   <RoomCard
@@ -250,11 +251,28 @@ export default function RoomsPage() {
             </div>
 
             {filteredRooms.length === 0 ? (
-              <div className="mt-8 rounded-lg border border-stone-200 bg-white p-8 text-center">
-                <h3 className="font-display text-3xl font-bold text-lune-ink">{t('rooms.noRoomsForSelectionTitle')}</h3>
-                <p className="mt-2 text-sm text-stone-600">
+              <div className="mt-8 rounded-lg border border-stone-200 bg-white p-6 text-center shadow-soft sm:p-8">
+                <h3 className="font-display text-2xl font-bold text-lune-ink sm:text-3xl">{t('rooms.noRoomsForSelectionTitle')}</h3>
+                <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-stone-600">
                   {t('rooms.noRoomsForSelectionBody')}
                 </p>
+                <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+                  <button
+                    className="btn-gold"
+                    type="button"
+                    onClick={() => {
+                      updateFilter('checkIn', defaults.checkIn);
+                      updateFilter('checkOut', defaults.checkOut);
+                    }}
+                  >
+                    <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                    {t('rooms.tryDefaultDates')}
+                  </button>
+                  <Link className="btn-secondary" to="/contact">
+                    <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                    {t('common.contactLune')}
+                  </Link>
+                </div>
               </div>
             ) : null}
           </div>

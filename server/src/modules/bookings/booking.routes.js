@@ -6,6 +6,7 @@ import {
   adminBooking,
   adminBookings,
   adminDeleteBooking,
+  adminDeleteOldBookings,
   adminUpdateBookingStatus,
   adminUpdateInternalNote,
   adminUpdatePaymentStatus,
@@ -29,6 +30,7 @@ publicBookingRouter.get('/:bookingCode', publicReadRateLimit, validate(bookingCo
 
 adminBookingRouter.use(requireAuth, requireAdmin);
 adminBookingRouter.get('/', validate(adminBookingsQuerySchema), adminBookings);
+adminBookingRouter.post('/cleanup/old', adminDeleteOldBookings);
 adminBookingRouter.get('/:bookingCode', validate(bookingCodeSchema), adminBooking);
 adminBookingRouter.patch('/:bookingCode/status', validate(bookingStatusSchema), adminUpdateBookingStatus);
 adminBookingRouter.patch('/:bookingCode/payment-status', validate(paymentStatusSchema), adminUpdatePaymentStatus);

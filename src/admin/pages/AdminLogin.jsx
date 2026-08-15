@@ -2,10 +2,11 @@ import { LockKeyhole } from 'lucide-react';
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { isAdminLoggedIn, login } from '../services/adminAuthService.js';
+import { getAdminDeviceKey } from '../../services/apiClient.js';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ username: '', password: '', deviceKey: getAdminDeviceKey() });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -19,7 +20,7 @@ export default function AdminLogin() {
     }
 
     setLoading(true);
-    const result = await login(form.username.trim(), form.password);
+    const result = await login(form.username.trim(), form.password, form.deviceKey);
     if (!result.ok) {
       setLoading(false);
       setError(result.message);
@@ -58,6 +59,20 @@ export default function AdminLogin() {
               onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
               placeholder="Enter admin password"
             />
+          </label>
+          <label>
+            <span className="label">Device key</span>
+            <input
+              className="input-field"
+              type="password"
+              value={form.deviceKey}
+              onChange={(event) => setForm((current) => ({ ...current, deviceKey: event.target.value }))}
+              placeholder="Access key for this device"
+              autoComplete="off"
+            />
+            <span className="mt-1 block text-xs text-stone-500">
+              Required only where the server enforces it. Saved on this device after first login.
+            </span>
           </label>
         </div>
 

@@ -560,15 +560,15 @@ export default function BookingPage() {
   return (
     <RevealOnScroll as="section" direction="none" duration={450} className="section-space bg-lune-cream">
       <div className="page-shell">
-        <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
-          <RevealOnScroll as="form" variant="curve-right" className="rounded-lg border border-stone-200 bg-white p-5 shadow-soft sm:p-8" onSubmit={handleSubmit}>
-            <div className="flex items-center gap-3">
-              <span className="grid h-11 w-11 place-items-center rounded-md bg-lune-ink text-white">
+        <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <RevealOnScroll as="form" variant="curve-right" className="min-w-0 rounded-lg border border-stone-200 bg-white p-4 shadow-soft sm:p-8" onSubmit={handleSubmit}>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-lune-ink text-white sm:h-11 sm:w-11">
                 <UserRound className="h-5 w-5" aria-hidden="true" />
               </span>
-              <div>
+              <div className="min-w-0">
                 <p className="eyebrow">{t('booking.guestDetails')}</p>
-                <h1 className="font-display text-4xl font-bold text-lune-ink">{t('booking.completeBooking')}</h1>
+                <h1 className="max-w-full font-display text-3xl font-bold leading-tight text-lune-ink sm:text-4xl">{t('booking.completeBooking')}</h1>
               </div>
             </div>
 
@@ -576,7 +576,7 @@ export default function BookingPage() {
               <TrustBadges compact />
             </div>
 
-            <div className="mt-8 rounded-lg border border-stone-200 bg-lune-cream p-4">
+            <div className="mt-8 min-w-0 rounded-lg border border-stone-200 bg-lune-cream p-3 sm:p-4">
               <DateSelector
                 checkIn={booking.checkIn}
                 checkOut={booking.checkOut}
@@ -634,6 +634,7 @@ export default function BookingPage() {
                             className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-red-600 hover:bg-red-50 disabled:opacity-40"
                             type="button"
                             title={t('common.removeRoom')}
+                            aria-label={t('common.removeRoom')}
                             disabled={booking.rooms.length === 1}
                             onClick={() => removeRoomItem(index)}
                           >
@@ -721,6 +722,8 @@ export default function BookingPage() {
                   className="input-field"
                   type="text"
                   autoComplete="name"
+                  required
+                  aria-invalid={Boolean(errors.fullName)}
                   value={form.fullName}
                   onChange={(event) => updateForm('fullName', event.target.value)}
                   placeholder="Nguyen Van A"
@@ -731,9 +734,10 @@ export default function BookingPage() {
                 <span className="label">{t('booking.email')}</span>
                 <input
                   className="input-field"
-                  type="text"
-                  inputMode="email"
+                  type="email"
                   autoComplete="email"
+                  required
+                  aria-invalid={Boolean(errors.email)}
                   value={form.email}
                   onChange={(event) => updateForm('email', event.target.value)}
                   placeholder="you@example.com"
@@ -751,6 +755,8 @@ export default function BookingPage() {
                     type="tel"
                     inputMode="tel"
                     autoComplete="tel-national"
+                    required
+                    aria-invalid={Boolean(errors.phone)}
                     value={form.phone}
                     onChange={(event) => updateForm('phone', event.target.value)}
                     placeholder="901234567"
@@ -847,7 +853,7 @@ export default function BookingPage() {
           </RevealOnScroll>
 
           <RevealOnScroll variant="curve-left" delay={100}>
-            <BookingSummary booking={previewBooking} className="h-fit lg:sticky lg:top-28" />
+            <BookingSummary booking={previewBooking} className="min-w-0 h-fit lg:sticky lg:top-28" />
           </RevealOnScroll>
         </div>
       </div>

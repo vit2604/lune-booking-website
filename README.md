@@ -177,3 +177,13 @@ Chrome says "Not secure":
 - Clear site data for the domain if old HTTP state is cached.
 - Run `curl -I https://www.luneboutiquedanang.com`.
 
+## AI Content 0 VND
+
+Hệ thống quản trị mobile-first tại `/admin/ai-content` tạo ý tưởng, shot list, upload/quarantine media, privacy review, caption Việt–Anh, render Sharp/FFmpeg, lịch database, mock publishing, diagnostics và emergency stop. Ollama là tùy chọn; template deterministic luôn là fallback. Live Meta tắt mặc định.
+
+```powershell
+npm run build
+npm run ai-content:start
+```
+
+Máy tính: `http://localhost:4173/admin/ai-content`. Chạy `npm run ai-content:check` để lấy URL điện thoại cùng Wi-Fi. Xem `docs/WINDOWS_SETUP.md`, `docs/AI_CONTENT_ARCHITECTURE.md` và `docs/MANUAL_FINAL_STEPS.md`.

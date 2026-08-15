@@ -18,10 +18,10 @@ export default function TrustBadges({ compact = false }) {
         return (
           <div
             key={badge.labelKey}
-            className="flex min-h-12 items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-3 text-sm font-medium text-lune-charcoal"
+            className="flex min-w-0 min-h-12 items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-3 text-sm font-medium text-lune-charcoal"
           >
             <Icon className="h-4 w-4 shrink-0 text-lune-goldDark" aria-hidden="true" />
-            <span>{t(badge.labelKey)}</span>
+            <span className="min-w-0 leading-5">{t(badge.labelKey)}</span>
           </div>
         );
       })}

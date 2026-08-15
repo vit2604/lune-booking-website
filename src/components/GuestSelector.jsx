@@ -9,6 +9,7 @@ export default function GuestSelector({
   className = 'input-field',
   t,
   showIcon = true,
+  compact = false,
 }) {
   const { maxAdults } = getRoomCapacity(maxGuests);
   const adultCount = Math.min(maxAdults, Math.max(1, Number(adults || 1)));
@@ -35,13 +36,13 @@ export default function GuestSelector({
   };
 
   return (
-    <div className={`${className} flex min-h-0 items-center gap-3 py-2`}>
+    <div className={`${className} flex min-h-0 items-center gap-3 ${compact ? 'py-0' : 'py-2'}`}>
       {showIcon ? <Users className="h-5 w-5 shrink-0 text-lune-goldDark" aria-hidden="true" /> : null}
-      <div className="grid flex-1 gap-2 sm:grid-cols-2">
+      <div className={`grid flex-1 gap-2 ${compact ? 'grid-cols-2' : 'sm:grid-cols-2'}`}>
         <label className="grid gap-1">
           <span className="text-[11px] font-bold uppercase tracking-wide text-stone-500">{t('common.adults')}</span>
           <select
-            className="min-h-10 w-full rounded-md bg-white text-base font-semibold text-lune-ink outline-none sm:text-sm"
+            className={`${compact ? 'min-h-8 text-sm' : 'min-h-10 text-base'} w-full rounded-md bg-white font-semibold text-lune-ink outline-none sm:text-sm`}
             value={adultCount}
             onChange={(event) => updateAdults(event.target.value)}
           >
@@ -55,7 +56,7 @@ export default function GuestSelector({
         <label className="grid gap-1">
           <span className="text-[11px] font-bold uppercase tracking-wide text-stone-500">{t('common.children')}</span>
           <select
-            className="min-h-10 w-full rounded-md bg-white text-base font-semibold text-lune-ink outline-none sm:text-sm"
+            className={`${compact ? 'min-h-8 text-sm' : 'min-h-10 text-base'} w-full rounded-md bg-white font-semibold text-lune-ink outline-none sm:text-sm`}
             value={Math.min(childCount, maxChildren)}
             onChange={(event) => updateChildren(event.target.value)}
           >

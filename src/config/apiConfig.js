@@ -14,15 +14,27 @@ function isLocalUrl(value) {
 
 function isPublicFrontendHost() {
   if (typeof window === 'undefined') return false;
-  return !['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+  return !isPrivateOrLoopbackHost(window.location.hostname);
+}
+
+function isPrivateOrLoopbackHost(hostname) {
+  if (['localhost', '127.0.0.1', '::1'].includes(hostname)) return true;
+  const parts = hostname.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+  return parts[0] === 10 || (parts[0] === 192 && parts[1] === 168) || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31);
+}
+
+function localRuntimeUrl(port, suffix = '') {
+  if (typeof window === 'undefined') return `http://localhost:${port}${suffix}`;
+  return `http://${window.location.hostname}:${port}${suffix}`;
 }
 
 function getDefaultApiBaseUrl() {
-  return isPublicFrontendHost() ? productionApiUrl : localApiUrl;
+  return isPublicFrontendHost() ? productionApiUrl : localRuntimeUrl(4000, '/api');
 }
 
 function getDefaultSocketUrl() {
-  return isPublicFrontendHost() ? productionSocketUrl : localSocketUrl;
+  return isPublicFrontendHost() ? productionSocketUrl : localRuntimeUrl(4000);
 }
 
 function getMockFallbackDefault() {
@@ -30,9 +42,9 @@ function getMockFallbackDefault() {
 }
 
 export const apiConfig = {
-  baseUrl: import.meta.env.VITE_API_BASE_URL || getDefaultApiBaseUrl(),
-  socketUrl: import.meta.env.VITE_SOCKET_URL || getDefaultSocketUrl(),
-  useMockFallback: String(import.meta.env.VITE_USE_MOCK_FALLBACK ?? getMockFallbackDefault()) === 'true',
+  baseUrl: isPublicFrontendHost() ? (import.meta.env.VITE_API_BASE_URL || getDefaultApiBaseUrl()) : getDefaultApiBaseUrl(),
+  socketUrl: isPublicFrontendHost() ? (import.meta.env.VITE_SOCKET_URL || getDefaultSocketUrl()) : getDefaultSocketUrl(),
+  useMockFallback: isPublicFrontendHost() && String(import.meta.env.VITE_USE_MOCK_FALLBACK ?? getMockFallbackDefault()) === 'true',
   timeoutMs: isPublicFrontendHost() ? 60000 : 10000,
 };
 

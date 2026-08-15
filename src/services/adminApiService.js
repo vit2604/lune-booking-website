@@ -111,6 +111,13 @@ export function adminDeleteBooking(bookingCode, options = {}) {
   });
 }
 
+export function adminDeleteOldBookings() {
+  return apiRequest('/admin/bookings/cleanup/old', {
+    method: 'POST',
+    timeoutMs: 30000,
+  });
+}
+
 export function adminGetSettings() {
   return apiRequest('/admin/settings', { timeoutMs: 15000 });
 }

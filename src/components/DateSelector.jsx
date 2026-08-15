@@ -31,8 +31,8 @@ export default function DateSelector({
   };
 
   return (
-    <div className={compact ? 'grid gap-3' : `grid gap-4 ${showGuests ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-      {showGuests ? <label>
+    <div className={compact ? 'grid min-w-0 gap-3' : `grid min-w-0 gap-4 ${showGuests ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+      {showGuests ? <label className="min-w-0">
         <span className="label">{t('common.checkIn')}</span>
         <DateInput
           className={inputClass}
@@ -41,7 +41,7 @@ export default function DateSelector({
           onChange={(event) => handleCheckInChange(event.target.value)}
         />
       </label> : null}
-      <label>
+      <label className="min-w-0">
         <span className="label">{t('common.checkOut')}</span>
         <DateInput
           className={inputClass}
@@ -50,7 +50,7 @@ export default function DateSelector({
           onChange={(event) => onChange({ checkOut: event.target.value })}
         />
       </label>
-      <label>
+      <label className="min-w-0">
         <span className="label">{t('common.guests')}</span>
         {readOnlyGuests ? (
           <div className={`${inputClass} flex min-h-0 items-center gap-3 py-2`}>

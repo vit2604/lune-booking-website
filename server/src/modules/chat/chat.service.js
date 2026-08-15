@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import sharp from 'sharp';
 import { prisma } from '../../config/prisma.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 import { cleanText } from '../../utils/sanitizeUtils.js';
@@ -59,7 +60,24 @@ export async function listChatSessions(query = {}) {
   const [items, total] = await Promise.all([
     prisma.chatSession.findMany({
       where,
-      include: { messages: { orderBy: { createdAt: 'desc' }, take: 1 } },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            senderType: true,
+            senderName: true,
+            message: true,
+            attachmentMime: true,
+            attachmentName: true,
+            attachmentSize: true,
+            readByAdmin: true,
+            readByGuest: true,
+            createdAt: true,
+          },
+        },
+      },
       orderBy: { updatedAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -84,6 +102,54 @@ export async function sendGuestMessage(sessionCode, message, meta = {}) {
         senderType: 'GUEST',
         senderName: cleanText(meta.guestName, 120) || session.guestName || 'Guest',
         message: cleanText(message, 2000),
+        readByGuest: true,
+        readByAdmin: false,
+      },
+    }),
+    prisma.chatSession.update({
+      where: { id: session.id },
+      data: {
+        status: session.status === 'CLOSED' ? 'OPEN' : 'PENDING',
+        unreadByAdmin: { increment: 1 },
+        updatedAt: new Date(),
+        guestName: cleanText(meta.guestName, 120) || session.guestName,
+      },
+    }),
+  ]);
+  return created;
+}
+
+export async function sendGuestImage(sessionCode, file, meta = {}) {
+  if (!file?.buffer?.length) throw createHttpError(400, 'Please choose an image to send');
+  const session = await getSessionByCode(sessionCode);
+
+  let optimized;
+  try {
+    optimized = await sharp(file.buffer, { failOn: 'warning' })
+      .rotate()
+      .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 82, effort: 4 })
+      .toBuffer();
+  } catch {
+    throw createHttpError(400, 'The selected file is not a valid image');
+  }
+
+  if (optimized.length > 2 * 1024 * 1024) {
+    throw createHttpError(413, 'The optimized image is still too large to send');
+  }
+
+  const attachmentData = `data:image/webp;base64,${optimized.toString('base64')}`;
+  const [created] = await prisma.$transaction([
+    prisma.chatMessage.create({
+      data: {
+        sessionId: session.id,
+        senderType: 'GUEST',
+        senderName: cleanText(meta.guestName, 120) || session.guestName || 'Guest',
+        message: cleanText(meta.message, 500) || '[Image]',
+        attachmentData,
+        attachmentMime: 'image/webp',
+        attachmentName: cleanText(file.originalname, 180) || 'guest-image.webp',
+        attachmentSize: optimized.length,
         readByGuest: true,
         readByAdmin: false,
       },

@@ -10,5 +10,7 @@ server/.env.*.local
 .DS_Store
 .claude/
 outputs/
+server/data/
+backups/ai-content/
 
 .vercel

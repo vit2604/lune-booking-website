@@ -1,0 +1,27 @@
+import { apiBlobRequest, apiRequest } from '../../services/apiClient.js';
+
+const base = '/admin/ai-content';
+export const getAiDashboard = () => apiRequest(`${base}/dashboard`);
+export const updateAiSettings = (input) => apiRequest(`${base}/settings`, { method: 'PATCH', body: input });
+export const generateIdeas = () => apiRequest(`${base}/ideas/generate`, { method: 'POST' });
+export const refreshTrends = () => apiRequest(`${base}/trends/refresh`, { method: 'POST', timeoutMs: 30_000 });
+export const getAnalytics = () => apiRequest(`${base}/analytics`);
+export const selectIdea = (id) => apiRequest(`${base}/ideas/${id}/select`, { method: 'POST' });
+export const sendIdeaFeedback = (id, action, feedback) => apiRequest(`${base}/ideas/${id}/feedback`, { method: 'POST', body: { action, feedback } });
+export const uploadContentMedia = (files) => { const body = new FormData(); [...files].forEach((file) => body.append('media', file)); return apiRequest(`${base}/uploads`, { method: 'POST', body, timeoutMs: 180_000 }); };
+export const reviewContentMedia = (id, input) => apiRequest(`${base}/uploads/${id}/review`, { method: 'POST', body: input, timeoutMs: 180_000 });
+export const deleteContentMedia = (id) => apiRequest(`${base}/uploads/${id}`, { method: 'DELETE' });
+export const getContentMediaBlob = (id) => apiBlobRequest(`${base}/uploads/${id}/file`, { timeoutMs: 60_000 });
+export const createDraft = (ideaId, mediaAssetIds) => apiRequest(`${base}/drafts/generate`, { method: 'POST', body: { ideaId, mediaAssetIds }, timeoutMs: 90_000 });
+export const updateDraft = (id, input) => apiRequest(`${base}/drafts/${id}`, { method: 'PATCH', body: input });
+export const approveDraft = (id) => apiRequest(`${base}/drafts/${id}/approve`, { method: 'POST' });
+export const renderDraft = (id) => apiRequest(`${base}/drafts/${id}/render`, { method: 'POST', timeoutMs: 180_000 });
+export const scheduleDraft = (id, scheduledAt) => apiRequest(`${base}/drafts/${id}/schedule`, { method: 'POST', body: { scheduledAt } });
+export const publishDryRun = (id) => apiRequest(`${base}/publications/${id}/publish`, { method: 'POST', timeoutMs: 60_000 });
+export const resumePublication = (id, scheduledAt) => apiRequest(`${base}/publications/${id}/resume`, { method: 'POST', body: { scheduledAt } });
+export const setEmergencyStop = (active) => apiRequest(`${base}/emergency-stop`, { method: 'POST', body: { active } });
+export const getMetaStatus = () => apiRequest(`${base}/integrations/meta/status`);
+export const getMetaConnectUrl = () => apiRequest(`${base}/integrations/meta/connect`);
+export const completeMetaOauth = (code, state) => apiRequest(`${base}/integrations/meta/callback`, { method: 'POST', body: { code, state }, timeoutMs: 60_000 });
+export const disconnectMeta = () => apiRequest(`${base}/integrations/meta/disconnect`, { method: 'POST' });
+export const getDiagnostics = () => apiRequest(`${base}/diagnostics`);

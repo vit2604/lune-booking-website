@@ -55,7 +55,9 @@ export async function fetchRoomWithFallback(slug, query = {}, options = {}) {
       room: normalizeApiRoom(
         {
           ...data.room,
-          availableQuantity: data.availability?.availableQuantity,
+          availableQuantity: data.availability?.available === false ? 0 : data.availability?.availableQuantity,
+          availabilityStatus: data.availability?.available === false ? 'not_available' : data.room?.availabilityStatus,
+          availabilityReason: data.availability?.reason || '',
           bluejay: data.availability?.bluejay,
           priceSummary: data.availability?.price || data.room?.priceSummary || null,
         },
@@ -64,6 +66,7 @@ export async function fetchRoomWithFallback(slug, query = {}, options = {}) {
       availability: data.availability,
     };
   } catch (error) {
+    if (query.checkIn && query.checkOut) throw error;
     if (!canUseMockFallback()) throw error;
     return { source: 'local', room: null, availability: null };
   }

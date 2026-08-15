@@ -7,6 +7,7 @@ import { createHttpError } from '../../utils/responseUtils.js';
 import { syncBookingToBluejay } from '../bookings/booking.service.js';
 import { buildPayosDescription } from './paymentDescription.js';
 import { bookingStatusAfterPayment } from './paymentStatusUtils.js';
+import { canGuestUsePaymentMethod } from './paymentEligibility.js';
 
 const DEFAULT_TRANSFER_CONTENT = 'Dang Trung Vuong chuyen tien';
 const MIN_DEPOSIT_PERCENT = 30;
@@ -214,23 +215,6 @@ function normalizePaymentStatus(status) {
   if (value === 'PAY_AT_PROPERTY' || value === 'PAYATPROPERTY') return 'PAY_AT_PROPERTY';
   if (['PENDING', 'PAID', 'FAILED', 'REFUNDED'].includes(value)) return value;
   return 'PENDING';
-}
-
-const vietnamCountryNames = new Set(['vietnam', 'viet nam', 'vn']);
-const payAtPropertyMethods = new Set(['payAtProperty', 'cashAtProperty']);
-
-function normalizeCountryName(value) {
-  return String(value || '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
-
-function isVietnameseGuest(guest = {}) {
-  const country = normalizeCountryName(guest.country);
-  const phoneCode = String(guest.phoneCode || '').trim();
-  return vietnamCountryNames.has(country) || phoneCode.startsWith('+84');
 }
 
 function payosIsConfigured() {
@@ -460,8 +444,8 @@ export async function createPaymentRequest({
   if (!booking) throw createHttpError(404, 'Booking not found');
   if (booking.bookingStatus === 'CANCELLED') throw createHttpError(409, 'Cancelled bookings cannot be paid');
   if (!isAllowedPaymentMethod(method)) throw createHttpError(400, 'Payment method is not supported');
-  if (payAtPropertyMethods.has(method) && isVietnameseGuest(booking.guest)) {
-    throw createHttpError(400, 'Pay at property is not available for Vietnamese guests');
+  if (!canGuestUsePaymentMethod(method, booking.guest)) {
+    throw createHttpError(400, 'Pay at property and card payments are not available for Vietnamese guests');
   }
   if (!booking.totalPrice || booking.totalPrice <= 0) throw createHttpError(400, 'Invalid booking amount');
   const paymentAmount = normalizeRequestedPaymentAmount({ booking, amount, grandTotal });

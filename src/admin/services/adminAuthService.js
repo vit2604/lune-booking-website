@@ -5,13 +5,20 @@ import { adminLogin as backendAdminLogin } from '../../services/adminApiService.
 const ADMIN_SESSION_KEY = storageKeys.adminLoggedIn;
 const ADMIN_USER_KEY = storageKeys.adminUser;
 const ADMIN_TOKEN_KEY = storageKeys.adminToken;
+const ADMIN_DEVICE_KEY = storageKeys.adminDeviceKey;
 
-const MOCK_ADMIN = {
-  username: import.meta.env.VITE_MOCK_ADMIN_USERNAME || 'admin',
-  password: import.meta.env.VITE_MOCK_ADMIN_PASSWORD || '',
-};
+const MOCK_ADMIN = import.meta.env.DEV
+  ? { username: import.meta.env.VITE_MOCK_ADMIN_USERNAME || 'admin', password: import.meta.env.VITE_MOCK_ADMIN_PASSWORD || '' }
+  : { username: '', password: '' };
 
-export async function login(username, password) {
+export async function login(username, password, deviceKey) {
+  // Store the device key first so the login request itself carries the header.
+  if (typeof deviceKey === 'string') {
+    const trimmed = deviceKey.trim();
+    if (trimmed) localStorage.setItem(ADMIN_DEVICE_KEY, trimmed);
+    else localStorage.removeItem(ADMIN_DEVICE_KEY);
+  }
+
   try {
     const data = await backendAdminLogin(username, password);
     localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
@@ -39,6 +46,7 @@ export function logout() {
   localStorage.removeItem(ADMIN_SESSION_KEY);
   localStorage.removeItem(ADMIN_USER_KEY);
   localStorage.removeItem(ADMIN_TOKEN_KEY);
+  // Keep the device key so this trusted machine stays authorized after logout.
 }
 
 export function isAdminLoggedIn() {

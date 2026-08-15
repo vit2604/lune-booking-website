@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { getWebsiteSettings } from '../admin/services/adminSettingsService.js';
 import Footer from './Footer.jsx';
 import Navbar from './Navbar.jsx';
@@ -8,6 +8,7 @@ const CustomerChatWidget = lazy(() => import('./chat/CustomerChatWidget.jsx'));
 
 export default function GuestLayout() {
   const [settings, setSettings] = useState(getWebsiteSettings());
+  const location = useLocation();
 
   useEffect(() => {
     const applyTheme = (nextSettings) => {
@@ -35,7 +36,9 @@ export default function GuestLayout() {
         </div>
       ) : null}
       <main id="main-content" className="flex-1" tabIndex={-1}>
-        <Outlet />
+        <div key={location.pathname} className="lune-page-transition">
+          <Outlet />
+        </div>
       </main>
       <Suspense fallback={null}>
         <CustomerChatWidget />

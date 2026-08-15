@@ -3,6 +3,12 @@ import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { createSocketServer } from './config/socket.js';
 import { cleanupStaleChatSessions } from './modules/chat/chat.service.js';
+import { cleanupStaleIncompleteBookings } from './modules/bookings/booking.service.js';
+import { startAiContentWorker } from './modules/ai-content/worker.js';
+import {
+  retryPendingBookingConfirmationEmails,
+  verifyBookingConfirmationEmailTransport,
+} from './modules/bookings/bookingConfirmationEmail.service.js';
 
 const app = createApp();
 const httpServer = http.createServer(app);
@@ -14,6 +20,8 @@ httpServer.listen(env.PORT, () => {
 });
 
 const CHAT_CLEANUP_INTERVAL_MS = 15 * 60 * 1000;
+const BOOKING_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+const BOOKING_EMAIL_RETRY_INTERVAL_MS = 60 * 1000;
 
 async function runChatCleanup() {
   try {
@@ -26,3 +34,29 @@ async function runChatCleanup() {
 
 runChatCleanup();
 setInterval(runChatCleanup, CHAT_CLEANUP_INTERVAL_MS).unref();
+
+async function runBookingCleanup() {
+  try {
+    const result = await cleanupStaleIncompleteBookings({ olderThanHours: 24 });
+    if (result.deleted) console.log('Stale incomplete booking cleanup completed', result);
+  } catch (error) {
+    console.error('Stale incomplete booking cleanup failed', error.message);
+  }
+}
+
+runBookingCleanup();
+setInterval(runBookingCleanup, BOOKING_CLEANUP_INTERVAL_MS).unref();
+
+async function runBookingEmailRetry() {
+  try {
+    const result = await retryPendingBookingConfirmationEmails();
+    if (result.attempted) console.log('Booking confirmation email retry completed', result);
+  } catch (error) {
+    console.error('Booking confirmation email retry failed', error.message);
+  }
+}
+
+runBookingEmailRetry();
+setInterval(runBookingEmailRetry, BOOKING_EMAIL_RETRY_INTERVAL_MS).unref();
+void verifyBookingConfirmationEmailTransport();
+startAiContentWorker();

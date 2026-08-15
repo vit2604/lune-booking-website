@@ -19,6 +19,8 @@ import { calculateTotalPrice } from '../../utils/priceUtils.js';
 import { createHttpError } from '../../utils/responseUtils.js';
 import { cleanText } from '../../utils/sanitizeUtils.js';
 import { assertPhoneVerification, consumePhoneVerification } from '../phone-verifications/phoneVerification.service.js';
+import { notifyNewBooking } from './bookingNotification.service.js';
+import { sendBookingConfirmationEmailIfNeeded } from './bookingConfirmationEmail.service.js';
 
 const bookingInclude = {
   room: { include: { images: true, ratePeriods: true } },
@@ -205,6 +207,7 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
   if (booking?.bookingStatus === 'CANCELLED') return booking;
   if (!forceConfirm && !canSyncBookingToBluejay(booking)) return booking;
   if (booking.bluejaySyncStatus === 'SYNCED' && booking.bookingStatus === 'CONFIRMED') {
+    await sendBookingConfirmationEmailIfNeeded(booking);
     return booking;
   }
 
@@ -257,7 +260,7 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
     if (createdStatus !== 'confirm') {
       await confirmBluejayBooking({ booking: currentBooking });
     }
-    return prisma.booking.update({
+    const confirmedBooking = await prisma.booking.update({
       where: { id: booking.id },
       data: {
         bookingStatus: 'CONFIRMED',
@@ -267,6 +270,8 @@ export async function syncBookingToBluejay(booking, { forceConfirm = false } = {
       },
       include: bookingInclude,
     });
+    await sendBookingConfirmationEmailIfNeeded(confirmedBooking);
+    return confirmedBooking;
   } catch (error) {
     const message = normalizeSyncError(error);
     await prisma.booking
@@ -494,7 +499,9 @@ export async function createBooking(input) {
   await consumePhoneVerification(phoneVerification);
 
   const syncedBooking = await syncBookingToBluejay(booking);
-  return publicBookingSummary(syncedBooking || booking);
+  const finalBooking = syncedBooking || booking;
+  void notifyNewBooking(finalBooking);
+  return publicBookingSummary(finalBooking);
 }
 
 export async function getPublicBooking(bookingCode) {
@@ -552,7 +559,13 @@ export async function updateBookingStatus(bookingCode, bookingStatus) {
     if (!booking) throw createHttpError(404, 'Booking not found');
     return syncBookingToBluejay(booking, { forceConfirm: true });
   }
-  return prisma.booking.update({ where: { bookingCode }, data: { bookingStatus }, include: bookingInclude });
+  const booking = await prisma.booking.update({
+    where: { bookingCode },
+    data: { bookingStatus },
+    include: bookingInclude,
+  });
+  await sendBookingConfirmationEmailIfNeeded(booking);
+  return booking;
 }
 
 export async function updatePaymentStatus(bookingCode, paymentStatus) {
@@ -598,4 +611,62 @@ export async function deleteBooking(bookingCode, options = {}) {
   });
 
   return { bookingCode, deleted: true };
+}
+
+async function deleteBookingsAndOrphanGuests(where) {
+  const candidates = await prisma.booking.findMany({
+    where,
+    select: { id: true, guestId: true },
+  });
+  if (!candidates.length) return { deleted: 0 };
+
+  const bookingIds = candidates.map((booking) => booking.id);
+  const guestIds = [...new Set(candidates.map((booking) => booking.guestId))];
+  return prisma.$transaction(async (tx) => {
+    const result = await tx.booking.deleteMany({ where: { id: { in: bookingIds } } });
+    await tx.guest.deleteMany({
+      where: {
+        id: { in: guestIds },
+        bookings: { none: {} },
+      },
+    });
+    return { deleted: result.count };
+  });
+}
+
+const neverPaidWhere = {
+  paymentStatus: { in: ['PENDING', 'FAILED'] },
+  payments: { none: { status: 'PAID' } },
+};
+
+export async function cleanupStaleIncompleteBookings({ olderThanHours = 24 } = {}) {
+  const cutoff = new Date(Date.now() - Math.max(1, Number(olderThanHours || 24)) * 60 * 60 * 1000);
+  return deleteBookingsAndOrphanGuests({
+    bookingStatus: 'RECEIVED',
+    bluejayBookingCode: null,
+    createdAt: { lt: cutoff },
+    ...neverPaidWhere,
+    OR: [
+      { paymentMethod: null },
+      { paymentStatus: 'FAILED' },
+    ],
+  });
+}
+
+export async function deleteOldSafeBookings({ before = new Date() } = {}) {
+  const cutoff = toHotelDate(before);
+  const where = {
+    checkOut: { lt: cutoff },
+    ...neverPaidWhere,
+    OR: [
+      { bluejayBookingCode: null },
+      { bookingStatus: 'CANCELLED' },
+    ],
+  };
+  const [eligible, allOld] = await Promise.all([
+    prisma.booking.count({ where }),
+    prisma.booking.count({ where: { checkOut: { lt: cutoff } } }),
+  ]);
+  const result = await deleteBookingsAndOrphanGuests(where);
+  return { ...result, protected: Math.max(0, allOld - eligible), cutoff };
 }

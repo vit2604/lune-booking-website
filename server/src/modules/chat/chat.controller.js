@@ -11,6 +11,7 @@ import {
   markAsRead,
   reopenChatSession,
   sendAdminMessage,
+  sendGuestImage,
   sendGuestMessage,
 } from './chat.service.js';
 import { notifyGuestChatMessage } from './chatNotification.service.js';
@@ -48,6 +49,14 @@ export async function publicSendMessage(req, res) {
   emitChatMessage(req, req.params.sessionCode, message);
   emitSessionUpdate(req, 'admin:unread_count', { sessionCode: req.params.sessionCode });
   sendSuccess(res, message, 'Message sent', 201);
+}
+
+export async function publicSendImage(req, res) {
+  const message = await sendGuestImage(req.params.sessionCode, req.file, req.body);
+  void notifyGuestChatMessage({ ...message, sessionCode: req.params.sessionCode });
+  emitChatMessage(req, req.params.sessionCode, message);
+  emitSessionUpdate(req, 'admin:unread_count', { sessionCode: req.params.sessionCode });
+  sendSuccess(res, message, 'Image sent', 201);
 }
 
 export async function publicRead(req, res) {

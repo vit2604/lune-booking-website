@@ -123,7 +123,7 @@ export default function AdminMessages() {
     messages.forEach((message) => {
       const key = message.id || message.createdAt;
       const isGuest = message.senderType === 'GUEST' || message.sender === 'guest';
-      if (!key || !isGuest || translatedMessages[key]) return;
+      if (!key || !isGuest || message.attachmentData || translatedMessages[key]) return;
       translateForAdmin(message.message || message.text || '', selected?.language || 'auto').then((result) => {
         setTranslatedMessages((current) => ({ ...current, [key]: result }));
       });
@@ -289,11 +289,17 @@ export default function AdminMessages() {
                   const isAdmin = message.senderType === 'ADMIN';
                   const translation = translatedMessages[message.id || message.createdAt];
                   const originalText = message.message || message.text;
+                  const hasImage = Boolean(message.attachmentData);
                   const primaryText = !isAdmin && translation?.translated ? translation.translatedText : originalText;
                   return (
                     <div key={message.id || message.createdAt} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[78%] rounded-lg px-3 py-2 text-sm leading-6 ${isAdmin ? 'bg-lune-ink text-white' : 'bg-white text-stone-700'}`}>
-                        <p>{primaryText}</p>
+                        {hasImage ? (
+                          <a href={message.attachmentData} target="_blank" rel="noreferrer" aria-label="Open guest image">
+                            <img className="max-h-96 w-full rounded-md object-contain" src={message.attachmentData} alt={message.attachmentName || 'Guest attachment'} />
+                          </a>
+                        ) : null}
+                        {primaryText && (!hasImage || primaryText !== '[Image]') ? <p className={hasImage ? 'mt-2' : ''}>{primaryText}</p> : null}
                         {!isAdmin && translation?.translated ? (
                           <p className="mt-2 rounded-md bg-lune-cream px-2 py-1 text-xs font-medium text-lune-ink">
                             Original: {originalText}

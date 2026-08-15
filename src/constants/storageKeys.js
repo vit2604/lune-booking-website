@@ -18,6 +18,7 @@ export const storageKeys = {
   adminLoggedIn: 'lune_admin_logged_in',
   adminToken: 'lune_admin_token',
   adminUser: 'lune_admin_user',
+  adminDeviceKey: 'lune_admin_device_key',
 };
 
 export const legacyStorageKeys = {

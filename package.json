@@ -16,6 +16,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "quality:check": "npm run test && npm run build",
+    "ai-content:start": "powershell -ExecutionPolicy Bypass -File ./scripts/ai-content/start.ps1",
+    "ai-content:stop": "powershell -ExecutionPolicy Bypass -File ./scripts/ai-content/stop.ps1",
+    "ai-content:check": "powershell -ExecutionPolicy Bypass -File ./scripts/ai-content/check-system.ps1",
+    "ai-content:backup": "powershell -ExecutionPolicy Bypass -File ./scripts/ai-content/backup.ps1",
+    "ai-content:install-scheduler": "powershell -ExecutionPolicy Bypass -File ./scripts/ai-content/install-scheduler.ps1",
+    "ai-content:uninstall-scheduler": "powershell -ExecutionPolicy Bypass -File ./scripts/ai-content/uninstall-scheduler.ps1",
     "preview": "vite preview"
   },
   "dependencies": {

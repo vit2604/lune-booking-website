@@ -39,7 +39,7 @@ export const defaultBrandingSettings = {
     'Boutique hotel and apartment stays near My Khe Beach with kitchen-equipped rooms, free Wi-Fi, daily housekeeping, and direct Lune support.',
   whyBookDirect: [
     'Official Lune direct booking',
-    'Secure payment placeholder',
+    'Secure direct support',
     'No account required',
     'Direct support from our team',
   ],
@@ -57,9 +57,9 @@ export const defaultBrandingSettings = {
 
 export const defaultPaymentSettings = {
   ...defaultPaymentConfig,
-  enableBankTransfer: true,
-  bankName: 'PLACEHOLDER_BANK_NAME',
-  bankAccountNumber: 'PLACEHOLDER_ACCOUNT_NUMBER',
+  enableBankTransfer: false,
+  bankName: '',
+  bankAccountNumber: '',
   bankAccountName: 'LUNE BOUTIQUE HOTEL',
   transferContentTemplate: 'Dang Trung Vuong chuyen tien',
   qrImageUrl: '',
@@ -94,7 +94,7 @@ export const defaultWebsiteSettings = {
   contactEmail: brand.email,
   notificationEmail: '',
   directBookingEnabled: true,
-  availabilityMockEnabled: true,
+  availabilityMockEnabled: false,
   maintenanceMessage:
     'Lune Boutique Hotel & Apartment Da Nang is updating the booking website. Please contact us directly for reservations.',
 };
