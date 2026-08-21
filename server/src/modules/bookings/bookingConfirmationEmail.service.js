@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import { resolve4 } from 'node:dns/promises';
 import { env } from '../../config/env.js';
 import { prisma } from '../../config/prisma.js';
 import { getAllSettings } from '../settings/setting.service.js';
@@ -7,8 +6,13 @@ import { getAllSettings } from '../settings/setting.service.js';
 const CLAIM_TIMEOUT_MS = 10 * 60 * 1000;
 const RETRY_BATCH_SIZE = 10;
 
-let transporter;
-let transporterPromise;
+const mimeTransporter = nodemailer.createTransport({
+  streamTransport: true,
+  buffer: true,
+  newline: 'unix',
+});
+let gmailAccessToken;
+let gmailAccessTokenExpiresAt = 0;
 let missingConfigWasLogged = false;
 
 const escapeHtml = (value) => String(value ?? '')
@@ -122,49 +126,81 @@ function emailIsConfigured() {
   return Boolean(
     env.BOOKING_CONFIRMATION_EMAIL_ENABLED
     && env.SMTP_USER
-    && env.SMTP_APP_PASSWORD,
+    && env.GMAIL_OAUTH_CLIENT_ID
+    && env.GMAIL_OAUTH_CLIENT_SECRET
+    && env.GMAIL_OAUTH_REFRESH_TOKEN,
   );
 }
 
-async function getTransporter() {
-  if (transporter) return transporter;
-  if (!transporterPromise) {
-    transporterPromise = (async () => {
-      const [smtpIpv4] = await resolve4(env.SMTP_HOST);
-      if (!smtpIpv4) throw new Error(`Could not resolve an IPv4 address for ${env.SMTP_HOST}`);
-      return nodemailer.createTransport({
-        host: smtpIpv4,
-        port: env.SMTP_PORT,
-        secure: env.SMTP_SECURE,
-        auth: { user: env.SMTP_USER, pass: env.SMTP_APP_PASSWORD.replace(/\s/g, '') },
-        tls: { servername: env.SMTP_HOST },
-        connectionTimeout: 15_000,
-        greetingTimeout: 15_000,
-        socketTimeout: 30_000,
-      });
-    })();
+function base64Url(value) {
+  return Buffer.from(value).toString('base64url');
+}
+
+async function getGmailAccessToken() {
+  if (gmailAccessToken && Date.now() < gmailAccessTokenExpiresAt - 60_000) return gmailAccessToken;
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: env.GMAIL_OAUTH_CLIENT_ID,
+      client_secret: env.GMAIL_OAUTH_CLIENT_SECRET,
+      refresh_token: env.GMAIL_OAUTH_REFRESH_TOKEN,
+      grant_type: 'refresh_token',
+    }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const payload = await response.json();
+  if (!response.ok || !payload.access_token) {
+    throw new Error(`Gmail OAuth token request failed (${response.status}): ${payload.error_description || payload.error || 'unknown error'}`);
   }
-  try {
-    transporter = await transporterPromise;
-    return transporter;
-  } catch (error) {
-    transporterPromise = null;
-    throw error;
+  gmailAccessToken = payload.access_token;
+  gmailAccessTokenExpiresAt = Date.now() + Number(payload.expires_in || 3600) * 1000;
+  return gmailAccessToken;
+}
+
+async function gmailApiRequest(path, options = {}) {
+  const accessToken = await getGmailAccessToken();
+  const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`, {
+    ...options,
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      'content-type': 'application/json',
+      ...options.headers,
+    },
+    signal: AbortSignal.timeout(20_000),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(`Gmail API request failed (${response.status}): ${payload.error?.message || 'unknown error'}`);
   }
+  return payload;
+}
+
+async function verifyGmailOAuthScope() {
+  const accessToken = await getGmailAccessToken();
+  const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  const payload = await response.json().catch(() => ({}));
+  const scopes = String(payload.scope || '').split(/\s+/);
+  if (!response.ok || !scopes.includes('https://www.googleapis.com/auth/gmail.send')) {
+    throw new Error(`Gmail OAuth verification failed (${response.status}): gmail.send scope is missing`);
+  }
+  return payload;
 }
 
 export async function verifyBookingConfirmationEmailTransport() {
   if (!emailIsConfigured()) {
-    console.warn('Booking confirmation email is disabled or Gmail SMTP credentials are missing.');
+    console.warn('Booking confirmation email is disabled or Gmail API OAuth credentials are missing.');
     return { configured: false, ready: false };
   }
 
   try {
-    await (await getTransporter()).verify();
-    console.log('Gmail SMTP is ready for booking confirmation emails.');
+    await verifyGmailOAuthScope();
+    console.log('Gmail API is ready for booking confirmation emails.', { email: env.SMTP_USER });
     return { configured: true, ready: true };
   } catch (error) {
-    console.warn('Gmail SMTP verification failed:', String(error?.message || error).slice(0, 500));
+    console.warn('Gmail API verification failed:', String(error?.message || error).slice(0, 500));
     return { configured: true, ready: false };
   }
 }
@@ -187,7 +223,7 @@ export async function sendBookingConfirmationEmailIfNeeded(booking) {
   if (!booking || booking.bookingStatus !== 'CONFIRMED' || !booking.guest?.email) return false;
   if (!emailIsConfigured()) {
     if (!missingConfigWasLogged) {
-      console.warn('Booking confirmation email is disabled or Gmail SMTP credentials are missing.');
+      console.warn('Booking confirmation email is disabled or Gmail API OAuth credentials are missing.');
       missingConfigWasLogged = true;
     }
     return false;
@@ -227,7 +263,7 @@ export async function sendBookingConfirmationEmailIfNeeded(booking) {
   try {
     const settings = await loadEmailSettings();
     const message = buildBookingConfirmationEmail(claimedBooking, settings);
-    const result = await (await getTransporter()).sendMail({
+    const result = await mimeTransporter.sendMail({
       from: { name: env.SMTP_FROM_NAME, address: env.SMTP_USER },
       replyTo: env.SMTP_USER,
       to: claimedBooking.guest.email,
@@ -237,6 +273,10 @@ export async function sendBookingConfirmationEmailIfNeeded(booking) {
       messageId: `<booking-confirmed-${claimedBooking.bookingCode}@luneboutiquedanang.com>`,
       disableFileAccess: true,
       disableUrlAccess: true,
+    });
+    const gmailMessage = await gmailApiRequest('messages/send', {
+      method: 'POST',
+      body: JSON.stringify({ raw: base64Url(result.message) }),
     });
 
     await prisma.booking.update({
@@ -250,7 +290,7 @@ export async function sendBookingConfirmationEmailIfNeeded(booking) {
     });
     console.log('Booking confirmation email sent', {
       bookingCode: claimedBooking.bookingCode,
-      messageId: result.messageId,
+      messageId: gmailMessage.id,
     });
     return true;
   } catch (error) {

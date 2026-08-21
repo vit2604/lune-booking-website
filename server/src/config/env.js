@@ -85,6 +85,9 @@ const schema = z.object({
   SMTP_USER: optionalEmail,
   SMTP_APP_PASSWORD: optionalString,
   SMTP_FROM_NAME: z.string().default('Lune Boutique Hotel & Apartment Da Nang'),
+  GMAIL_OAUTH_CLIENT_ID: optionalString,
+  GMAIL_OAUTH_CLIENT_SECRET: optionalString,
+  GMAIL_OAUTH_REFRESH_TOKEN: optionalString,
 });
 
 const parsed = schema.safeParse(process.env);
