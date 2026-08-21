@@ -11,6 +11,7 @@ const booking = {
   totalPrice: 1_430_000,
   currency: 'VND',
   paymentStatus: 'PAID',
+  payments: [{ status: 'PAID', amount: 1_430_000, rawPayloadJson: { paymentPurpose: 'full' } }],
   guest: { fullName: 'Nguyen <Van> A', email: 'guest@example.com' },
   roomItems: [{ room: { name: 'One-bedroom Apartment' }, quantity: 1 }],
 };
@@ -32,7 +33,8 @@ describe('booking confirmation email', () => {
     expect(email.html).toContain('One-bedroom Apartment');
     expect(email.html).toContain('1,430,000');
     expect(email.html).toContain('1,430,000 VND');
-    expect(email.text).toContain('Paid / Đã thanh toán');
+    expect(email.text).toContain('Fully paid / Đã thanh toán toàn bộ');
+    expect(email.text).toContain('Amount paid / Số tiền đã thanh toán: 1,430,000 VND');
     expect(`${email.subject}\n${email.html}\n${email.text}`).not.toMatch(/Ã|Â|Ä|Æ|â€|áº|á»/);
   });
 
@@ -40,5 +42,23 @@ describe('booking confirmation email', () => {
     const email = buildBookingConfirmationEmail(booking, settings);
     expect(email.html).toContain('Nguyen &lt;Van&gt; A');
     expect(email.html).not.toContain('Nguyen <Van> A');
+  });
+
+  it('shows the paid deposit, percentage, and remaining balance', () => {
+    const email = buildBookingConfirmationEmail({
+      ...booking,
+      totalPrice: 1_000_000,
+      payments: [{
+        status: 'PAID',
+        amount: 300_000,
+        rawPayloadJson: { paymentPurpose: 'deposit', depositPercent: 30, balanceAmount: 700_000 },
+      }],
+    }, settings);
+
+    expect(email.html).toContain('Deposit paid (30%) / Tiền cọc đã thanh toán');
+    expect(email.html).toContain('300,000 VND');
+    expect(email.html).toContain('Balance due at property / Còn lại thanh toán tại khách sạn');
+    expect(email.html).toContain('700,000 VND');
+    expect(email.text).toContain('Deposit paid 30% / Đã thanh toán tiền cọc 30%');
   });
 });

@@ -51,13 +51,33 @@ function bookingRooms(booking) {
   return [{ name: booking.room?.name || 'Room', quantity: 1 }];
 }
 
-function paymentLabel(status) {
-  return {
-    PAID: 'Paid / Đã thanh toán',
+function paymentSummary(booking) {
+  const total = Math.max(0, Number(booking.totalPrice || 0));
+  const paidPayments = (booking.payments || []).filter(
+    (payment) => payment.status === 'PAID' && Number(payment.amount || 0) > 0,
+  );
+  const paidAmount = paidPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const remainingAmount = Math.max(0, total - paidAmount);
+  const isDeposit = paidAmount > 0 && paidAmount < total;
+  const depositPayment = [...paidPayments]
+    .reverse()
+    .find((payment) => payment.rawPayloadJson?.paymentPurpose === 'deposit');
+  const storedPercent = Number(depositPayment?.rawPayloadJson?.depositPercent);
+  const calculatedPercent = total > 0 ? Math.round((paidAmount / total) * 100) : 0;
+  const depositPercent = isDeposit
+    ? (Number.isFinite(storedPercent) && storedPercent > 0 ? storedPercent : calculatedPercent)
+    : null;
+
+  let status = {
     PAY_AT_PROPERTY: 'Pay at property / Thanh toán tại khách sạn',
     PENDING: 'Pending / Đang chờ thanh toán',
     REFUNDED: 'Refunded / Đã hoàn tiền',
-  }[status] || String(status || 'Pending');
+    FAILED: 'Failed / Thanh toán thất bại',
+  }[booking.paymentStatus] || String(booking.paymentStatus || 'Pending');
+  if (paidAmount >= total && total > 0) status = 'Fully paid / Đã thanh toán toàn bộ';
+  if (isDeposit) status = `Deposit paid ${depositPercent}% / Đã thanh toán tiền cọc ${depositPercent}%`;
+
+  return { paidAmount, remainingAmount, isDeposit, depositPercent, status };
 }
 
 function safeSettings(settings = {}) {
@@ -81,10 +101,13 @@ export function buildBookingConfirmationEmail(booking, settings = {}) {
   const roomText = rooms.map((room) => `${room.name} × ${room.quantity}`).join(', ');
   const subject = `Booking confirmed | Xác nhận đặt phòng – ${booking.bookingCode}`;
   const total = formatMoney(booking.totalPrice, booking.currency || 'VND');
+  const payment = paymentSummary(booking);
+  const amountPaid = formatMoney(payment.paidAmount, booking.currency || 'VND');
+  const remaining = formatMoney(payment.remainingAmount, booking.currency || 'VND');
   const checkIn = formatDate(booking.checkIn);
   const checkOut = formatDate(booking.checkOut);
   const guests = `${Number(booking.adults || booking.guests || 1)} adult(s), ${Number(booking.children || 0)} child(ren)`;
-  const status = paymentLabel(booking.paymentStatus);
+  const status = payment.status;
   const preheader = `Your stay at Lune Boutique has been confirmed. Booking ${booking.bookingCode}.`;
 
   const html = `<!doctype html>
@@ -99,7 +122,7 @@ export function buildBookingConfirmationEmail(booking, settings = {}) {
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td width="50%" valign="top" style="padding:0 12px 16px 0"><div style="font-size:11px;color:#82796d">CHECK-IN</div><div style="margin-top:5px;font-size:15px;font-weight:700">${escapeHtml(checkIn)}</div><div style="margin-top:4px;font-size:13px;color:#6c665e">${escapeHtml(site.checkIn)}</div></td><td width="50%" valign="top" style="padding:0 0 16px 12px"><div style="font-size:11px;color:#82796d">CHECK-OUT</div><div style="margin-top:5px;font-size:15px;font-weight:700">${escapeHtml(checkOut)}</div><div style="margin-top:4px;font-size:13px;color:#6c665e">${escapeHtml(site.checkOut)}</div></td></tr>
 <tr><td width="50%" valign="top" style="padding:12px 12px 0 0;border-top:1px solid #e6dfd3"><div style="font-size:11px;color:#82796d">ROOM</div><div style="margin-top:5px;font-size:15px;font-weight:700;line-height:1.4">${escapeHtml(roomText)}</div></td><td width="50%" valign="top" style="padding:12px 0 0 12px;border-top:1px solid #e6dfd3"><div style="font-size:11px;color:#82796d">GUESTS / STAY</div><div style="margin-top:5px;font-size:15px;font-weight:700">${escapeHtml(guests)} · ${Number(booking.nights || 0)} night(s)</div></td></tr></table>
 </td></tr></table></td></tr>
-<tr><td style="padding:4px 38px 22px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td style="padding:12px 0;font-size:14px;color:#6c665e;border-bottom:1px solid #ece7df">Total</td><td align="right" style="padding:12px 0;font-size:17px;font-weight:700;color:#20312c;border-bottom:1px solid #ece7df">${escapeHtml(total)}</td></tr><tr><td style="padding:12px 0;font-size:14px;color:#6c665e">Payment status</td><td align="right" style="padding:12px 0;font-size:14px;font-weight:700;color:#2f6b45">${escapeHtml(status)}</td></tr></table></td></tr>
+<tr><td style="padding:4px 38px 22px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td style="padding:12px 0;font-size:14px;color:#6c665e;border-bottom:1px solid #ece7df">Booking total / Tổng tiền phòng</td><td align="right" style="padding:12px 0;font-size:17px;font-weight:700;color:#20312c;border-bottom:1px solid #ece7df">${escapeHtml(total)}</td></tr><tr><td style="padding:12px 0;font-size:14px;color:#6c665e;border-bottom:1px solid #ece7df">${payment.isDeposit ? `Deposit paid (${payment.depositPercent}%) / Tiền cọc đã thanh toán` : 'Amount paid / Số tiền đã thanh toán'}</td><td align="right" style="padding:12px 0;font-size:16px;font-weight:700;color:#2f6b45;border-bottom:1px solid #ece7df">${escapeHtml(amountPaid)}</td></tr>${payment.isDeposit ? `<tr><td style="padding:12px 0;font-size:14px;color:#6c665e;border-bottom:1px solid #ece7df">Balance due at property / Còn lại thanh toán tại khách sạn</td><td align="right" style="padding:12px 0;font-size:16px;font-weight:700;color:#8a5b24;border-bottom:1px solid #ece7df">${escapeHtml(remaining)}</td></tr>` : ''}<tr><td style="padding:12px 0;font-size:14px;color:#6c665e">Payment status / Trạng thái thanh toán</td><td align="right" style="padding:12px 0;font-size:14px;font-weight:700;color:#2f6b45">${escapeHtml(status)}</td></tr></table></td></tr>
 <tr><td style="padding:0 38px 34px"><div style="padding:18px 20px;background:#fbf8f3;border-left:4px solid #b89a6a;border-radius:8px;font-size:14px;line-height:1.65;color:#625b51">Please keep your booking code for check-in. To request airport pickup, early check-in, or a booking change, contact Lune directly.</div><h2 style="margin:28px 0 9px;font-family:Georgia,serif;font-size:21px;color:#20312c">Xác nhận đặt phòng</h2><p style="margin:0;font-size:14px;line-height:1.7;color:#5f5a52">Đặt phòng của bạn tại Lune Boutique đã được xác nhận. Vui lòng lưu mã <strong>${escapeHtml(booking.bookingCode)}</strong> để làm thủ tục nhận phòng. ${escapeHtml(site.checkIn)} và ${escapeHtml(site.checkOut)}.</p></td></tr>
 <tr><td style="background:#20312c;padding:26px 38px;text-align:center;color:#eee8de"><div style="font-size:13px;line-height:1.7">${escapeHtml(site.address)}</div><div style="font-size:13px;line-height:1.7">${escapeHtml(site.phone)} · ${escapeHtml(site.email)}</div><div style="margin-top:12px;font-size:11px;color:#bfb8ad">This is an automated confirmation for your direct website booking.</div></td></tr>
 </table></td></tr></table></body></html>`;
@@ -116,8 +139,10 @@ export function buildBookingConfirmationEmail(booking, settings = {}) {
     `Room: ${roomText}`,
     `Guests: ${guests}`,
     `Stay: ${Number(booking.nights || 0)} night(s)`,
-    `Total: ${total}`,
-    `Payment: ${status}`,
+    `Booking total / Tổng tiền phòng: ${total}`,
+    `${payment.isDeposit ? `Deposit paid (${payment.depositPercent}%) / Tiền cọc đã thanh toán` : 'Amount paid / Số tiền đã thanh toán'}: ${amountPaid}`,
+    ...(payment.isDeposit ? [`Balance due at property / Còn lại thanh toán tại khách sạn: ${remaining}`] : []),
+    `Payment status / Trạng thái thanh toán: ${status}`,
     '',
     `Đặt phòng của bạn tại Lune Boutique đã được xác nhận. Vui lòng lưu mã ${booking.bookingCode} để làm thủ tục nhận phòng.`,
     '',
