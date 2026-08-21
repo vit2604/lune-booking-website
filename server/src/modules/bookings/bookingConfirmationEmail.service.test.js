@@ -57,8 +57,25 @@ describe('booking confirmation email', () => {
 
     expect(email.html).toContain('Deposit paid (30%) / Tiền cọc đã thanh toán');
     expect(email.html).toContain('300,000 VND');
-    expect(email.html).toContain('Balance due at property / Còn lại thanh toán tại khách sạn');
+    expect(email.html).toContain('Amount due at property / Còn lại thanh toán tại khách sạn');
     expect(email.html).toContain('700,000 VND');
     expect(email.text).toContain('Deposit paid 30% / Đã thanh toán tiền cọc 30%');
+  });
+
+  it('shows the balance and method for an international card paid at the property', () => {
+    const email = buildBookingConfirmationEmail({
+      ...booking,
+      totalPrice: 1_050_000,
+      paymentStatus: 'PAY_AT_PROPERTY',
+      paymentMethod: 'creditCard',
+      payments: [],
+    }, settings);
+
+    expect(email.html).toContain('Amount paid / Số tiền đã thanh toán');
+    expect(email.html).toContain('0 VND');
+    expect(email.html).toContain('Amount due at property / Còn lại thanh toán tại khách sạn');
+    expect(email.html).toContain('1,050,000 VND');
+    expect(email.html).toContain('International card at property (+5%)');
+    expect(email.text).toContain('Pay at property / Thanh toán tại khách sạn');
   });
 });
