@@ -12,7 +12,7 @@ export const createPaymentSchema = {
           method: z.enum(paymentMethodKeys),
           amount: z.number().int().positive().optional(),
           paymentPurpose: z.enum(['deposit', 'full']).optional(),
-          depositPercent: z.number().min(0).max(100).optional(),
+          depositPercent: z.number().min(30).max(100).optional(),
           balanceAmount: z.number().int().min(0).optional(),
           grandTotal: z.number().int().positive().optional(),
         }),

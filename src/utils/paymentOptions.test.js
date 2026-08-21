@@ -3,6 +3,7 @@ import {
   clampDepositPercent,
   computePaymentBreakdown,
   filterPaymentChoicesForGuest,
+  getVisiblePaymentChoices,
   isVietnameseGuest,
   paymentChoices,
 } from './paymentOptions.js';
@@ -67,13 +68,40 @@ describe('guest payment choices', () => {
     expect(isVietnameseGuest({ country: 'France', phoneCode: '+33 France' })).toBe(false);
   });
 
-  it('hides cash but keeps card fallback for Vietnamese guests', () => {
+  it('hides cash and card payments for Vietnamese guests', () => {
     const choices = filterPaymentChoicesForGuest(paymentChoices, { country: 'Vietnam' }).map((choice) => choice.id);
-    expect(choices).toEqual(['payos', 'deposit', 'card']);
+    expect(choices).toEqual(['payos', 'deposit']);
   });
 
   it('shows QR payment, cash, and international card for foreign guests', () => {
     const choices = filterPaymentChoicesForGuest(paymentChoices, { country: 'United States' }).map((choice) => choice.id);
+    expect(choices).toEqual(['payos', 'cash', 'card']);
+  });
+
+  it('shows a PayOS-backed deposit for Vietnamese guests when manual bank transfer is disabled', () => {
+    const methods = [
+      { key: 'cashAtProperty', enabled: true, visibleForGuests: true },
+      { key: 'bankTransfer', enabled: false, visibleForGuests: false },
+      { key: 'vietQr', enabled: true, visibleForGuests: true },
+      { key: 'creditCard', enabled: true, visibleForGuests: true },
+    ];
+
+    const choices = getVisiblePaymentChoices(paymentChoices, methods, { country: 'Vietnam' }).map((choice) => choice.id);
+    expect(choices).toEqual(['payos', 'deposit']);
+  });
+
+  it('keeps cash and card for foreign guests without exposing the deposit option', () => {
+    const methods = [
+      { key: 'cashAtProperty', enabled: true, visibleForGuests: true },
+      { key: 'bankTransfer', enabled: false, visibleForGuests: false },
+      { key: 'vietQr', enabled: true, visibleForGuests: true },
+      { key: 'creditCard', enabled: true, visibleForGuests: true },
+    ];
+
+    const choices = getVisiblePaymentChoices(paymentChoices, methods, {
+      country: 'United States',
+      phoneCode: '+1 United States/Canada',
+    }).map((choice) => choice.id);
     expect(choices).toEqual(['payos', 'cash', 'card']);
   });
 });
