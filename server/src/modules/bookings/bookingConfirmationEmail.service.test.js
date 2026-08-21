@@ -16,7 +16,7 @@ const booking = {
 };
 
 const settings = {
-  branding: { address: '92-94 Tháº¡ch Lam, ÄÃ  Náºµng' },
+  branding: { address: '92-94 Thạch Lam, Đà Nẵng' },
   contact: { phone: '+84 867 802 229', email: 'luneboutique92tl@gmail.com' },
   policies: { checkIn: 'Check-in from 14:00', checkOut: 'Check-out before 12:00' },
 };
@@ -27,10 +27,13 @@ describe('booking confirmation email', () => {
 
     expect(email.subject).toContain('LUNE-260813-ABCD');
     expect(email.html).toContain('BOOKING CONFIRMED');
-    expect(email.html).toContain('XÃ¡c nháº­n Ä‘áº·t phÃ²ng');
+    expect(email.subject).toBe('Booking confirmed | Xác nhận đặt phòng – LUNE-260813-ABCD');
+    expect(email.html).toContain('Xác nhận đặt phòng');
     expect(email.html).toContain('One-bedroom Apartment');
     expect(email.html).toContain('1,430,000');
-    expect(email.text).toContain('Paid / ÄÃ£ thanh toÃ¡n');
+    expect(email.html).toContain('1,430,000 VND');
+    expect(email.text).toContain('Paid / Đã thanh toán');
+    expect(`${email.subject}\n${email.html}\n${email.text}`).not.toMatch(/Ã|Â|Ä|Æ|â€|áº|á»/);
   });
 
   it('escapes guest-controlled values in HTML', () => {
@@ -39,4 +42,3 @@ describe('booking confirmation email', () => {
     expect(email.html).not.toContain('Nguyen <Van> A');
   });
 });
-

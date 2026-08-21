@@ -22,11 +22,17 @@ const escapeHtml = (value) => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
-const formatMoney = (value, currency = 'VND') => new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency,
-  maximumFractionDigits: currency === 'VND' ? 0 : 2,
-}).format(Number(value || 0));
+const formatMoney = (value, currency = 'VND') => {
+  const normalizedCurrency = String(currency || 'VND').toUpperCase();
+  if (normalizedCurrency === 'VND') {
+    return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(value || 0))} VND`;
+  }
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: normalizedCurrency,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+};
 
 const formatDate = (value) => new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Asia/Ho_Chi_Minh',
@@ -47,10 +53,10 @@ function bookingRooms(booking) {
 
 function paymentLabel(status) {
   return {
-    PAID: 'Paid / ÄÃ£ thanh toÃ¡n',
-    PAY_AT_PROPERTY: 'Pay at property / Thanh toÃ¡n táº¡i khÃ¡ch sáº¡n',
-    PENDING: 'Pending / Äang chá» thanh toÃ¡n',
-    REFUNDED: 'Refunded / ÄÃ£ hoÃ n tiá»n',
+    PAID: 'Paid / Đã thanh toán',
+    PAY_AT_PROPERTY: 'Pay at property / Thanh toán tại khách sạn',
+    PENDING: 'Pending / Đang chờ thanh toán',
+    REFUNDED: 'Refunded / Đã hoàn tiền',
   }[status] || String(status || 'Pending');
 }
 
@@ -60,7 +66,7 @@ function safeSettings(settings = {}) {
   const policies = settings.policies || {};
   return {
     hotelName: branding.hotelName || 'Lune Boutique Hotel & Apartment Da Nang',
-    address: branding.address || '92-94 Tháº¡ch Lam, PhÆ°á»ng An Háº£i, Quáº­n SÆ¡n TrÃ , ÄÃ  Náºµng, Viá»‡t Nam',
+    address: branding.address || '92-94 Thạch Lam, Phường An Hải, Quận Sơn Trà, Đà Nẵng, Việt Nam',
     phone: contact.phone || branding.phone || '+84 867 802 229',
     email: contact.email || branding.email || env.SMTP_USER || '',
     checkIn: policies.checkIn || 'Check-in from 14:00',
@@ -72,8 +78,8 @@ export function buildBookingConfirmationEmail(booking, settings = {}) {
   const site = safeSettings(settings);
   const guestName = booking.guest?.fullName || 'Guest';
   const rooms = bookingRooms(booking);
-  const roomText = rooms.map((room) => `${room.name} Ã— ${room.quantity}`).join(', ');
-  const subject = `Booking confirmed | XÃ¡c nháº­n Ä‘áº·t phÃ²ng â€“ ${booking.bookingCode}`;
+  const roomText = rooms.map((room) => `${room.name} × ${room.quantity}`).join(', ');
+  const subject = `Booking confirmed | Xác nhận đặt phòng – ${booking.bookingCode}`;
   const total = formatMoney(booking.totalPrice, booking.currency || 'VND');
   const checkIn = formatDate(booking.checkIn);
   const checkOut = formatDate(booking.checkOut);
@@ -91,15 +97,15 @@ export function buildBookingConfirmationEmail(booking, settings = {}) {
 <tr><td style="padding:40px 38px 18px"><div style="display:inline-block;padding:7px 12px;border-radius:999px;background:#e9f4ed;color:#2f6b45;font-size:12px;font-weight:700;letter-spacing:.5px">BOOKING CONFIRMED</div><h1 style="margin:18px 0 12px;font-family:Georgia,serif;font-size:30px;line-height:1.25;font-weight:500;color:#20312c">Your stay is confirmed</h1><p style="margin:0;font-size:16px;line-height:1.7;color:#5f5a52">Dear ${escapeHtml(guestName)},</p><p style="margin:8px 0 0;font-size:16px;line-height:1.7;color:#5f5a52">Thank you for choosing Lune Boutique. We are pleased to confirm your reservation and look forward to welcoming you to Da Nang.</p></td></tr>
 <tr><td style="padding:18px 38px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f4ee;border:1px solid #e6dfd3;border-radius:12px"><tr><td style="padding:22px 24px;border-bottom:1px solid #e6dfd3"><div style="font-size:11px;letter-spacing:1.2px;color:#82796d">BOOKING CODE</div><div style="margin-top:6px;font-size:23px;font-weight:700;color:#20312c;letter-spacing:1px">${escapeHtml(booking.bookingCode)}</div></td></tr><tr><td style="padding:20px 24px">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td width="50%" valign="top" style="padding:0 12px 16px 0"><div style="font-size:11px;color:#82796d">CHECK-IN</div><div style="margin-top:5px;font-size:15px;font-weight:700">${escapeHtml(checkIn)}</div><div style="margin-top:4px;font-size:13px;color:#6c665e">${escapeHtml(site.checkIn)}</div></td><td width="50%" valign="top" style="padding:0 0 16px 12px"><div style="font-size:11px;color:#82796d">CHECK-OUT</div><div style="margin-top:5px;font-size:15px;font-weight:700">${escapeHtml(checkOut)}</div><div style="margin-top:4px;font-size:13px;color:#6c665e">${escapeHtml(site.checkOut)}</div></td></tr>
-<tr><td width="50%" valign="top" style="padding:12px 12px 0 0;border-top:1px solid #e6dfd3"><div style="font-size:11px;color:#82796d">ROOM</div><div style="margin-top:5px;font-size:15px;font-weight:700;line-height:1.4">${escapeHtml(roomText)}</div></td><td width="50%" valign="top" style="padding:12px 0 0 12px;border-top:1px solid #e6dfd3"><div style="font-size:11px;color:#82796d">GUESTS / STAY</div><div style="margin-top:5px;font-size:15px;font-weight:700">${escapeHtml(guests)} Â· ${Number(booking.nights || 0)} night(s)</div></td></tr></table>
+<tr><td width="50%" valign="top" style="padding:12px 12px 0 0;border-top:1px solid #e6dfd3"><div style="font-size:11px;color:#82796d">ROOM</div><div style="margin-top:5px;font-size:15px;font-weight:700;line-height:1.4">${escapeHtml(roomText)}</div></td><td width="50%" valign="top" style="padding:12px 0 0 12px;border-top:1px solid #e6dfd3"><div style="font-size:11px;color:#82796d">GUESTS / STAY</div><div style="margin-top:5px;font-size:15px;font-weight:700">${escapeHtml(guests)} · ${Number(booking.nights || 0)} night(s)</div></td></tr></table>
 </td></tr></table></td></tr>
 <tr><td style="padding:4px 38px 22px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td style="padding:12px 0;font-size:14px;color:#6c665e;border-bottom:1px solid #ece7df">Total</td><td align="right" style="padding:12px 0;font-size:17px;font-weight:700;color:#20312c;border-bottom:1px solid #ece7df">${escapeHtml(total)}</td></tr><tr><td style="padding:12px 0;font-size:14px;color:#6c665e">Payment status</td><td align="right" style="padding:12px 0;font-size:14px;font-weight:700;color:#2f6b45">${escapeHtml(status)}</td></tr></table></td></tr>
-<tr><td style="padding:0 38px 34px"><div style="padding:18px 20px;background:#fbf8f3;border-left:4px solid #b89a6a;border-radius:8px;font-size:14px;line-height:1.65;color:#625b51">Please keep your booking code for check-in. To request airport pickup, early check-in, or a booking change, contact Lune directly.</div><h2 style="margin:28px 0 9px;font-family:Georgia,serif;font-size:21px;color:#20312c">XÃ¡c nháº­n Ä‘áº·t phÃ²ng</h2><p style="margin:0;font-size:14px;line-height:1.7;color:#5f5a52">Äáº·t phÃ²ng cá»§a báº¡n táº¡i Lune Boutique Ä‘Ã£ Ä‘Æ°á»£c xÃ¡c nháº­n. Vui lÃ²ng lÆ°u mÃ£ <strong>${escapeHtml(booking.bookingCode)}</strong> Ä‘á»ƒ lÃ m thá»§ tá»¥c nháº­n phÃ²ng. ${escapeHtml(site.checkIn)} vÃ  ${escapeHtml(site.checkOut)}.</p></td></tr>
-<tr><td style="background:#20312c;padding:26px 38px;text-align:center;color:#eee8de"><div style="font-size:13px;line-height:1.7">${escapeHtml(site.address)}</div><div style="font-size:13px;line-height:1.7">${escapeHtml(site.phone)} Â· ${escapeHtml(site.email)}</div><div style="margin-top:12px;font-size:11px;color:#bfb8ad">This is an automated confirmation for your direct website booking.</div></td></tr>
+<tr><td style="padding:0 38px 34px"><div style="padding:18px 20px;background:#fbf8f3;border-left:4px solid #b89a6a;border-radius:8px;font-size:14px;line-height:1.65;color:#625b51">Please keep your booking code for check-in. To request airport pickup, early check-in, or a booking change, contact Lune directly.</div><h2 style="margin:28px 0 9px;font-family:Georgia,serif;font-size:21px;color:#20312c">Xác nhận đặt phòng</h2><p style="margin:0;font-size:14px;line-height:1.7;color:#5f5a52">Đặt phòng của bạn tại Lune Boutique đã được xác nhận. Vui lòng lưu mã <strong>${escapeHtml(booking.bookingCode)}</strong> để làm thủ tục nhận phòng. ${escapeHtml(site.checkIn)} và ${escapeHtml(site.checkOut)}.</p></td></tr>
+<tr><td style="background:#20312c;padding:26px 38px;text-align:center;color:#eee8de"><div style="font-size:13px;line-height:1.7">${escapeHtml(site.address)}</div><div style="font-size:13px;line-height:1.7">${escapeHtml(site.phone)} · ${escapeHtml(site.email)}</div><div style="margin-top:12px;font-size:11px;color:#bfb8ad">This is an automated confirmation for your direct website booking.</div></td></tr>
 </table></td></tr></table></body></html>`;
 
   const text = [
-    'BOOKING CONFIRMED / XÃC NHáº¬N Äáº¶T PHÃ’NG',
+    'BOOKING CONFIRMED / XÁC NHẬN ĐẶT PHÒNG',
     '',
     `Dear ${guestName},`,
     'Your stay at Lune Boutique has been confirmed.',
@@ -113,10 +119,10 @@ export function buildBookingConfirmationEmail(booking, settings = {}) {
     `Total: ${total}`,
     `Payment: ${status}`,
     '',
-    `Äáº·t phÃ²ng cá»§a báº¡n táº¡i Lune Boutique Ä‘Ã£ Ä‘Æ°á»£c xÃ¡c nháº­n. Vui lÃ²ng lÆ°u mÃ£ ${booking.bookingCode} Ä‘á»ƒ lÃ m thá»§ tá»¥c nháº­n phÃ²ng.`,
+    `Đặt phòng của bạn tại Lune Boutique đã được xác nhận. Vui lòng lưu mã ${booking.bookingCode} để làm thủ tục nhận phòng.`,
     '',
     site.address,
-    `${site.phone} Â· ${site.email}`,
+    `${site.phone} · ${site.email}`,
   ].join('\n');
 
   return { subject, html, text };
