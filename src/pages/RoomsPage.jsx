@@ -69,16 +69,22 @@ export default function RoomsPage() {
             adults: filters.adults,
             children: filters.children,
           },
-          { timeoutMs: 25000 },
+          // The backend may retry Bluejay once (up to ~30s), and a free Render
+          // instance can also need a short cold-start window.
+          { timeoutMs: 55000 },
         );
         if (!ignore) {
           setRooms(nextRooms);
-          setBookingError('');
+          setBookingError(
+            nextRooms.some((room) => room.availabilityStatus === 'unverified')
+              ? t('errors.apiUnavailable')
+              : '',
+          );
         }
       } catch {
-        // availability could not be verified — do not present rooms as bookable
+        // Keep the room catalogue visible. A temporary provider/network error
+        // must not look like the hotel has sold out.
         if (!ignore) {
-          setRooms([]);
           setBookingError(t('errors.apiUnavailable'));
         }
       }
@@ -244,6 +250,7 @@ export default function RoomsPage() {
                     room={room}
                     onBook={handleBook}
                     isBooking={processingRoom === room.id}
+                    isDisabled={room.availabilityStatus === 'unverified'}
                   />
                 </RevealOnScroll>
               ))}

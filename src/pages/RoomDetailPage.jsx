@@ -154,10 +154,11 @@ export default function RoomDetailPage() {
   const approxNight = getApproxPriceText(room.price, currentCurrency, currentLanguage);
   const approxTotal = getApproxPriceText(totals.total, currentCurrency, currentLanguage);
   const roomUnavailable = room.availabilityStatus === 'not_available';
+  const roomAvailabilityUnverified = room.availabilityStatus === 'unverified';
   const availableRoomQuantity = roomUnavailable ? 0 : Math.max(0, Number(room.availableQuantity ?? room.bluejay?.inventory ?? 1));
   const safeAvailabilityMessage = getGuestSafeErrorMessage(
     t,
-    availabilityError || room.availabilityReason,
+    availabilityError || (roomAvailabilityUnverified ? t('errors.apiUnavailable') : room.availabilityReason),
     t('errors.roomUnavailable'),
   );
 
@@ -206,7 +207,7 @@ export default function RoomDetailPage() {
 
     const mergedErrors = { ...nextErrors, ...availability.errors };
     const availableQuantity = availableRoomQuantity;
-    if (roomUnavailable || availabilityError) {
+    if (roomUnavailable || roomAvailabilityUnverified || availabilityError) {
       mergedErrors.availability = safeAvailabilityMessage;
     } else if (booking.quantity > availableQuantity) {
       mergedErrors.quantity = t('errors.notEnoughRooms', { count: availableQuantity });
@@ -382,7 +383,7 @@ export default function RoomDetailPage() {
               ))}
             </div>
           ) : null}
-          {roomUnavailable || availabilityError ? (
+          {roomUnavailable || roomAvailabilityUnverified || availabilityError ? (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">
               {safeAvailabilityMessage}
             </div>

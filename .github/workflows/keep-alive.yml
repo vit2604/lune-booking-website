@@ -13,3 +13,10 @@ jobs:
         run: |
           curl -fsS --retry 3 --retry-delay 10 --max-time 90 \
             https://lune-booking-api.onrender.com/api/health
+      - name: Warm Bluejay direct prices and availability
+        run: |
+          check_in=$(date -u -d '+1 day' +%F)
+          check_out=$(date -u -d '+2 days' +%F)
+          curl -fsS --retry 2 --retry-delay 10 --max-time 90 \
+            "https://lune-booking-api.onrender.com/api/rooms?lang=vi&checkIn=${check_in}&checkOut=${check_out}&guests=2&adults=2&children=0" \
+            > /dev/null

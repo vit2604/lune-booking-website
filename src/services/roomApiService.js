@@ -57,6 +57,8 @@ export async function fetchRoomWithFallback(slug, query = {}, options = {}) {
           ...data.room,
           availableQuantity: data.availability?.availableQuantity,
           bluejay: data.availability?.bluejay,
+          availabilityStatus: data.availability?.availabilityStatus,
+          availabilityReason: data.availability?.reason,
           priceSummary: data.availability?.price || data.room?.priceSummary || null,
         },
         query,

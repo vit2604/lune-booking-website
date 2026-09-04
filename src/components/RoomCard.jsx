@@ -8,7 +8,7 @@ import { getApproxPriceText } from '../utils/currencyUtils.js';
 import AmenityList from './AmenityList.jsx';
 import LuneImage from './LuneImage.jsx';
 
-export default function RoomCard({ room, onBook, isBooking = false }) {
+export default function RoomCard({ room, onBook, isBooking = false, isDisabled = false }) {
   const { t, currentLanguage } = useTranslation();
   const { currentCurrency } = useCurrency();
   const localizedRoom = getLocalizedRoom(room, currentLanguage);
@@ -70,7 +70,7 @@ export default function RoomCard({ room, onBook, isBooking = false }) {
           <button
             className="btn-gold w-full"
             type="button"
-            disabled={isBooking}
+            disabled={isBooking || isDisabled}
             onClick={() => onBook?.(room)}
           >
             {isBooking ? t('common.processing') : t('nav.bookNow')}

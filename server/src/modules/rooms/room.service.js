@@ -196,7 +196,7 @@ export async function listPublicRooms(query = {}) {
         );
         const bluejayAvailable = !bluejayRoom?.checked || bluejayRoom.available;
         available = check.available && bluejayAvailable;
-        availabilityStatus = available ? 'available' : 'not_available';
+        availabilityStatus = !bluejayRoom?.checked ? 'unverified' : available ? 'available' : 'not_available';
         unavailableReason = check.available ? bluejayRoom?.reason || '' : check.reason || '';
         availableQuantity = Number(check.availableQuantity ?? bluejayRoom?.inventory ?? (available ? 1 : 0));
       }
@@ -220,6 +220,8 @@ export async function listPublicRooms(query = {}) {
               inventory: bluejayRoom.inventory,
               ratePlanId: bluejayRoom.ratePlanId,
               ratePlanName: bluejayRoom.ratePlanName,
+              stale: Boolean(bluejayRoom.stale),
+              reason: bluejayRoom.reason || '',
             }
           : undefined,
         priceSummary: bluejayRoom?.priceSummary || localPriceSummary,
@@ -272,6 +274,8 @@ export async function getRoomAvailability(roomId, query) {
     withStayContext(calculateTotalPrice({ room, checkIn: query.checkIn, checkOut: query.checkOut }), query);
   return {
     available,
+    verified: Boolean(bluejayRoom?.checked),
+    availabilityStatus: !bluejayRoom?.checked ? 'unverified' : available ? 'available' : 'not_available',
     reason: available ? '' : validation.ok ? bluejayRoom?.reason || '' : validation.message,
     nights: price.nights,
     price,
@@ -284,6 +288,8 @@ export async function getRoomAvailability(roomId, query) {
           inventory: bluejayRoom.inventory,
           ratePlanId: bluejayRoom.ratePlanId,
           ratePlanName: bluejayRoom.ratePlanName,
+          stale: Boolean(bluejayRoom.stale),
+          reason: bluejayRoom.reason || '',
         }
       : undefined,
   };

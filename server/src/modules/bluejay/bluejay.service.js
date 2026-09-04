@@ -12,6 +12,8 @@ import { getBluejayPaymentSummary } from './bluejayPaymentUtils.js';
 const DEFAULT_MEAL_PLAN = { breakfast: false, lunch: false, dinner: false };
 const MIN_AVAILABILITY_TIMEOUT_MS = 15_000;
 const AVAILABILITY_RETRY_COUNT = 1;
+const AVAILABILITY_CACHE_MAX_AGE_MS = 20 * 60 * 1000;
+const availabilityCache = new Map();
 
 function safeJsonParse(value, fallback = {}) {
   if (!value) return fallback;
@@ -230,12 +232,33 @@ function selectMatchedRoomType(roomTypes, externalRoomId) {
   return roomTypes.map(normalizeRoomType).find((roomType) => String(roomType.id) === String(externalRoomId)) || null;
 }
 
-function selectRatePlan(roomType, roomId, externalRoomId) {
+function normalizeRatePlanLabel(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+export function selectRatePlan(roomType, roomId, externalRoomId) {
   if (!roomType) return null;
   const configuredRatePlanId = getConfiguredRatePlanId(roomId, externalRoomId);
   if (configuredRatePlanId) {
     return roomType.rates.find((rate) => String(rate.rateplan_id) === String(configuredRatePlanId)) || null;
   }
+
+  // Bluejay can change the order of rates depending on dates/promotions. The
+  // website sells the property's Direct rate, so never assume rates[0] is it.
+  const exactDirectRate = roomType.rates.find((rate) =>
+    [rate.title, rate.name, rate.rateplan_name, rate.rate_plan_name]
+      .map(normalizeRatePlanLabel)
+      .some((label) => label === 'direct'),
+  );
+  if (exactDirectRate) return exactDirectRate;
+
+  const directRate = roomType.rates.find((rate) =>
+    [rate.title, rate.name, rate.rateplan_name, rate.rate_plan_name]
+      .map(normalizeRatePlanLabel)
+      .some((label) => /(^|\W)direct(\W|$)/i.test(label)),
+  );
+  if (directRate) return directRate;
+
   return roomType.rates[0] || null;
 }
 
@@ -388,6 +411,25 @@ export async function searchBluejayRoomTypes({ checkIn, checkOut, guests = 1, ad
   );
 }
 
+function getAvailabilityCacheKey({ checkIn, checkOut, guests = 1, adults, children = 0 }) {
+  const occupancy = normalizeOccupancy({ guests, adults, children });
+  return [normalizeDate(checkIn), normalizeDate(checkOut), occupancy.adults, occupancy.children].join('|');
+}
+
+function getCachedAvailability(query) {
+  const cached = availabilityCache.get(getAvailabilityCacheKey(query));
+  if (!cached || Date.now() - cached.savedAt > AVAILABILITY_CACHE_MAX_AGE_MS) return null;
+  return cached;
+}
+
+function cacheAvailability(query, payload) {
+  availabilityCache.set(getAvailabilityCacheKey(query), { payload, savedAt: Date.now() });
+  if (availabilityCache.size > 100) {
+    const oldestKey = availabilityCache.keys().next().value;
+    availabilityCache.delete(oldestKey);
+  }
+}
+
 export async function diagnoseBluejayAvailability({ roomId, checkIn, checkOut, guests = 1, adults, children = 0 }) {
   const roomTypePayload = await listBluejayRoomTypes();
   const searchPayload =
@@ -476,27 +518,36 @@ export async function checkBluejayRoomAvailability({ roomId, checkIn, checkOut, 
     };
   } catch (error) {
     return {
-      checked: true,
-      available: !env.BLUEJAY_FAIL_CLOSED,
+      checked: false,
+      source: 'bluejay',
+      available: null,
       reason: error?.message || 'Bluejay availability request failed',
     };
   }
 }
 
-export async function getBluejayStayAvailability({ roomIds = [], checkIn, checkOut, guests = 1, adults, children = 0 }) {
+export async function getBluejayStayAvailability({
+  roomIds = [],
+  checkIn,
+  checkOut,
+  guests = 1,
+  adults,
+  children = 0,
+  allowStaleFallback = true,
+}) {
   const uniqueRoomIds = [...new Set(roomIds.filter(Boolean))];
   if (!isBluejayEnabled()) {
     return { checked: false, source: 'local', rooms: {} };
   }
 
-  const buildFallbackRooms = (reason, available) =>
+  const buildFallbackRooms = (reason) =>
     Object.fromEntries(
       uniqueRoomIds.map((roomId) => [
         roomId,
         {
-          checked: true,
+          checked: false,
           source: 'bluejay',
-          available,
+          available: null,
           reason,
           priceSummary: null,
         },
@@ -505,7 +556,28 @@ export async function getBluejayStayAvailability({ roomIds = [], checkIn, checkO
 
   try {
     const occupancy = normalizeOccupancy({ guests, adults, children });
-    const payload = await searchBluejayRoomTypes({ checkIn, checkOut, guests: occupancy.guests, adults: occupancy.adults, children: occupancy.children });
+    const searchQuery = {
+      checkIn,
+      checkOut,
+      guests: occupancy.guests,
+      adults: occupancy.adults,
+      children: occupancy.children,
+    };
+    let payload;
+    let stale = false;
+    let staleReason = '';
+    try {
+      // Always ask Bluejay for live data. Cache is only an outage fallback and
+      // is never used by final booking validation.
+      payload = await searchBluejayRoomTypes(searchQuery);
+      cacheAvailability(searchQuery, payload);
+    } catch (error) {
+      const cached = allowStaleFallback ? getCachedAvailability(searchQuery) : null;
+      if (!cached) throw error;
+      payload = cached.payload;
+      stale = true;
+      staleReason = error?.message || 'Bluejay availability request failed';
+    }
     const roomTypes = getRoomTypeList(payload);
     const rooms = {};
 
@@ -527,24 +599,29 @@ export async function getBluejayStayAvailability({ roomIds = [], checkIn, checkO
       const available = Number(matchedRoomType?.available || 0) > 0 && Boolean(ratePlan);
 
       rooms[roomId] = {
-        checked: true,
+        checked: !stale,
         source: 'bluejay',
+        stale,
         externalRoomId,
         available,
         inventory: Number(matchedRoomType?.available || 0),
         ratePlanId: ratePlan?.rateplan_id || null,
         ratePlanName: ratePlan?.title || ratePlan?.name || '',
-        reason: available ? '' : 'Bluejay returned no available inventory or no rate plan for this stay',
+        reason: stale
+          ? `Showing the latest Bluejay result while live refresh failed: ${staleReason}`
+          : available
+            ? ''
+            : 'Bluejay returned no available inventory or no rate plan for this stay',
         priceSummary: ratePlan ? buildBluejayPriceSummary(ratePlan, checkIn, checkOut, occupancy.guests, occupancy.adults, occupancy.children) : null,
       };
     });
 
-    return { checked: true, source: 'bluejay', rooms };
+    return { checked: !stale, source: 'bluejay', stale, rooms };
   } catch (error) {
     return {
-      checked: true,
+      checked: false,
       source: 'bluejay',
-      rooms: buildFallbackRooms(error?.message || 'Bluejay availability request failed', !env.BLUEJAY_FAIL_CLOSED),
+      rooms: buildFallbackRooms(error?.message || 'Bluejay availability request failed'),
     };
   }
 }

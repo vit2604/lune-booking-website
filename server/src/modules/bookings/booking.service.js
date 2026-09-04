@@ -339,8 +339,12 @@ export async function createBooking(input) {
       guests: selection.guests,
       adults: selection.adults,
       children: selection.children,
+      allowStaleFallback: false,
     });
     const externalRoom = externalStay.rooms?.[room.id] || null;
+    if (!externalRoom?.checked) {
+      throw createHttpError(503, 'Could not verify live price and availability with Bluejay. Please try again.');
+    }
     if (externalRoom?.checked && !externalRoom.available) {
       throw createHttpError(409, externalRoom.reason || `${room.name} is not available`);
     }
