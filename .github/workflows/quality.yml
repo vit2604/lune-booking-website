@@ -31,7 +31,19 @@ jobs:
         run: npm run test
 
       - name: Dependency audit
-        run: npm audit --audit-level=high
+        shell: bash
+        run: |
+          set +e
+          audit_output=$(npm audit --audit-level=high 2>&1)
+          audit_status=$?
+          printf '%s\n' "$audit_output"
+          if [ "$audit_status" -ne 0 ]; then
+            if printf '%s\n' "$audit_output" | grep -Eqi 'audit endpoint returned an error|network timeout|ECONNRESET|ETIMEDOUT'; then
+              echo '::warning::npm audit registry is temporarily unavailable; OSV/package updates are handled separately.'
+            else
+              exit "$audit_status"
+            fi
+          fi
 
       - name: Build frontend
         run: npm run build
@@ -58,7 +70,19 @@ jobs:
 
       - name: Backend dependency audit
         working-directory: server
-        run: npm audit --audit-level=high
+        shell: bash
+        run: |
+          set +e
+          audit_output=$(npm audit --audit-level=high 2>&1)
+          audit_status=$?
+          printf '%s\n' "$audit_output"
+          if [ "$audit_status" -ne 0 ]; then
+            if printf '%s\n' "$audit_output" | grep -Eqi 'audit endpoint returned an error|network timeout|ECONNRESET|ETIMEDOUT'; then
+              echo '::warning::npm audit registry is temporarily unavailable; OSV/package updates are handled separately.'
+            else
+              exit "$audit_status"
+            fi
+          fi
 
       - name: Validate Prisma schema
         working-directory: server
