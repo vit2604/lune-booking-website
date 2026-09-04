@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          audit_output=$(npm audit --audit-level=high 2>&1)
+          audit_output=$(npm audit --audit-level=high --fetch-timeout=10000 --fetch-retries=0 2>&1)
           audit_status=$?
           printf '%s\n' "$audit_output"
           if [ "$audit_status" -ne 0 ]; then
@@ -73,7 +73,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          audit_output=$(npm audit --audit-level=high 2>&1)
+          audit_output=$(npm audit --audit-level=high --fetch-timeout=10000 --fetch-retries=0 2>&1)
           audit_status=$?
           printf '%s\n' "$audit_output"
           if [ "$audit_status" -ne 0 ]; then
