@@ -364,6 +364,7 @@ export default {
     "startConversation": "Xin chào, Lune có thể hỗ trợ gì cho quý khách?",
     "typeMessage": "Nhập tin nhắn...",
     "send": "Gửi",
+    "close": "Đóng đoạn chat",
     "quickBookRoom": "Tôi muốn đặt phòng",
     "quickAvailability": "Khách sạn còn phòng không?",
     "quickEarlyCheckIn": "Tôi có thể nhận phòng sớm không?",

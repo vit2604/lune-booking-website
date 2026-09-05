@@ -279,17 +279,21 @@ export default {
     "Wardrobe": "Wardrobe"
   },
   "chat": {
-    "chatWithUs": "Chat with us",
-    "luneSupport": "Lune Support",
-    "usuallyReplies": "Usually replies shortly",
-    "startConversation": "Hi, welcome to Lune. Send us a message and our team will help shortly.",
-    "typeMessage": "Type your message...",
-    "send": "Send",
-    "quickBookRoom": "I want to book a room",
-    "quickAvailability": "Do you have availability?",
-    "quickEarlyCheckIn": "Can I check in early?",
-    "quickPayment": "How can I pay?",
-    "quickBookingHelp": "I need help with my booking"
+    "chatWithUs": "แชทกับเรา",
+    "luneSupport": "ฝ่ายบริการ Lune",
+    "usuallyReplies": "โดยปกติจะตอบกลับในไม่ช้า",
+    "startConversation": "สวัสดี ยินดีต้อนรับสู่ Lune ส่งข้อความถึงเรา แล้วทีมงานจะช่วยเหลือคุณในไม่ช้า",
+    "typeMessage": "พิมพ์ข้อความของคุณ...",
+    "send": "ส่ง",
+    "close": "ปิดแชท",
+    "quickBookRoom": "ฉันต้องการจองห้องพัก",
+    "quickAvailability": "มีห้องว่างหรือไม่?",
+    "quickEarlyCheckIn": "ฉันเช็กอินก่อนเวลาได้หรือไม่?",
+    "quickPayment": "ฉันชำระเงินได้อย่างไร?",
+    "quickBookingHelp": "ฉันต้องการความช่วยเหลือเกี่ยวกับการจอง",
+    "aiTranslated": "แปลอัตโนมัติ",
+    "originalMessage": "ข้อความต้นฉบับ",
+    "waitMoment": "โปรดรอสักครู่ ทีมงาน Lune จะตอบกลับในไม่ช้า"
   },
   "footer": {
     "social": "Social",

@@ -365,6 +365,7 @@ export default {
     "startConversation": "Hi, welcome to Lune. Send us a message and our team will help shortly.",
     "typeMessage": "Type your message...",
     "send": "Send",
+    "close": "Close chat",
     "quickBookRoom": "I want to book a room",
     "quickAvailability": "Do you have availability?",
     "quickEarlyCheckIn": "Can I check in early?",

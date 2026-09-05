@@ -341,6 +341,7 @@ export default {
     "startConversation": "您好，欢迎来到 Lune。请给我们留言，我们的团队会尽快为您提供帮助。",
     "typeMessage": "请输入您的消息……",
     "send": "发送",
+    "close": "关闭聊天",
     "sendMessage": "发送消息",
     "quickBookRoom": "我想预订房间",
     "quickAvailability": "请问还有空房吗？",

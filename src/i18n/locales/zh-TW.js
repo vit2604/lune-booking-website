@@ -285,12 +285,16 @@ export default {
     "startConversation": "您好，歡迎來到 Lune。請給我們留言，我們的團隊會盡快為您提供協助。",
     "typeMessage": "請輸入您的訊息……",
     "send": "傳送",
+    "close": "關閉聊天",
     "sendMessage": "傳送訊息",
     "quickBookRoom": "我想預訂房間",
     "quickAvailability": "請問還有空房嗎？",
     "quickEarlyCheckIn": "可以提前入住嗎？",
     "quickPayment": "如何付款？",
-    "quickBookingHelp": "我的預訂需要協助"
+    "quickBookingHelp": "我的預訂需要協助",
+    "aiTranslated": "自動翻譯",
+    "originalMessage": "原始訊息",
+    "waitMoment": "請稍候片刻。Lune 團隊會盡快回覆您。"
   },
   "footer": {
     "social": "Social",

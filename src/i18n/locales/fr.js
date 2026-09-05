@@ -279,17 +279,21 @@ export default {
     "Wardrobe": "Wardrobe"
   },
   "chat": {
-    "chatWithUs": "Chat with us",
-    "luneSupport": "Lune Support",
-    "usuallyReplies": "Usually replies shortly",
-    "startConversation": "Hi, welcome to Lune. Send us a message and our team will help shortly.",
-    "typeMessage": "Type your message...",
-    "send": "Send",
-    "quickBookRoom": "I want to book a room",
-    "quickAvailability": "Do you have availability?",
-    "quickEarlyCheckIn": "Can I check in early?",
-    "quickPayment": "How can I pay?",
-    "quickBookingHelp": "I need help with my booking"
+    "chatWithUs": "Discuter avec nous",
+    "luneSupport": "Assistance Lune",
+    "usuallyReplies": "Répond généralement rapidement",
+    "startConversation": "Bonjour et bienvenue chez Lune. Envoyez-nous un message, notre équipe vous aidera rapidement.",
+    "typeMessage": "Saisissez votre message...",
+    "send": "Envoyer",
+    "close": "Fermer le chat",
+    "quickBookRoom": "Je souhaite réserver une chambre",
+    "quickAvailability": "Avez-vous des disponibilités ?",
+    "quickEarlyCheckIn": "Puis-je arriver plus tôt ?",
+    "quickPayment": "Comment puis-je payer ?",
+    "quickBookingHelp": "J’ai besoin d’aide pour ma réservation",
+    "aiTranslated": "Traduction automatique",
+    "originalMessage": "Message d’origine",
+    "waitMoment": "Veuillez patienter un instant. L’équipe Lune vous répondra rapidement."
   },
   "footer": {
     "social": "Social",

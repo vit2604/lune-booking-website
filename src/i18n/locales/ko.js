@@ -341,6 +341,7 @@ export default {
     "startConversation": "안녕하세요. Lune입니다. 궁금한 점을 남겨주시면 곧 도와드리겠습니다.",
     "typeMessage": "메시지를 입력하세요...",
     "send": "보내기",
+    "close": "채팅 닫기",
     "quickBookRoom": "객실을 예약하고 싶어요",
     "quickAvailability": "예약 가능한 객실이 있나요?",
     "quickEarlyCheckIn": "얼리 체크인이 가능한가요?",

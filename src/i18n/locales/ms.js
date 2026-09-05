@@ -279,17 +279,21 @@ export default {
     "Wardrobe": "Wardrobe"
   },
   "chat": {
-    "chatWithUs": "Chat with us",
-    "luneSupport": "Lune Support",
-    "usuallyReplies": "Usually replies shortly",
-    "startConversation": "Hi, welcome to Lune. Send us a message and our team will help shortly.",
-    "typeMessage": "Type your message...",
-    "send": "Send",
-    "quickBookRoom": "I want to book a room",
-    "quickAvailability": "Do you have availability?",
-    "quickEarlyCheckIn": "Can I check in early?",
-    "quickPayment": "How can I pay?",
-    "quickBookingHelp": "I need help with my booking"
+    "chatWithUs": "Berbual dengan kami",
+    "luneSupport": "Sokongan Lune",
+    "usuallyReplies": "Biasanya membalas sebentar lagi",
+    "startConversation": "Hai, selamat datang ke Lune. Hantar mesej kepada kami dan pasukan kami akan membantu sebentar lagi.",
+    "typeMessage": "Taip mesej anda...",
+    "send": "Hantar",
+    "close": "Tutup sembang",
+    "quickBookRoom": "Saya ingin menempah bilik",
+    "quickAvailability": "Adakah bilik masih tersedia?",
+    "quickEarlyCheckIn": "Bolehkah saya daftar masuk awal?",
+    "quickPayment": "Bagaimanakah saya boleh membuat bayaran?",
+    "quickBookingHelp": "Saya perlukan bantuan dengan tempahan saya",
+    "aiTranslated": "Terjemahan automatik",
+    "originalMessage": "Mesej asal",
+    "waitMoment": "Sila tunggu sebentar. Pasukan Lune akan membalas tidak lama lagi."
   },
   "footer": {
     "social": "Social",

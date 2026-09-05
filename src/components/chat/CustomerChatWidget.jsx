@@ -39,6 +39,11 @@ const translationPendingText = {
   fr: 'Traduction de la réponse...',
   de: 'Antwort wird ubersetzt...',
   es: 'Traduciendo la respuesta...',
+  ar: 'جارٍ ترجمة رد الموظف...',
+  hi: 'कर्मचारी के उत्तर का अनुवाद किया जा रहा है...',
+  id: 'Menerjemahkan balasan staf...',
+  it: 'Traduzione della risposta dello staff...',
+  ms: 'Sedang menterjemah balasan kakitangan...',
 };
 
 const translationUnavailableText = {
@@ -53,6 +58,11 @@ const translationUnavailableText = {
   fr: 'Le personnel a repondu. La traduction est temporairement indisponible.',
   de: 'Das Team hat geantwortet. Die Ubersetzung ist vorubergehend nicht verfugbar.',
   es: 'El equipo respondio. La traduccion no esta disponible temporalmente.',
+  ar: 'أرسل الموظف ردًا. الترجمة غير متاحة مؤقتًا.',
+  hi: 'कर्मचारी ने उत्तर भेजा है। अनुवाद अस्थायी रूप से उपलब्ध नहीं है।',
+  id: 'Staf telah membalas. Terjemahan sementara tidak tersedia.',
+  it: 'Lo staff ha risposto. La traduzione non è temporaneamente disponibile.',
+  ms: 'Kakitangan telah membalas. Terjemahan tidak tersedia buat sementara waktu.',
 };
 
 function getTranslationStatusText(map, language) {
@@ -207,7 +217,7 @@ export default function CustomerChatWidget() {
               <p className="font-semibold">{t('chat.luneSupport')}</p>
               <p className="text-xs text-white/70">{t('chat.usuallyReplies')}</p>
             </div>
-            <button className="rounded-md p-2 hover:bg-white/10" type="button" onClick={() => setOpen(false)} aria-label="Close chat">
+            <button className="rounded-md p-2 hover:bg-white/10" type="button" onClick={() => setOpen(false)} aria-label={t('chat.close')}>
               <X className="h-4 w-4" />
             </button>
           </header>
@@ -273,7 +283,13 @@ export default function CustomerChatWidget() {
                 }}
                 placeholder={t('chat.typeMessage')}
               />
-              <button className="btn-gold min-h-11 px-3" type="button" disabled={sending} onClick={() => sendMessage()}>
+              <button
+                className="btn-gold min-h-11 px-3"
+                type="button"
+                disabled={sending}
+                onClick={() => sendMessage()}
+                aria-label={t('chat.send')}
+              >
                 <Send className="h-4 w-4" />
               </button>
             </div>
