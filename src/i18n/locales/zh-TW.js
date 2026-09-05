@@ -279,17 +279,18 @@ export default {
     "Wardrobe": "衣柜"
   },
   "chat": {
-    "chatWithUs": "Chat with us",
-    "luneSupport": "Lune Support",
-    "usuallyReplies": "Usually replies shortly",
-    "startConversation": "Hi, welcome to Lune. Send us a message and our team will help shortly.",
-    "typeMessage": "Type your message...",
-    "send": "Send",
-    "quickBookRoom": "I want to book a room",
-    "quickAvailability": "Do you have availability?",
-    "quickEarlyCheckIn": "Can I check in early?",
-    "quickPayment": "How can I pay?",
-    "quickBookingHelp": "I need help with my booking"
+    "chatWithUs": "聯絡我們",
+    "luneSupport": "Lune 客服",
+    "usuallyReplies": "我們通常會盡快回覆",
+    "startConversation": "您好，歡迎來到 Lune。請給我們留言，我們的團隊會盡快為您提供協助。",
+    "typeMessage": "請輸入您的訊息……",
+    "send": "傳送",
+    "sendMessage": "傳送訊息",
+    "quickBookRoom": "我想預訂房間",
+    "quickAvailability": "請問還有空房嗎？",
+    "quickEarlyCheckIn": "可以提前入住嗎？",
+    "quickPayment": "如何付款？",
+    "quickBookingHelp": "我的預訂需要協助"
   },
   "footer": {
     "social": "Social",
