@@ -11,6 +11,13 @@ import {
 import { translateForGuest } from '../../services/aiTranslationService.js';
 import { connectChatSocket } from '../../services/socketChatClient.js';
 import { mergeChatMessages, receiveChatMessage } from '../../utils/chatMessageUtils.js';
+import {
+  cacheChatMessages,
+  clearChatPersistence,
+  readCachedChatMessages,
+  readChatDraft,
+  saveChatDraft,
+} from '../../utils/chatPersistence.js';
 
 const quickQuestionKeys = [
   'chat.quickBookRoom',
@@ -62,7 +69,7 @@ export default function CustomerChatWidget() {
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft] = useState(() => readChatDraft());
   const [sending, setSending] = useState(false);
   const [unread, setUnread] = useState(0);
   const [translatedMessages, setTranslatedMessages] = useState({});
@@ -73,8 +80,18 @@ export default function CustomerChatWidget() {
   useEffect(() => {
     const sessionCode = localStorage.getItem(storageKeys.chatSessionCode);
     if (!sessionCode) return;
+    setMessages(readCachedChatMessages(sessionCode));
     setSession({ sessionCode });
   }, []);
+
+  useEffect(() => {
+    if (!session?.sessionCode) return;
+    cacheChatMessages(session.sessionCode, messages);
+  }, [messages, session?.sessionCode]);
+
+  useEffect(() => {
+    saveChatDraft(draft);
+  }, [draft]);
 
   useEffect(() => {
     if (!session?.sessionCode) return undefined;
@@ -91,17 +108,27 @@ export default function CustomerChatWidget() {
   }, [currentLanguage, open, session?.sessionCode]);
 
   useEffect(() => {
-    if (!session?.sessionCode || !open) return undefined;
+    if (!session?.sessionCode) return undefined;
+    let active = true;
     const refreshMessages = () => {
       getChatMessagesWithFallback(session.sessionCode)
         .then(({ messages: nextMessages }) => {
+          if (!active) return;
           setMessages((current) => mergeChatMessages(nextMessages, current));
         })
-        .catch(() => {});
+        .catch((error) => {
+          if (!active || !isMissingChatSessionError(error)) return;
+          clearChatPersistence(session.sessionCode);
+          setSession(null);
+          setMessages([]);
+        });
     };
     refreshMessages();
-    const interval = window.setInterval(refreshMessages, 15000);
-    return () => window.clearInterval(interval);
+    const interval = open ? window.setInterval(refreshMessages, 15000) : null;
+    return () => {
+      active = false;
+      if (interval) window.clearInterval(interval);
+    };
   }, [open, session?.sessionCode]);
 
   useEffect(() => {
@@ -113,7 +140,8 @@ export default function CustomerChatWidget() {
     messages.forEach((message) => {
       const key = message.id || message.createdAt;
       const isAdmin = message.senderType === 'ADMIN' || message.sender === 'admin';
-      if (!key || !isAdmin || currentLanguage === 'vi' || translatedMessages[key]) return;
+      const alreadyLocalized = message.senderName === 'Lune Telegram';
+      if (!key || !isAdmin || alreadyLocalized || message.attachmentData || currentLanguage === 'vi' || translatedMessages[key]) return;
       translateForGuest(message.message || message.text || '', currentLanguage).then((result) => {
         setTranslatedMessages((current) => ({
           ...current,
@@ -125,7 +153,7 @@ export default function CustomerChatWidget() {
 
   const ensureSession = async ({ reset = false } = {}) => {
     if (!reset && session?.sessionCode) return session;
-    if (reset) localStorage.removeItem(storageKeys.chatSessionCode);
+    if (reset) clearChatPersistence(session?.sessionCode);
     const { session: created } = await createChatSessionWithFallback({ language: currentLanguage });
     localStorage.setItem(storageKeys.chatSessionCode, created.sessionCode);
     setSession(created);
@@ -193,8 +221,9 @@ export default function CustomerChatWidget() {
             {messages.filter((message) => message.senderType !== 'SYSTEM').map((message) => {
               const isGuest = message.senderType === 'GUEST' || message.sender === 'guest';
               const isAdmin = message.senderType === 'ADMIN' || message.sender === 'admin';
+              const alreadyLocalized = message.senderName === 'Lune Telegram' || message.senderName === 'Lune AI';
               const translation = translatedMessages[message.id || message.createdAt];
-              const needsTranslation = isAdmin && currentLanguage !== 'vi';
+              const needsTranslation = isAdmin && !alreadyLocalized && currentLanguage !== 'vi';
               const originalText = message.message || message.text;
               const displayText = needsTranslation
                 ? translation?.translated

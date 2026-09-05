@@ -15,6 +15,8 @@ export const storageKeys = {
   chatSessions: 'lune_chat_sessions',
   chatMessages: 'lune_chat_messages',
   chatSessionCode: 'lune_chat_session_code',
+  chatMessageCache: 'lune_chat_message_cache_v1',
+  chatDraft: 'lune_chat_draft_v1',
   adminLoggedIn: 'lune_admin_logged_in',
   adminToken: 'lune_admin_token',
   adminUser: 'lune_admin_user',

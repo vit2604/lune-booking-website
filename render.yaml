@@ -87,6 +87,10 @@ services:
         sync: false
       - key: TELEGRAM_CHAT_ADMIN_URL
         value: https://www.luneboutiquedanang.com/admin/messages
+      - key: TELEGRAM_WEBHOOK_URL
+        value: https://lune-booking-api.onrender.com/api/webhooks/telegram/chat
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
       - key: BOOKING_CONFIRMATION_EMAIL_ENABLED
         value: 'true'
       - key: SMTP_HOST

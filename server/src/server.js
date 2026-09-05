@@ -3,6 +3,7 @@ import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { createSocketServer } from './config/socket.js';
 import { cleanupStaleChatSessions } from './modules/chat/chat.service.js';
+  import { registerTelegramChatWebhook } from './modules/chat/chatNotification.service.js';
 import {
   retryPendingBookingConfirmationEmails,
   verifyBookingConfirmationEmailTransport,
@@ -44,3 +45,4 @@ async function runBookingEmailRetry() {
 runBookingEmailRetry();
 setInterval(runBookingEmailRetry, BOOKING_EMAIL_RETRY_INTERVAL_MS).unref();
 void verifyBookingConfirmationEmailTransport();
+  void registerTelegramChatWebhook();

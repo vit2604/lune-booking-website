@@ -13,6 +13,7 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { adminBluejayRouter } from './modules/bluejay/bluejay.routes.js';
 import { adminBookingRouter, publicBookingRouter } from './modules/bookings/booking.routes.js';
 import { adminChatRouter, publicChatRouter } from './modules/chat/chat.routes.js';
+import { telegramChatWebhookRouter } from './modules/chat/chatTelegramWebhook.routes.js';
 import { currencyRouter } from './modules/currency/currency.routes.js';
 import { adminMediaRouter } from './modules/media/media.routes.js';
 import { adminPaymentRouter, paymentWebhookRouter, publicPaymentRouter } from './modules/payments/payment.routes.js';
@@ -77,6 +78,7 @@ export function createApp() {
   // Payment webhooks are mounted before the general rate limiter and are
   // signature-verified, so legitimate provider bursts are never throttled.
   app.use('/api/webhooks', paymentWebhookRouter);
+  app.use('/api/webhooks', telegramChatWebhookRouter);
 
   // Prevent caching of PII/payment/admin responses, then apply the baseline
   // API rate limit to everything below.

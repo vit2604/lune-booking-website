@@ -78,6 +78,8 @@ const schema = z.object({
   TELEGRAM_BOT_TOKEN: optionalString,
   TELEGRAM_CHAT_ID: optionalString,
   TELEGRAM_CHAT_ADMIN_URL: optionalUrl,
+  TELEGRAM_WEBHOOK_URL: optionalUrl,
+  TELEGRAM_WEBHOOK_SECRET: optionalString,
   BOOKING_CONFIRMATION_EMAIL_ENABLED: optionalBoolean(false),
   SMTP_HOST: z.string().default('smtp.gmail.com'),
   SMTP_PORT: z.coerce.number().int().positive().default(465),
