@@ -270,3 +270,32 @@
     will-change: auto;
   }
 }
+
+/* Guest navigation, booking controls and contact actions. */
+.lune-main-header { z-index: 1000; }
+.lune-main-header[data-scrolled="true"] { box-shadow: 0 4px 20px rgb(23 20 18 / 12%); }
+.lune-mobile-guests, .lune-mobile-booking-bar { display: none; }
+.lune-contact-fabs { position: fixed; right: 1rem; bottom: 6rem; z-index: 45; display: flex; flex-direction: column; gap: .5rem; }
+.lune-chat-widget:has(section) { z-index: 1001; }
+@media (min-width: 769px) {
+  .lune-main-header { position: sticky; top: 0; }
+  .lune-main-header[data-home="true"] { background: #27221d; }
+  .featured-rooms-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
+}
+@media (max-width: 768px) {
+  .lune-guest-layout { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .lune-mobile-guests { display: block; }
+  .lune-desktop-guests { display: none; }
+  .lune-mobile-booking-bar, .lune-room-booking-bar { position: fixed; bottom: 0; left: 0; width: 100%; z-index: 999; border-top: 1px solid #e7e5e4; background: #fffdf8; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgb(23 20 18 / 8%); }
+  .lune-mobile-booking-bar { display: block; }
+  .lune-mobile-booking-bar a { min-height: 48px; }
+  .lune-contact-fabs { bottom: calc(150px + env(safe-area-inset-bottom)); right: 12px; }
+  .lune-chat-widget { bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
+  .lune-chat-widget section { height: min(580px, calc(100dvh - 180px)); }
+  .lune-calendar-popover button { min-height: 44px; touch-action: manipulation; }
+  .lune-guest-layout button[aria-haspopup="dialog"] { min-height: 48px; }
+}
+
+@media (max-width: 768px) { .lune-calendar-popover > div:last-child { padding-left: 0; padding-right: 0; } }
+
+@media (max-width: 768px) { .lune-date-input { min-height: 48px; touch-action: manipulation; } }

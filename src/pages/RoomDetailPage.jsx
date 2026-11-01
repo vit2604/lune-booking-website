@@ -421,7 +421,7 @@ export default function RoomDetailPage() {
         </RevealOnScroll>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 p-3 shadow-[0_-12px_30px_rgba(23,20,18,0.12)] backdrop-blur lg:hidden">
+      <div className="lune-room-booking-bar fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 p-3 shadow-[0_-12px_30px_rgba(23,20,18,0.12)] backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs text-stone-500">{t('common.from')} {formatCurrency(room.price)} {t('common.perNight')}</p>

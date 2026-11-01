@@ -13,6 +13,8 @@ const navItems = [
 ];
 
 export default function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => { const update = () => setScrolled(window.scrollY > 8); update(); window.addEventListener("scroll", update, { passive: true }); return () => window.removeEventListener("scroll", update); }, []);
   const [open, setOpen] = useState(false);
   const [branding, setBranding] = useState(getBrandingSettings());
   const location = useLocation();
@@ -38,10 +40,12 @@ export default function Navbar() {
 
   return (
     <header
+      data-scrolled={scrolled}
+      data-home={isHome}
       className={
         isHome
-          ? 'absolute inset-x-0 top-0 z-50 border-b border-white/10 bg-transparent text-white'
-          : 'sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur'
+          ? 'lune-main-header absolute inset-x-0 top-0 z-50 border-b border-white/10 bg-transparent text-white'
+          : 'lune-main-header sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur'
       }
     >
       <nav className="page-shell flex h-24 items-center justify-between gap-2 sm:h-28 sm:gap-3 lg:h-36 lg:gap-5">
@@ -114,7 +118,7 @@ export default function Navbar() {
               isHome ? 'border-white/35 bg-white/10 text-white' : 'border-stone-200 text-lune-ink'
             }`}
             type="button"
-            aria-label="Toggle navigation"
+            aria-label="Toggle navigation" aria-expanded={open}
             onClick={() => setOpen((value) => !value)}
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

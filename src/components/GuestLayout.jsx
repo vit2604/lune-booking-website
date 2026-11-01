@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { getWebsiteSettings } from '../admin/services/adminSettingsService.js';
+import GuestActions from './GuestActions.jsx';
 import Footer from './Footer.jsx';
 import Navbar from './Navbar.jsx';
 
@@ -24,7 +25,7 @@ export default function GuestLayout() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="lune-guest-layout flex min-h-screen flex-col">
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
@@ -41,6 +42,7 @@ export default function GuestLayout() {
         <CustomerChatWidget />
       </Suspense>
       <Footer />
+      <GuestActions />
     </div>
   );
 }

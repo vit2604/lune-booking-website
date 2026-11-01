@@ -71,7 +71,9 @@ export default function AdminBranding() {
           <AdminFormInput label="Short slogan" value={settings.shortSlogan} onChange={(e) => update('shortSlogan', e.target.value)} />
           <AdminFormInput label="Phone number" value={settings.phone} onChange={(e) => update('phone', e.target.value)} />
           <AdminFormInput label="Email" value={settings.email} onChange={(e) => update('email', e.target.value)} />
-          <AdminFormInput label="Zalo / WhatsApp optional" value={settings.zalo || settings.whatsapp || ''} onChange={(e) => update('whatsapp', e.target.value)} />
+          <AdminFormInput label="Zalo number" value={settings.zalo || ''} onChange={(e) => update('zalo', e.target.value)} />
+          <AdminFormInput label="WhatsApp number (country code included)" value={settings.whatsapp || ''} onChange={(e) => update('whatsapp', e.target.value)} />
+          <AdminFormInput label="KakaoTalk channel URL (https://pf.kakao.com/...)" value={settings.kakaoTalkUrl || ''} onChange={(e) => update('kakaoTalkUrl', e.target.value)} />
           <AdminFormInput label="Facebook link optional" value={settings.facebook} onChange={(e) => update('facebook', e.target.value)} />
           <AdminFormInput label="Instagram link optional" value={settings.instagram} onChange={(e) => update('instagram', e.target.value)} />
           <AdminFormInput label="Google Maps link optional" value={settings.googleMapsLink || ''} onChange={(e) => update('googleMapsLink', e.target.value)} />

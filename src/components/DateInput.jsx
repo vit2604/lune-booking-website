@@ -24,7 +24,7 @@ export default function DateInput({
   const displayValue = formatDateInputDisplay(value);
 
   return (
-    <span className={`relative flex items-center ${className}`}>
+    <span className={`lune-date-input relative flex items-center ${className}`}>
       <span className={`pointer-events-none block truncate ${displayValue ? 'text-lune-ink' : 'text-stone-400'}`}>
         {displayValue || placeholder}
       </span>

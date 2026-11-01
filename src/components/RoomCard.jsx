@@ -20,7 +20,7 @@ export default function RoomCard({ room, onBook, isBooking = false, isDisabled =
         <LuneImage
           src={room.image}
           alt={localizedRoom.name}
-          className="h-72 w-full object-cover transition duration-700 group-hover:scale-105"
+          className="h-72 w-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105 motion-reduce:transform-none"
           loading="lazy"
           decoding="async"
         />

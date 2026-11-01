@@ -383,10 +383,7 @@ export default function HomePage() {
               {t('home.guestLovedTitle')}
             </h2>
             <p className="mt-5 text-sm leading-7 text-stone-600">{t('home.guestLovedBody')}</p>
-            <p className="hidden">
-              Lune is built for travelers who want the comfort of an apartment and the ease of a hotel:
-              clean rooms, practical amenities, responsive support, and a calm location in Sơn Trà.
-            </p>
+
           </div>
           <div className="grid gap-4">
             <div className="grid gap-3 sm:grid-cols-4">
@@ -561,7 +558,7 @@ export default function HomePage() {
             )}
 
             <div
-              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              className="featured-rooms-grid grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
               aria-label={t('home.chooseStay')}
               aria-live="polite"
             >
